@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Adjust plugin additions-->
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- init section is always evaluated once per architecture -->
+    <init>
+        <log text="Adjust SDK Android init"/>
+
+        <!-- check if using Gradle -->
+        <setBoolFromProperty result="bGradle" ini="Engine" section="/Script/AndroidRuntimeSettings.AndroidRuntimeSettings" property="bEnableGradle" default="false"/>
+        <if condition="bGradle">
+            <true>
+                <log text="Adjust requires minimum SDK of 15"/>
+            </true>
+        </if>
+        
+        <!-- get packaging for Adjust from ini and reset it if architecture not supported -->
+        <setBoolFromProperty result="bEnabled" ini="Engine" section="Adjust" property="bEnabled" default="true"/>
+        <setStringFromProperty result="ClientId" ini="Engine" section="Adjust" property="ClientId" default="0"/>
+        <dumpvars/>
+  </init>
+    
+    <!-- optional files or directories to copy to Intermediate/Android/APK -->
+    <resourceCopies>
+    <copyFile src="$S(PluginDir)/../ThirdParty/Android/adjust-android.jar" dst="$S(BuildDir)/libs/adjust-android.jar" />
+    </resourceCopies>
+    
+    <!-- Adjust requires at least android-26 SDK platform for resources -->
+    <minimumSDKAPI>
+        <insertValue value="19"/>
+        <insertNewline/>
+    </minimumSDKAPI>
+    
+    <!-- AAR dependencies -->
+    <AARImports>
+        <if condition="bEnabled">
+            <true>
+                <if condition="bGradle">
+                    <false>
+                        <insertValue value="repository $S(PluginDir)/../../ThirdParty/Android"/>
+                        <insertNewline/>
+                        <insertValue value="com.adjust.sdk,adjust-android,release" />
+                        <insertNewline/>
+                    </false>
+                </if>
+            </true>
+        </if>
+    </AARImports>
+
+    <buildGradleAdditions>
+        <insert>
+      dependencies {
+      }
+    </insert>
+    </buildGradleAdditions>
+    
+    <!-- optional updates applied to AndroidManifest.xml -->
+    <androidManifestUpdates>
+        <if condition="bEnabled">
+            <true>
+                <!-- Add permissions -->
+                <addPermission android:name="android.permission.INTERNET" />
+                <addPermission android:name="android.permission.ACCESS_WIFI_STATE" />
+                <addPermission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            </true>
+        </if>
+    </androidManifestUpdates>
+
+    <!-- optional additions to proguard -->
+    <proguardAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>
+
+                </insert>
+            </true>
+        </if>
+    </proguardAdditions>
+
+    <!-- optional files or directories to copy or delete from Intermediate/Android/APK before ndk-build 
+    <prebuildCopies>
+    </prebuildCopies> -->
+
+    <!-- optional additions to the GameActivity imports in GameActivity.java -->
+    <gameActivityImportAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>
+                    import com.adjust.sdk.*;
+                </insert>
+            </true>
+        </if>
+    </gameActivityImportAdditions>
+
+    <!-- optional additions to the GameActivity class in GameActivity.java -->
+    <gameActivityClassAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>
+                    // Begin Adjust gameActivityClassAdditions
+                    <!-- public native void nativeOnConcatenateCallback(String left, String right);
+  
+                    /** Whether this application was packaged for GearVR or not */
+                    public boolean PackagedForAdjust = true;
+
+                    // check the manifest to determine if we are a GearVR application
+                    public boolean AndroidThunkJava_IsAdjust() {
+                        return PackagedForAdjust;
+                    }
+  
+                    public String AndroidThunkJava_Concatenate(String left, String right) {  
+                        String concatenate = DummyLib.concatenate(left, right, new OnConcatenateListener() {
+                            @Override
+                            public void onConcatenate(String left, String right) {
+                                nativeOnConcatenateCallback(left, right);
+                            }
+                        });
+
+                        return concatenate;
+                    } -->
+                    // End Adjust gameActivityClassAdditions
+                </insert>
+            </true>
+        </if>
+    </gameActivityClassAdditions>
+    
+    <!-- optional additions to GameActivity onCreate metadata reading in GameActivity.java -->
+    <gameActivityReadMetadataAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>
+                    // Adjust gameActivityReadMetadataAdditions
+                </insert>
+            </true>
+        </if>
+    </gameActivityReadMetadataAdditions>
+    
+    <!-- optional additions to GameActivity onCreate in GameActivity.java -->
+    <gameActivityOnCreateAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>
+                    // Begin Adjust onCreate
+                    Log.debug("Adjust SDK success!");
+                    // End Adjust onCreate
+                </insert>
+            </true>
+        </if>
+    </gameActivityOnCreateAdditions>
+
+    <!-- optional additions to GameActivity onDestroy in GameActivity.java-->
+    <gameActivityOnDestroyAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>                    
+                    // Begin Adjust onDestroy
+                    Log.debug("Adjust SDK Destroy!");
+                    // End Adjust onDestroy
+                </insert>
+            </true>
+        </if>
+    </gameActivityOnDestroyAdditions>
+    
+    <!-- optional additions to GameActivity onStart in GameActivity.java -->
+    <gameActivityOnStartAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>
+                    // Begin Adjust onStart
+                    Log.debug("Adjust SDK onStart!");
+                    // End Adjust onStart
+                </insert>
+            </true>
+        </if>
+    </gameActivityOnStartAdditions>
+
+    <!-- optional additions to GameActivity onStop in GameActivity.java -->
+    <gameActivityOnStopAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>
+                    // Begin Adjust onStop
+                    Log.debug("Adjust SDK onStop!");
+                    // End Adjust onStop
+                </insert>
+            </true>
+        </if>
+    </gameActivityOnStopAdditions>
+
+    <!-- optional additions to GameActivity onPause in GameActivity.java -->
+    <gameActivityOnPauseAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>
+                    // Begin Adjust onPause
+                    Log.debug("Adjust SDK onPause!");
+                    // End Adjust onPause
+                </insert>
+            </true>
+        </if>
+    </gameActivityOnPauseAdditions>
+
+    <!-- optional additions to GameActivity onResume in GameActivity.java -->
+    <gameActivityOnResumeAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>
+                // Begin Adjust onResume
+                Log.debug("Adjust SDK onResume!");
+                // End Adjust onResume
+                </insert>
+            </true>
+        </if>
+    </gameActivityOnResumeAdditions>
+
+    <!-- optional additions to GameActivity onActivityResult in GameActivity.java -->
+    <gameActivityOnActivityResultAdditions>
+        <if condition="bEnabled">
+            <true>
+                <insert>
+                    // Begin Adjust onActivityResult
+                    Log.debug("Adjust SDK onActivityResult!");
+                    // End Adjust onActivityResult
+                </insert>
+            </true>
+        </if>
+    </gameActivityOnActivityResultAdditions>
+
+    <!-- optional libraries to load in GameActivity.java before libUE4.so -->
+    <soLoadLibrary>
+    </soLoadLibrary>
+</root>
