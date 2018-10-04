@@ -41,13 +41,13 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 	static void SetOfflineMode(bool Offline);
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
+	static void GetGoogleAdId();
+
+	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static FString GetAdid();
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static FString GetIdfa();
-
-	UFUNCTION(BlueprintCallable, Category = "Adjust")
-	static FString GetGoogleAdId();
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static FString GetAmazonAdId();
@@ -71,7 +71,7 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 	static void ResetSessionCallbackParameters();
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
-	static void ResetPartnerCallbackParameters();
+	static void ResetSessionPartnerParameters();
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static void GdprForgetMe();

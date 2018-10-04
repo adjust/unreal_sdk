@@ -23,6 +23,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionFailureDelegate, const FAd
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEventSuccessDelegate, const FAdjustEventSuccess&, EventSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEventFailureDelegate, const FAdjustEventFailure&, EventFailure);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeferredDeeplinkDelegate, const FString&, Deeplink);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoogleAdvertisingIdDelegate, const FString&, GoogleAdId);
 
 UCLASS(ClassGroup = (Adjust), meta = (BlueprintSpawnableComponent))
 class ADJUST_API UAdjustDelegates : public USceneComponent
@@ -49,4 +50,7 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = Adjust)
 	FOnDeferredDeeplinkDelegate OnDeferredDeeplinkDelegate;
+
+	UPROPERTY(BlueprintAssignable, Category = Adjust)
+	FOnGoogleAdvertisingIdDelegate OnGoogleAdvertisingIdDelegate;
 };
