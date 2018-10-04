@@ -48,19 +48,30 @@
 
     <buildGradleAdditions>
         <insert>
-      dependencies {
-      }
-    </insert>
+dependencies {
+    implementation 'com.android.installreferrer:installreferrer:1.0'
+}
+        </insert>
     </buildGradleAdditions>
     
     <!-- optional updates applied to AndroidManifest.xml -->
     <androidManifestUpdates>
         <if condition="bEnabled">
             <true>
-                <!-- Add permissions -->
-                <addPermission android:name="android.permission.INTERNET" />
-                <addPermission android:name="android.permission.ACCESS_WIFI_STATE" />
-                <addPermission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<addPermission android:name="android.permission.INTERNET" />
+<addPermission android:name="android.permission.ACCESS_WIFI_STATE" />
+<addPermission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<addElements tag="application">
+    <receiver
+        android:name="com.adjust.sdk.AdjustReferrerReceiver"
+        android:permission="android.permission.INSTALL_PACKAGES"
+        android:exported="true" >
+        <intent-filter>
+            <action android:name="com.android.vending.INSTALL_REFERRER" />
+        </intent-filter>
+    </receiver>
+</addElements>
             </true>
         </if>
     </androidManifestUpdates>
@@ -70,7 +81,18 @@
         <if condition="bEnabled">
             <true>
                 <insert>
-
+-keep public class com.adjust.sdk.** { *; }
+-keep class com.google.android.gms.common.ConnectionResult {
+    int SUCCESS;
+}
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient {
+    com.google.android.gms.ads.identifier.AdvertisingIdClient$Info getAdvertisingIdInfo(android.content.Context);
+}
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient$Info {
+    java.lang.String getId();
+    boolean isLimitAdTrackingEnabled();
+}
+-keep public class com.android.installreferrer.** { *; }
                 </insert>
             </true>
         </if>
@@ -85,7 +107,7 @@
         <if condition="bEnabled">
             <true>
                 <insert>
-                    import com.adjust.sdk.*;
+import com.adjust.sdk.*;
                 </insert>
             </true>
         </if>
@@ -96,28 +118,88 @@
         <if condition="bEnabled">
             <true>
                 <insert>
-                    // Begin Adjust gameActivityClassAdditions
-                    <!-- public native void nativeOnConcatenateCallback(String left, String right);
-  
-                    /** Whether this application was packaged for GearVR or not */
-                    public boolean PackagedForAdjust = true;
+// Begin Adjust gameActivityClassAdditions
+public class AdjustUeAttributionCallback implements OnAttributionChangedListener {
+    public native void attributionChanged(Object attributionString);
+    
+    public AdjustUeAttributionCallback() {}
+    
+    @Override
+    public void onAttributionChanged(AdjustAttribution attribution) {
+        attributionChanged(attribution);
+    }
+}
 
-                    // check the manifest to determine if we are a GearVR application
-                    public boolean AndroidThunkJava_IsAdjust() {
-                        return PackagedForAdjust;
-                    }
-  
-                    public String AndroidThunkJava_Concatenate(String left, String right) {  
-                        String concatenate = DummyLib.concatenate(left, right, new OnConcatenateListener() {
-                            @Override
-                            public void onConcatenate(String left, String right) {
-                                nativeOnConcatenateCallback(left, right);
-                            }
-                        });
+public class AdjustUeSessionSuccessCallback implements OnSessionTrackingSucceededListener {
+    public native void sessionSuccess(Object sessionSuccess);
+    
+    public AdjustUeSessionSuccessCallback() {}
+    
+    @Override
+    public void onFinishedSessionTrackingSucceeded(AdjustSessionSuccess sessionSuccessResponseData) {
+        sessionSuccess(sessionSuccessResponseData);
+    }
+}
 
-                        return concatenate;
-                    } -->
-                    // End Adjust gameActivityClassAdditions
+public class AdjustUeSessionFailureCallback implements OnSessionTrackingFailedListener {
+    public native void sessionFailure(Object sessionFailure);
+    
+    public AdjustUeSessionFailureCallback() {}
+    
+    @Override
+    public void onFinishedSessionTrackingFailed(AdjustSessionFailure failureResponseData) {
+        sessionFailure(failureResponseData);
+    }
+}
+
+public class AdjustUeEventSuccessCallback implements OnEventTrackingSucceededListener {
+    public native void eventSuccess(Object eventSuccess);
+    
+    public AdjustUeEventSuccessCallback() {}
+    
+    @Override
+    public void onFinishedEventTrackingSucceeded(AdjustEventSuccess eventSuccessResponseData) {
+        eventSuccess(eventSuccessResponseData);
+    }
+}
+
+public class AdjustUeEventFailureCallback implements OnEventTrackingFailedListener {
+    public native void eventFailure(Object eventFailure);
+    
+    public AdjustUeEventFailureCallback() {}
+    
+    @Override
+    public void onFinishedEventTrackingFailed(AdjustEventFailure eventFailureResponseData) {
+        eventFailure(eventFailureResponseData);
+    }
+}
+
+public class AdjustUeDeferredDeeplinkCallback implements OnDeeplinkResponseListener {
+    private boolean launchDeeplink;
+    public native boolean deferredDeeplinkReceived(String deeplink);
+    
+    public AdjustUeDeferredDeeplinkCallback(boolean launchDeeplink) {
+        this.launchDeeplink = launchDeeplink;
+    }
+    
+    @Override
+    public boolean launchReceivedDeeplink(android.net.Uri deeplink) {
+        deferredDeeplinkReceived(deeplink.toString());
+        return this.launchDeeplink;
+    }
+}
+
+public class AdjustUeGoogleAdvertisingIdCallback implements OnDeviceIdsRead {
+    public native void googleAdvertisingIdRead(String googleAdId);
+    
+    public AdjustUeGoogleAdvertisingIdCallback() {}
+    
+    @Override
+    public void onGoogleAdIdRead(String googleAdId) {
+        googleAdvertisingIdRead(googleAdId);
+    }
+}
+// End Adjust gameActivityClassAdditions
                 </insert>
             </true>
         </if>
@@ -128,7 +210,7 @@
         <if condition="bEnabled">
             <true>
                 <insert>
-                    // Adjust gameActivityReadMetadataAdditions
+// Adjust gameActivityReadMetadataAdditions
                 </insert>
             </true>
         </if>
@@ -139,9 +221,8 @@
         <if condition="bEnabled">
             <true>
                 <insert>
-                    // Begin Adjust onCreate
-                    Log.debug("Adjust SDK success!");
-                    // End Adjust onCreate
+// Begin Adjust onCreate
+// End Adjust onCreate
                 </insert>
             </true>
         </if>
@@ -152,9 +233,8 @@
         <if condition="bEnabled">
             <true>
                 <insert>                    
-                    // Begin Adjust onDestroy
-                    Log.debug("Adjust SDK Destroy!");
-                    // End Adjust onDestroy
+// Begin Adjust onDestroy
+// End Adjust onDestroy
                 </insert>
             </true>
         </if>
@@ -165,9 +245,8 @@
         <if condition="bEnabled">
             <true>
                 <insert>
-                    // Begin Adjust onStart
-                    Log.debug("Adjust SDK onStart!");
-                    // End Adjust onStart
+// Begin Adjust onStart
+// End Adjust onStart
                 </insert>
             </true>
         </if>
@@ -178,9 +257,8 @@
         <if condition="bEnabled">
             <true>
                 <insert>
-                    // Begin Adjust onStop
-                    Log.debug("Adjust SDK onStop!");
-                    // End Adjust onStop
+// Begin Adjust onStop
+// End Adjust onStop
                 </insert>
             </true>
         </if>
@@ -191,9 +269,9 @@
         <if condition="bEnabled">
             <true>
                 <insert>
-                    // Begin Adjust onPause
-                    Log.debug("Adjust SDK onPause!");
-                    // End Adjust onPause
+// Begin Adjust onPause
+Adjust.onPause();
+// End Adjust onPause
                 </insert>
             </true>
         </if>
@@ -204,9 +282,9 @@
         <if condition="bEnabled">
             <true>
                 <insert>
-                // Begin Adjust onResume
-                Log.debug("Adjust SDK onResume!");
-                // End Adjust onResume
+// Begin Adjust onResume
+Adjust.onResume();
+// End Adjust onResume
                 </insert>
             </true>
         </if>
@@ -217,9 +295,8 @@
         <if condition="bEnabled">
             <true>
                 <insert>
-                    // Begin Adjust onActivityResult
-                    Log.debug("Adjust SDK onActivityResult!");
-                    // End Adjust onActivityResult
+// Begin Adjust onActivityResult
+// End Adjust onActivityResult
                 </insert>
             </true>
         </if>
