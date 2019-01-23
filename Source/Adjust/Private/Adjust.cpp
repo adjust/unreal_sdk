@@ -134,7 +134,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     }
 
     // SDK prefix.
-    [adjustConfig setSdkPrefix:@"unreal4.15.0"];
+    [adjustConfig setSdkPrefix:@"unreal4.17.0"];
 
     // Log level.
     [adjustConfig setLogLevel:logLevel];
@@ -262,7 +262,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     Env->DeleteLocalRef(jEnvironment);
 
     // SDK prefix.
-    const char* cstrSdkPrefix = "unreal4.15.0";
+    const char* cstrSdkPrefix = "unreal4.17.0";
     jstring jSdkPrefix = Env->NewStringUTF(cstrSdkPrefix);
     jmethodID jmidAdjustConfigSetSdkPrefix = Env->GetMethodID(jcslAdjustConfig, "setSdkPrefix", "(Ljava/lang/String;)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSdkPrefix, jSdkPrefix);
@@ -784,6 +784,37 @@ FAdjustAttribution UAdjust::GetAttribution() {
 #else
     FAdjustAttribution ueAttribution;
     return ueAttribution;
+#endif
+}
+
+FString UAdjust::GetSdkVersion() {
+#if PLATFORM_IOS
+    FString Separator = FString(UTF8_TO_TCHAR("@"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.17.0"));
+    FString SdkVersion = *FString([Adjust sdkVersion]);
+    FString FinalVersion = SdkPrefix + Separator + SdkVersion;
+    return FinalVersion;
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustGetSdkVersion = Env->GetStaticMethodID(jcslAdjust, "getSdkVersion", "()Ljava/lang/String;");
+    jstring jSdkVersion = (jstring)Env->CallStaticObjectMethod(jcslAdjust, jmidAdjustGetSdkVersion);
+    
+    FString SdkVersion = FString(UTF8_TO_TCHAR(""));
+    if (NULL != jSdkVersion) {
+        const char* sdkVersionCStr = Env->GetStringUTFChars(jSdkVersion, NULL);
+        SdkVersion = FString(UTF8_TO_TCHAR(sdkVersionCStr));
+        Env->ReleaseStringUTFChars(jSdkVersion, sdkVersionCStr);
+    }
+    Env->DeleteLocalRef(jSdkVersion);
+
+    FString Separator = FString(UTF8_TO_TCHAR("@"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.17.0"));
+    FString FinalVersion = SdkPrefix + Separator + SdkVersion;
+    return FinalVersion;
+#else
+    FString FinalVersion = FString(UTF8_TO_TCHAR(""));
+    return FinalVersion;
 #endif
 }
 

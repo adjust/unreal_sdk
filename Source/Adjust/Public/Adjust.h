@@ -56,6 +56,9 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 	static FAdjustAttribution GetAttribution();
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
+	static FString GetSdkVersion();
+
+	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static void AddSessionCallbackParameter(const FString& Key, const FString& Value);
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
