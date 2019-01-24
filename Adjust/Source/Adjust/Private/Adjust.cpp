@@ -908,6 +908,17 @@ void UAdjust::ResetSessionPartnerParameters() {
 #endif
 }
 
+void UAdjust::SendFirstPackages() {
+#if PLATFORM_IOS
+    [Adjust sendFirstPackages];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustSendFirstPackages = Env->GetStaticMethodID(jcslAdjust, "sendFirstPackages", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustSendFirstPackages);
+#endif
+}
+
 void UAdjust::GdprForgetMe() {
 #if PLATFORM_IOS
     [Adjust gdprForgetMe];

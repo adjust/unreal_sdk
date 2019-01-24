@@ -77,5 +77,8 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 	static void ResetSessionPartnerParameters();
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
+	static void SendFirstPackages();
+
+	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static void GdprForgetMe();
 };
