@@ -134,7 +134,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     }
 
     // SDK prefix.
-    [adjustConfig setSdkPrefix:@"unreal4.17.0"];
+    [adjustConfig setSdkPrefix:@"unreal4.17.1"];
 
     // Log level.
     [adjustConfig setLogLevel:logLevel];
@@ -262,7 +262,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     Env->DeleteLocalRef(jEnvironment);
 
     // SDK prefix.
-    const char* cstrSdkPrefix = "unreal4.17.0";
+    const char* cstrSdkPrefix = "unreal4.17.1";
     jstring jSdkPrefix = Env->NewStringUTF(cstrSdkPrefix);
     jmethodID jmidAdjustConfigSetSdkPrefix = Env->GetMethodID(jcslAdjustConfig, "setSdkPrefix", "(Ljava/lang/String;)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSdkPrefix, jSdkPrefix);
@@ -790,7 +790,7 @@ FAdjustAttribution UAdjust::GetAttribution() {
 FString UAdjust::GetSdkVersion() {
 #if PLATFORM_IOS
     FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.17.0"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.17.1"));
     FString SdkVersion = *FString([Adjust sdkVersion]);
     FString FinalVersion = SdkPrefix + Separator + SdkVersion;
     return FinalVersion;
@@ -809,7 +809,7 @@ FString UAdjust::GetSdkVersion() {
     Env->DeleteLocalRef(jSdkVersion);
 
     FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.17.0"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.17.1"));
     FString FinalVersion = SdkPrefix + Separator + SdkVersion;
     return FinalVersion;
 #else
