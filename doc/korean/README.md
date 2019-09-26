@@ -101,7 +101,7 @@ Adjust를 사용하여 원하는 모든 이벤트를 추적할 수 있습니다.
 ```cpp
 // Adjust method to invoke for event tracking.
 UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void Initialize(const FAdjustConfig& Config);
+static void TrackEvent(const FAdjustEvent& Event);
 ```
 
 ```cpp
