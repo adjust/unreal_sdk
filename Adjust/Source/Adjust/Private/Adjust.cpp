@@ -929,3 +929,28 @@ void UAdjust::GdprForgetMe() {
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGdprForgetMe, FJavaWrapper::GameActivityThis);
 #endif
 }
+
+void UAdjust::TrackAdRevenue(const FString& Source, const FString& Payload) {
+#if PLATFORM_IOS
+    CFStringRef cfstrSource = FPlatformString::TCHARToCFString(*Source);
+    NSString *strSource = (NSString *)cfstrSource;
+    CFStringRef cfstrPayload = FPlatformString::TCHARToCFString(*Payload);
+    NSString *strPayload = (NSString *)cfstrPayload;
+    NSData *dataPayload = [strPayload dataUsingEncoding:NSUTF8StringEncoding];
+    [Adjust trackAdRevenue:strSource payload:dataPayload];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustTrackAdRevenue = Env->GetStaticMethodID(jcslAdjust, "trackAdRevenue", "(Ljava/lang/String;Lorg/json/JSONObject;)V");
+    jstring jSource = Env->NewStringUTF(TCHAR_TO_UTF8(*Source));
+    jstring jPayload = Env->NewStringUTF(TCHAR_TO_UTF8(*Payload));
+
+    jclass jcslJsonObject = FAndroidApplication::FindJavaClass("org/json/JSONObject");
+    jmethodID jmidJsonObjectInit = Env->GetMethodID(jcslJsonObject, "<init>", "(Ljava/lang/String;)V");
+    jobject joJsonPayload = Env->NewObject(jcslJsonObject, jmidJsonObjectInit, jPayload);
+
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustTrackAdRevenue, jSource, joJsonPayload);
+    Env->DeleteLocalRef(jSource);
+    Env->DeleteLocalRef(jPayload);
+#endif
+}
