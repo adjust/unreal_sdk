@@ -93,6 +93,13 @@ dependencies {
     boolean isLimitAdTrackingEnabled();
 }
 -keep public class com.android.installreferrer.** { *; }
+-keep public class com.epicgames.ue4.GameActivity$AdjustUeAttributionCallback { *; }
+-keep public class com.epicgames.ue4.GameActivity$AdjustUeSessionSuccessCallback { *; }
+-keep public class com.epicgames.ue4.GameActivity$AdjustUeSessionFailureCallback { *; }
+-keep public class com.epicgames.ue4.GameActivity$AdjustUeEventSuccessCallback { *; }
+-keep public class com.epicgames.ue4.GameActivity$AdjustUeEventFailureCallback { *; }
+-keep public class com.epicgames.ue4.GameActivity$AdjustUeDeferredDeeplinkCallback { *; }
+-keep public class com.epicgames.ue4.GameActivity$AdjustUeGoogleAdvertisingIdCallback { *; }
                 </insert>
             </true>
         </if>

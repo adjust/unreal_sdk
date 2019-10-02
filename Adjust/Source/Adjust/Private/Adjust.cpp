@@ -134,7 +134,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     }
 
     // SDK prefix.
-    [adjustConfig setSdkPrefix:@"unreal4.17.0"];
+    [adjustConfig setSdkPrefix:@"unreal4.18.0"];
 
     // Log level.
     [adjustConfig setLogLevel:logLevel];
@@ -187,7 +187,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
         && [strInfo3 length] > 0
         && [strInfo4 length] > 0) {
         [adjustConfig setAppSecret:[[NSNumber numberWithLongLong:[strSecretId longLongValue]] unsignedIntegerValue]
-                              info1:[[NSNumber numberWithLongLong:[strInfo1 longLongValue]] unsignedIntegerValue]
+                             info1:[[NSNumber numberWithLongLong:[strInfo1 longLongValue]] unsignedIntegerValue]
                              info2:[[NSNumber numberWithLongLong:[strInfo2 longLongValue]] unsignedIntegerValue]
                              info3:[[NSNumber numberWithLongLong:[strInfo3 longLongValue]] unsignedIntegerValue]
                              info4:[[NSNumber numberWithLongLong:[strInfo4 longLongValue]] unsignedIntegerValue]];
@@ -262,7 +262,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     Env->DeleteLocalRef(jEnvironment);
 
     // SDK prefix.
-    const char* cstrSdkPrefix = "unreal4.17.0";
+    const char* cstrSdkPrefix = "unreal4.18.0";
     jstring jSdkPrefix = Env->NewStringUTF(cstrSdkPrefix);
     jmethodID jmidAdjustConfigSetSdkPrefix = Env->GetMethodID(jcslAdjustConfig, "setSdkPrefix", "(Ljava/lang/String;)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSdkPrefix, jSdkPrefix);
@@ -280,8 +280,8 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     setAttributionCallbackMethod(adjustAttributionCallback);
     jclass jcslUeAttributionCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeAttributionCallback");
     jmethodID jmidAdjustConfigSetAttributionCallback = Env->GetMethodID(jcslAdjustConfig, "setOnAttributionChangedListener", "(Lcom/adjust/sdk/OnAttributionChangedListener;)V");
-    jmethodID jmidUeAttributionCallbackInit = Env->GetMethodID(jcslUeAttributionCallback, "<init>", "()V");
-    jobject joAttributionCallbackProxy = Env->NewObject(jcslUeAttributionCallback, jmidUeAttributionCallbackInit);
+    jmethodID jmidUeAttributionCallbackInit = Env->GetMethodID(jcslUeAttributionCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jobject joAttributionCallbackProxy = Env->NewObject(jcslUeAttributionCallback, jmidUeAttributionCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetAttributionCallback, joAttributionCallbackProxy);
     Env->DeleteLocalRef(joAttributionCallbackProxy);
 
@@ -289,8 +289,8 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     setSessionSuccessCallbackMethod(adjustSessionSuccessCallback);
     jclass jcslUeSessionSuccessCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeSessionSuccessCallback");
     jmethodID jmidAdjustConfigSetSessionSuccessCallback = Env->GetMethodID(jcslAdjustConfig, "setOnSessionTrackingSucceededListener", "(Lcom/adjust/sdk/OnSessionTrackingSucceededListener;)V");
-    jmethodID jmidUeSessionSuccessCallbackInit = Env->GetMethodID(jcslUeSessionSuccessCallback, "<init>", "()V");
-    jobject joSessionSuccessCallbackProxy = Env->NewObject(jcslUeSessionSuccessCallback, jmidUeSessionSuccessCallbackInit);
+    jmethodID jmidUeSessionSuccessCallbackInit = Env->GetMethodID(jcslUeSessionSuccessCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jobject joSessionSuccessCallbackProxy = Env->NewObject(jcslUeSessionSuccessCallback, jmidUeSessionSuccessCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSessionSuccessCallback, joSessionSuccessCallbackProxy);
     Env->DeleteLocalRef(joSessionSuccessCallbackProxy);
 
@@ -298,8 +298,8 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     setSessionFailureCallbackMethod(adjustSessionFailureCallback);
     jclass jcslUeSessionFailureCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeSessionFailureCallback");
     jmethodID jmidAdjustConfigSetSessionFailureCallback = Env->GetMethodID(jcslAdjustConfig, "setOnSessionTrackingFailedListener", "(Lcom/adjust/sdk/OnSessionTrackingFailedListener;)V");
-    jmethodID jmidUeSessionFailureCallbackInit = Env->GetMethodID(jcslUeSessionFailureCallback, "<init>", "()V");
-    jobject joSessionFailureCallbackProxy = Env->NewObject(jcslUeSessionFailureCallback, jmidUeSessionFailureCallbackInit);
+    jmethodID jmidUeSessionFailureCallbackInit = Env->GetMethodID(jcslUeSessionFailureCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jobject joSessionFailureCallbackProxy = Env->NewObject(jcslUeSessionFailureCallback, jmidUeSessionFailureCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSessionFailureCallback, joSessionFailureCallbackProxy);
     Env->DeleteLocalRef(joSessionFailureCallbackProxy);
 
@@ -307,8 +307,8 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     setEventSuccessCallbackMethod(adjustEventSuccessCallback);
     jclass jcslUeEventSuccessCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeEventSuccessCallback");
     jmethodID jmidAdjustConfigSetEventSuccessCallback = Env->GetMethodID(jcslAdjustConfig, "setOnEventTrackingSucceededListener", "(Lcom/adjust/sdk/OnEventTrackingSucceededListener;)V");
-    jmethodID jmidUeEventSuccessCallbackInit = Env->GetMethodID(jcslUeEventSuccessCallback, "<init>", "()V");
-    jobject joEventSuccessCallbackProxy = Env->NewObject(jcslUeEventSuccessCallback, jmidUeEventSuccessCallbackInit);
+    jmethodID jmidUeEventSuccessCallbackInit = Env->GetMethodID(jcslUeEventSuccessCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jobject joEventSuccessCallbackProxy = Env->NewObject(jcslUeEventSuccessCallback, jmidUeEventSuccessCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetEventSuccessCallback, joEventSuccessCallbackProxy);
     Env->DeleteLocalRef(joEventSuccessCallbackProxy);
 
@@ -316,8 +316,8 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     setEventFailureCallbackMethod(adjustEventFailureCallback);
     jclass jcslUeEventFailureCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeEventFailureCallback");
     jmethodID jmidAdjustConfigSetEventFailureCallback = Env->GetMethodID(jcslAdjustConfig, "setOnEventTrackingFailedListener", "(Lcom/adjust/sdk/OnEventTrackingFailedListener;)V");
-    jmethodID jmidUeEventFailureCallbackInit = Env->GetMethodID(jcslUeEventFailureCallback, "<init>", "()V");
-    jobject joEventFailureCallbackProxy = Env->NewObject(jcslUeEventFailureCallback, jmidUeEventFailureCallbackInit);
+    jmethodID jmidUeEventFailureCallbackInit = Env->GetMethodID(jcslUeEventFailureCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jobject joEventFailureCallbackProxy = Env->NewObject(jcslUeEventFailureCallback, jmidUeEventFailureCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetEventFailureCallback, joEventFailureCallbackProxy);
     Env->DeleteLocalRef(joEventFailureCallbackProxy);
 
@@ -325,8 +325,8 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     setDeferredDeeplinkCallbackMethod(adjustDeferredDeeplinkCallback);
     jclass jcslUeDeferredDeeplinkCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeDeferredDeeplinkCallback");
     jmethodID jmidAdjustConfigSetDeferredDeeplinkCallback = Env->GetMethodID(jcslAdjustConfig, "setOnDeeplinkResponseListener", "(Lcom/adjust/sdk/OnDeeplinkResponseListener;)V");
-    jmethodID jmidUeDeferredDeeplinkCallbackInit = Env->GetMethodID(jcslUeDeferredDeeplinkCallback, "<init>", "()V");
-    jobject joDeferredDeeplinkCallbackProxy = Env->NewObject(jcslUeDeferredDeeplinkCallback, jmidUeDeferredDeeplinkCallbackInit, Config.OpenDeferredDeeplink);
+    jmethodID jmidUeDeferredDeeplinkCallbackInit = Env->GetMethodID(jcslUeDeferredDeeplinkCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;Z)V");
+    jobject joDeferredDeeplinkCallbackProxy = Env->NewObject(jcslUeDeferredDeeplinkCallback, jmidUeDeferredDeeplinkCallbackInit, FJavaWrapper::GameActivityThis, Config.OpenDeferredDeeplink);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetDeferredDeeplinkCallback, joDeferredDeeplinkCallbackProxy);
     Env->DeleteLocalRef(joDeferredDeeplinkCallbackProxy);
 
@@ -580,7 +580,7 @@ FString UAdjust::GetAdid() {
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustGetAdid = Env->GetStaticMethodID(jcslAdjust, "getAdid", "()Ljava/lang/String;");
     jstring jAdid = (jstring)Env->CallStaticObjectMethod(jcslAdjust, jmidAdjustGetAdid);
-    
+
     FString Adid = FString(UTF8_TO_TCHAR(""));
     if (NULL != jAdid) {
         const char* adidCStr = Env->GetStringUTFChars(jAdid, NULL);
@@ -613,8 +613,8 @@ void UAdjust::GetGoogleAdId() {
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustGetGoogleAdvertisingId = Env->GetStaticMethodID(jcslAdjust, "getGoogleAdId", "(Landroid/content/Context;Lcom/adjust/sdk/OnDeviceIdsRead;)V");
     jclass jcslUeGoogleAdvertisingIdCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeGoogleAdvertisingIdCallback");
-    jmethodID jmidUeGoogleAdvertisingIdCallbackInit = Env->GetMethodID(jcslUeGoogleAdvertisingIdCallback, "<init>", "()V");
-    jobject joGoogleAdvertisingIdCallbackProxy = Env->NewObject(jcslUeGoogleAdvertisingIdCallback, jmidUeGoogleAdvertisingIdCallbackInit);
+    jmethodID jmidUeGoogleAdvertisingIdCallbackInit = Env->GetMethodID(jcslUeGoogleAdvertisingIdCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jobject joGoogleAdvertisingIdCallbackProxy = Env->NewObject(jcslUeGoogleAdvertisingIdCallback, jmidUeGoogleAdvertisingIdCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetGoogleAdvertisingId, FJavaWrapper::GameActivityThis, joGoogleAdvertisingIdCallbackProxy);
     Env->DeleteLocalRef(joGoogleAdvertisingIdCallbackProxy);
 #endif
@@ -626,7 +626,7 @@ FString UAdjust::GetAmazonAdId() {
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustGetAmazonAdId = Env->GetStaticMethodID(jcslAdjust, "getAmazonAdId", "(Landroid/content/Context;)Ljava/lang/String;");
     jstring jAmazonAdId = (jstring)Env->CallStaticObjectMethod(jcslAdjust, jmidAdjustGetAmazonAdId, FJavaWrapper::GameActivityThis);
-    
+
     FString AmazonAdId = FString(UTF8_TO_TCHAR(""));
     if (NULL != jAmazonAdId) {
         const char* amazonAdIdCStr = Env->GetStringUTFChars(jAmazonAdId, NULL);
@@ -790,7 +790,7 @@ FAdjustAttribution UAdjust::GetAttribution() {
 FString UAdjust::GetSdkVersion() {
 #if PLATFORM_IOS
     FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.17.0"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.18.0"));
     FString SdkVersion = *FString([Adjust sdkVersion]);
     FString FinalVersion = SdkPrefix + Separator + SdkVersion;
     return FinalVersion;
@@ -799,7 +799,7 @@ FString UAdjust::GetSdkVersion() {
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustGetSdkVersion = Env->GetStaticMethodID(jcslAdjust, "getSdkVersion", "()Ljava/lang/String;");
     jstring jSdkVersion = (jstring)Env->CallStaticObjectMethod(jcslAdjust, jmidAdjustGetSdkVersion);
-    
+
     FString SdkVersion = FString(UTF8_TO_TCHAR(""));
     if (NULL != jSdkVersion) {
         const char* sdkVersionCStr = Env->GetStringUTFChars(jSdkVersion, NULL);
@@ -809,7 +809,7 @@ FString UAdjust::GetSdkVersion() {
     Env->DeleteLocalRef(jSdkVersion);
 
     FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.17.0"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.18.0"));
     FString FinalVersion = SdkPrefix + Separator + SdkVersion;
     return FinalVersion;
 #else
@@ -927,5 +927,30 @@ void UAdjust::GdprForgetMe() {
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustGdprForgetMe = Env->GetStaticMethodID(jcslAdjust, "gdprForgetMe", "(Landroid/content/Context;)V");
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGdprForgetMe, FJavaWrapper::GameActivityThis);
+#endif
+}
+
+void UAdjust::TrackAdRevenue(const FString& Source, const FString& Payload) {
+#if PLATFORM_IOS
+    CFStringRef cfstrSource = FPlatformString::TCHARToCFString(*Source);
+    NSString *strSource = (NSString *)cfstrSource;
+    CFStringRef cfstrPayload = FPlatformString::TCHARToCFString(*Payload);
+    NSString *strPayload = (NSString *)cfstrPayload;
+    NSData *dataPayload = [strPayload dataUsingEncoding:NSUTF8StringEncoding];
+    [Adjust trackAdRevenue:strSource payload:dataPayload];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustTrackAdRevenue = Env->GetStaticMethodID(jcslAdjust, "trackAdRevenue", "(Ljava/lang/String;Lorg/json/JSONObject;)V");
+    jstring jSource = Env->NewStringUTF(TCHAR_TO_UTF8(*Source));
+    jstring jPayload = Env->NewStringUTF(TCHAR_TO_UTF8(*Payload));
+
+    jclass jcslJsonObject = FAndroidApplication::FindJavaClass("org/json/JSONObject");
+    jmethodID jmidJsonObjectInit = Env->GetMethodID(jcslJsonObject, "<init>", "(Ljava/lang/String;)V");
+    jobject joJsonPayload = Env->NewObject(jcslJsonObject, jmidJsonObjectInit, jPayload);
+
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustTrackAdRevenue, jSource, joJsonPayload);
+    Env->DeleteLocalRef(jSource);
+    Env->DeleteLocalRef(jPayload);
 #endif
 }

@@ -13,8 +13,8 @@
 UENUM(Blueprintable)
 enum class EAdjustEnvironment : uint8
 {
-	Sandbox = 1,
-	Production = 2
+    Sandbox = 1,
+    Production = 2
 };
 
 UENUM(Blueprintable)
@@ -32,11 +32,11 @@ enum class EAdjustLogLevel : uint8
 USTRUCT(Blueprintable, BlueprintType)
 struct FAdjustConfig
 {
-	GENERATED_USTRUCT_BODY()
+    GENERATED_USTRUCT_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-	FString AppToken;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString AppToken;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     EAdjustEnvironment Environment;
@@ -69,14 +69,14 @@ public:
     FString Info4;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool EventBuffering;
+    bool EventBuffering = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool SendInBackground;
+    bool SendInBackground = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool IsDeviceKnown;
+    bool IsDeviceKnown = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool OpenDeferredDeeplink;
+    bool OpenDeferredDeeplink = true;
 };
