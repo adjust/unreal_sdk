@@ -78,6 +78,14 @@ static void adjustGoogleAdvertisingIdCallback(FString GoogleAdId) {
     }
 }
 
+static void adjustAuthorizationStatusCallback(FString AuthorizationStatus) {
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr) {
+        if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill())) {
+            Itr->OnAuthorizationStatusDelegate.Broadcast(AuthorizationStatus);
+        }
+    }
+}
+
 void UAdjust::Initialize(const FAdjustConfig& Config) {
 #if PLATFORM_IOS
     // App token.
@@ -146,6 +154,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     [delegate setSessionFailureCallback:adjustSessionFailureCallback];
     [delegate setEventSuccessCallback:adjustEventSuccessCallback];
     [delegate setEventFailureCallback:adjustEventFailureCallback];
+    [delegate setDeferredDeeplinkCallback:adjustDeferredDeeplinkCallback];
     [delegate setShouldOpenDeferredDeeplink:Config.OpenDeferredDeeplink];
     adjustConfig.delegate = delegate;
 
@@ -161,6 +170,24 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     NSString *strDefaultTracker = (NSString *)cfstrDefaultTracker;
     if ([strDefaultTracker length] > 0) {
         [adjustConfig setDefaultTracker:strDefaultTracker];
+    }
+
+    // External device ID.
+    CFStringRef cfstrExternalDeviceId = FPlatformString::TCHARToCFString(*Config.ExternalDeviceId);
+    NSString *strExternalDeviceId = (NSString *)cfstrExternalDeviceId;
+    if ([strExternalDeviceId length] > 0) {
+        [adjustConfig setExternalDeviceId:strExternalDeviceId];
+    }
+
+    // URL strategy.
+    CFStringRef cfstrUrlStrategy = FPlatformString::TCHARToCFString(*Config.UrlStrategy);
+    NSString *strUrlStrategy = (NSString *)cfstrUrlStrategy;
+    if (strUrlStrategy != nil && [strUrlStrategy length] > 0) {
+        if ([strUrlStrategy isEqualToString:@"china"]) {
+            [adjustConfig setUrlStrategy:ADJUrlStrategyChina];
+        } else if ([strUrlStrategy isEqualToString:@"india"]) {
+            [adjustConfig setUrlStrategy:ADJUrlStrategyIndia];
+        }
     }
 
     // Delay start.
@@ -201,6 +228,11 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
 
     // Is device known.
     [adjustConfig setIsDeviceKnown:Config.IsDeviceKnown];
+
+    // Handle SKAdNetwork.
+    if (Config.HandleSkAdNetwork == false) {
+        [adjustConfig deactivateSKAdNetworkHandling];
+    }
 
     // Start SDK.
     [Adjust appDidLaunch:adjustConfig];
@@ -989,11 +1021,21 @@ void UAdjust::TrackAdRevenue(const FString& Source, const FString& Payload) {
 
 void UAdjust::DisableThirdPartySharing() {
 #if PLATFORM_IOS
-    
+    [Adjust disableThirdPartySharing];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustDisableThirdPartySharing = Env->GetStaticMethodID(jcslAdjust, "disableThirdPartySharing", "(Landroid/content/Context;)V");
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustDisableThirdPartySharing, FJavaWrapper::GameActivityThis);
+#endif
+}
+
+void UAdjust::RequestTrackingAuthorizationWithCompletionHandler() {
+#if PLATFORM_IOS
+    [Adjust requestTrackingAuthorizationWithCompletionHandler:^(NSUInteger status) {
+        NSString *strStatus = [NSString stringWithFormat:@"%zd", status];
+        FString ueStatus = *FString(strStatus);
+        adjustAuthorizationStatusCallback(ueStatus);
+    }];
 #endif
 }

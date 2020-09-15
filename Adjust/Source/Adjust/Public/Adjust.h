@@ -87,4 +87,7 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static void DisableThirdPartySharing();
+
+	UFUNCTION(BlueprintCallable, Category = "Adjust")
+	static void RequestTrackingAuthorizationWithCompletionHandler();
 };

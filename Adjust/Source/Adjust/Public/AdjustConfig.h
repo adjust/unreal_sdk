@@ -81,11 +81,14 @@ public:
     bool SendInBackground = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool PreinstallTracking = false;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool IsDeviceKnown = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool OpenDeferredDeeplink = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool PreinstallTracking = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool HandleSkAdNetwork = true;
 };

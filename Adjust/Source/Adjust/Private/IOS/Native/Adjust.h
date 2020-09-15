@@ -2,7 +2,7 @@
 //  Adjust.h
 //  Adjust
 //
-//  V4.18.3
+//  V4.23.0
 //  Created by Christian Wellenbrock (wellle) on 23rd July 2013.
 //  Copyright © 2012-2017 Adjust GmbH. All rights reserved.
 //
@@ -10,13 +10,14 @@
 #import "ADJEvent.h"
 #import "ADJConfig.h"
 #import "ADJAttribution.h"
+#import "ADJSubscription.h"
 
 @interface AdjustTestOptions : NSObject
 
 @property (nonatomic, copy, nullable) NSString *baseUrl;
 @property (nonatomic, copy, nullable) NSString *gdprUrl;
-@property (nonatomic, copy, nullable) NSString *basePath;
-@property (nonatomic, copy, nullable) NSString *gdprPath;
+@property (nonatomic, copy, nullable) NSString *subscriptionUrl;
+@property (nonatomic, copy, nullable) NSString *extraPath;
 @property (nonatomic, copy, nullable) NSNumber *timerIntervalInMilliseconds;
 @property (nonatomic, copy, nullable) NSNumber *timerStartInMilliseconds;
 @property (nonatomic, copy, nullable) NSNumber *sessionIntervalInMilliseconds;
@@ -25,6 +26,8 @@
 @property (nonatomic, assign) BOOL deleteState;
 @property (nonatomic, assign) BOOL noBackoffWait;
 @property (nonatomic, assign) BOOL iAdFrameworkEnabled;
+@property (nonatomic, assign) BOOL enableSigning;
+@property (nonatomic, assign) BOOL disableSigning;
 
 @end
 
@@ -55,6 +58,12 @@ extern NSString * __nonnull const ADJAdRevenueSourceUpsight;
 extern NSString * __nonnull const ADJAdRevenueSourceUnityads;
 extern NSString * __nonnull const ADJAdRevenueSourceAdtoapp;
 extern NSString * __nonnull const ADJAdRevenueSourceTapdaq;
+
+/**
+ * Constants for country apps url strategies.
+ */
+extern NSString * __nonnull const ADJUrlStrategyIndia;
+extern NSString * __nonnull const ADJUrlStrategyChina;
 
 /**
  * @brief The main interface to Adjust.
@@ -260,6 +269,20 @@ extern NSString * __nonnull const ADJAdRevenueSourceTapdaq;
 + (void)trackAdRevenue:(nonnull NSString *)source payload:(nonnull NSData *)payload;
 
 /**
+ * @brief Give right user to disable sharing data to any third-party.
+ */
++ (void)disableThirdPartySharing;
+
+/**
+ * @brief Track subscription.
+ *
+ * @param subscription Subscription object.
+ */
++ (void)trackSubscription:(nonnull ADJSubscription *)subscription;
+
++ (void)requestTrackingAuthorizationWithCompletionHandler:(void (^_Nullable)(NSUInteger status))completion;
+
+/**
  * Obtain singleton Adjust object.
  */
 + (nullable id)getInstance;
@@ -304,6 +327,8 @@ extern NSString * __nonnull const ADJAdRevenueSourceTapdaq;
 
 - (void)trackAdRevenue:(nonnull NSString *)source payload:(nonnull NSData *)payload;
 
+- (void)trackSubscription:(nonnull ADJSubscription *)subscription;
+
 - (BOOL)isEnabled;
 
 - (nullable NSString *)adid;
@@ -315,5 +340,7 @@ extern NSString * __nonnull const ADJAdRevenueSourceTapdaq;
 - (nullable ADJAttribution *)attribution;
 
 - (nullable NSURL *)convertUniversalLink:(nonnull NSURL *)url scheme:(nonnull NSString *)scheme;
+
+- (void)requestTrackingAuthorizationWithCompletionHandler:(void (^_Nullable)(NSUInteger status))completion;
 
 @end
