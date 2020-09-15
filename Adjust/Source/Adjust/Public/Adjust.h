@@ -84,4 +84,7 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static void TrackAdRevenue(const FString& Source, const FString& Payload);
+
+	UFUNCTION(BlueprintCallable, Category = "Adjust")
+	static void DisableThirdPartySharing();
 };

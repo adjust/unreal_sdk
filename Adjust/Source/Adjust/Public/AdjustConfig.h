@@ -13,20 +13,20 @@
 UENUM(Blueprintable)
 enum class EAdjustEnvironment : uint8
 {
-    Sandbox = 1,
-    Production = 2
+    Sandbox = 0,
+    Production = 1
 };
 
 UENUM(Blueprintable)
 enum class EAdjustLogLevel : uint8
 {
-    Verbose = 1,
-    Debug = 2,
-    Info = 3,
-    Warn = 4,
-    Error = 5,
-    Assert = 6,
-    Suppress = 7
+    Verbose = 0,
+    Debug = 1,
+    Info = 2,
+    Warn = 3,
+    Error = 4,
+    Assert = 5,
+    Suppress = 6
 };
 
 USTRUCT(Blueprintable, BlueprintType)
@@ -51,10 +51,16 @@ public:
     FString DefaultTracker;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString ExternalDeviceId;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString DelayStart;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString SecretId;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString UrlStrategy;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString Info1;
@@ -73,6 +79,9 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool SendInBackground = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool PreinstallTracking = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool IsDeviceKnown = false;

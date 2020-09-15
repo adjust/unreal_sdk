@@ -134,7 +134,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     }
 
     // SDK prefix.
-    [adjustConfig setSdkPrefix:@"unreal4.18.0"];
+    [adjustConfig setSdkPrefix:@"unreal4.23.0"];
 
     // Log level.
     [adjustConfig setLogLevel:logLevel];
@@ -262,7 +262,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     Env->DeleteLocalRef(jEnvironment);
 
     // SDK prefix.
-    const char* cstrSdkPrefix = "unreal4.18.0";
+    const char* cstrSdkPrefix = "unreal4.23.0";
     jstring jSdkPrefix = Env->NewStringUTF(cstrSdkPrefix);
     jmethodID jmidAdjustConfigSetSdkPrefix = Env->GetMethodID(jcslAdjustConfig, "setSdkPrefix", "(Ljava/lang/String;)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSdkPrefix, jSdkPrefix);
@@ -342,6 +342,34 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetDefaultTracker, jDefaultTracker);
     Env->DeleteLocalRef(jDefaultTracker);
 
+    // External device ID.
+    jstring jExternalDeviceId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.ExternalDeviceId));
+    jmethodID jmidAdjustConfigSetExternalDeviceId = Env->GetMethodID(jcslAdjustConfig, "setExternalDeviceId", "(Ljava/lang/String;)V");
+    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetExternalDeviceId, jExternalDeviceId);
+    Env->DeleteLocalRef(jExternalDeviceId);
+
+    // URL strategy.
+    if (*Config.UrlStrategy != NULL) {
+        jmethodID jmidAdjustConfigSetUrlStrategy = Env->GetMethodID(jcslAdjustConfig, "setUrlStrategy", "(Ljava/lang/String;)V");
+        if (Config.UrlStrategy.Equals(TEXT("china"), ESearchCase::CaseSensitive) == 0) {
+            jstring jUrlStrategy = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.UrlStrategy));
+            jclass jclsAdjustConfig = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustConfig");
+            jfieldID jfidUrlStrategyChina = Env->GetStaticFieldID(jclsAdjustConfig, "URL_STRATEGY_CHINA", "Ljava/lang/String;");
+            jstring jUrlStrategyChina = (jstring)Env->GetStaticObjectField(jclsAdjustConfig, jfidUrlStrategyChina);
+            Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetUrlStrategy, jUrlStrategyChina);
+            Env->DeleteLocalRef(jUrlStrategyChina);
+            Env->DeleteLocalRef(jUrlStrategy);
+        } else if (Config.UrlStrategy.Equals(TEXT("india"), ESearchCase::CaseSensitive) == 0) {
+            jstring jUrlStrategy = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.UrlStrategy));
+            jclass jclsAdjustConfig = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustConfig");
+            jfieldID jfidUrlStrategyIndia = Env->GetStaticFieldID(jclsAdjustConfig, "URL_STRATEGY_INDIA", "Ljava/lang/String;");
+            jstring jUrlStrategyIndia = (jstring)Env->GetStaticObjectField(jclsAdjustConfig, jfidUrlStrategyIndia);
+            Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetUrlStrategy, jUrlStrategyIndia);
+            Env->DeleteLocalRef(jUrlStrategyIndia);
+            Env->DeleteLocalRef(jUrlStrategy);
+        }
+    }
+
     // Delay start.
     float fDelayStart = FCString::Atof(*Config.DelayStart);
     jmethodID jmidAdjustConfigSetDelayStart = Env->GetMethodID(jcslAdjustConfig, "setDelayStart", "(D)V");
@@ -369,6 +397,10 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     // Send in background.
     jmethodID jmidAdjustConfigSetSendInBackground = Env->GetMethodID(jcslAdjustConfig, "setSendInBackground", "(Z)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSendInBackground, Config.SendInBackground);
+
+    // Preinstall tracking.
+    jmethodID jmidAdjustConfigSetPreinstallTrackingEnabled = Env->GetMethodID(jcslAdjustConfig, "setPreinstallTrackingEnabled", "(Z)V");
+    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetPreinstallTrackingEnabled, Config.PreinstallTracking);
 
     // Is device known.
     jmethodID jmidAdjustConfigSetIsDeviceKnown = Env->GetMethodID(jcslAdjustConfig, "setDeviceKnown", "(Z)V");
@@ -952,5 +984,16 @@ void UAdjust::TrackAdRevenue(const FString& Source, const FString& Payload) {
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustTrackAdRevenue, jSource, joJsonPayload);
     Env->DeleteLocalRef(jSource);
     Env->DeleteLocalRef(jPayload);
+#endif
+}
+
+void UAdjust::DisableThirdPartySharing() {
+#if PLATFORM_IOS
+    
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustDisableThirdPartySharing = Env->GetStaticMethodID(jcslAdjust, "disableThirdPartySharing", "(Landroid/content/Context;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustDisableThirdPartySharing, FJavaWrapper::GameActivityThis);
 #endif
 }
