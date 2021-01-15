@@ -13,6 +13,7 @@
 UENUM(Blueprintable)
 enum class EAdjustEnvironment : uint8
 {
+	Zero = 0,
     Sandbox = 1,
     Production = 2
 };
@@ -20,6 +21,7 @@ enum class EAdjustEnvironment : uint8
 UENUM(Blueprintable)
 enum class EAdjustLogLevel : uint8
 {
+	Zero = 0,
     Verbose = 1,
     Debug = 2,
     Info = 3,
