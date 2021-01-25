@@ -39,4 +39,13 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString Adid;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString CostType;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    float CostAmount;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString CostCurrency;
 };

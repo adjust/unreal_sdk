@@ -40,15 +40,22 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static void SetOfflineMode(bool Offline);
 
+    // Android only
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static void GetGoogleAdId();
 
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static FString GetAdid();
 
+    // iOS only
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static FString GetIdfa();
 
+    // iOS only
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static int GetAppTrackingAuthorizationStatus();
+
+    // Android (Fire OS) only
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static FString GetAmazonAdId();
 
@@ -88,6 +95,7 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static void DisableThirdPartySharing();
 
+    // iOS only
 	UFUNCTION(BlueprintCallable, Category = "Adjust")
 	static void RequestTrackingAuthorizationWithCompletionHandler();
 };

@@ -7,5 +7,8 @@
 //
 
 #include "AdjustDelegates.h"
+#include "UObject/UObjectBaseUtility.h"
 
-UAdjustDelegates::UAdjustDelegates(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
+UAdjustDelegates::UAdjustDelegates(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {
+    // AddToRoot();
+}

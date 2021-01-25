@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "AdjustDelegates.h"
 #include "AdjustConfig.generated.h"
 
 UENUM(Blueprintable)
@@ -86,9 +87,19 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool OpenDeferredDeeplink = true;
 
+    // Android only
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool PreinstallTracking = false;
 
+    // iOS only
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool HandleSkAdNetwork = true;
+
+    // iOS only
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool AllowiAdInfoReading = true;
+
+    // iOS only
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool AllowAdServicesInfoReading = true;
 };

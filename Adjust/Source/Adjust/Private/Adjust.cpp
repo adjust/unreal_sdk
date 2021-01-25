@@ -78,7 +78,7 @@ static void adjustGoogleAdvertisingIdCallback(FString GoogleAdId) {
     }
 }
 
-static void adjustAuthorizationStatusCallback(FString AuthorizationStatus) {
+static void adjustAuthorizationStatusCallback(int AuthorizationStatus) {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr) {
         if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill())) {
             Itr->OnAuthorizationStatusDelegate.Broadcast(AuthorizationStatus);
@@ -142,7 +142,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     }
 
     // SDK prefix.
-    [adjustConfig setSdkPrefix:@"unreal4.23.0"];
+    [adjustConfig setSdkPrefix:@"unreal4.25.0"];
 
     // Log level.
     [adjustConfig setLogLevel:logLevel];
@@ -233,6 +233,16 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     if (Config.HandleSkAdNetwork == false) {
         [adjustConfig deactivateSKAdNetworkHandling];
     }
+    
+    // Allow iAd info reading.
+    if (Config.AllowiAdInfoReading == false) {
+        [adjustConfig setAllowiAdInfoReading:NO];
+    }
+    
+    // Allow AdServices info reading.
+    if (Config.AllowAdServicesInfoReading == false) {
+        [adjustConfig setAllowAdServicesInfoReading:NO];
+    }
 
     // Start SDK.
     [Adjust appDidLaunch:adjustConfig];
@@ -294,7 +304,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config) {
     Env->DeleteLocalRef(jEnvironment);
 
     // SDK prefix.
-    const char* cstrSdkPrefix = "unreal4.23.0";
+    const char* cstrSdkPrefix = "unreal4.25.0";
     jstring jSdkPrefix = Env->NewStringUTF(cstrSdkPrefix);
     jmethodID jmidAdjustConfigSetSdkPrefix = Env->GetMethodID(jcslAdjustConfig, "setSdkPrefix", "(Ljava/lang/String;)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSdkPrefix, jSdkPrefix);
@@ -670,6 +680,16 @@ FString UAdjust::GetIdfa() {
 #endif
 }
 
+int UAdjust::GetAppTrackingAuthorizationStatus() {
+#if PLATFORM_IOS
+    int AppTrackingAuthorizationStatus = [Adjust appTrackingAuthorizationStatus];
+    return AppTrackingAuthorizationStatus;
+#else
+    int AppTrackingAuthorizationStatus = -1;
+    return AppTrackingAuthorizationStatus;
+#endif
+}
+
 void UAdjust::GetGoogleAdId() {
 #if PLATFORM_ANDROID
     setGoogleAdvertisingIdCallbackMethod(adjustGoogleAdvertisingIdCallback);
@@ -854,7 +874,7 @@ FAdjustAttribution UAdjust::GetAttribution() {
 FString UAdjust::GetSdkVersion() {
 #if PLATFORM_IOS
     FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.18.0"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.25.0"));
     FString SdkVersion = *FString([Adjust sdkVersion]);
     FString FinalVersion = SdkPrefix + Separator + SdkVersion;
     return FinalVersion;
@@ -873,7 +893,7 @@ FString UAdjust::GetSdkVersion() {
     Env->DeleteLocalRef(jSdkVersion);
 
     FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.18.0"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.25.0"));
     FString FinalVersion = SdkPrefix + Separator + SdkVersion;
     return FinalVersion;
 #else
@@ -1033,9 +1053,7 @@ void UAdjust::DisableThirdPartySharing() {
 void UAdjust::RequestTrackingAuthorizationWithCompletionHandler() {
 #if PLATFORM_IOS
     [Adjust requestTrackingAuthorizationWithCompletionHandler:^(NSUInteger status) {
-        NSString *strStatus = [NSString stringWithFormat:@"%zd", status];
-        FString ueStatus = *FString(strStatus);
-        adjustAuthorizationStatusCallback(ueStatus);
+        adjustAuthorizationStatusCallback((int)status);
     }];
 #endif
 }
