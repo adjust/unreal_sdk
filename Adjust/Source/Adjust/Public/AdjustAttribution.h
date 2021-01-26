@@ -3,7 +3,7 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 27th September 2018.
-//  Copyright © 2018-2019 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
 //
 
 #pragma once
@@ -39,13 +39,4 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString Adid;
-    
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString CostType;
-    
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    float CostAmount;
-    
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString CostCurrency;
 };
