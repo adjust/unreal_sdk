@@ -26,6 +26,7 @@ static void adjustAttributionCallback(FAdjustAttribution Attribution) {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr) {
         if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill())) {
             Itr->OnAttributionChangedDelegate.Broadcast(Attribution);
+            Itr->OnAttributionChangedNonDynamicDelegate.Broadcast(Attribution);
         }
     }
 }
@@ -34,6 +35,7 @@ static void adjustSessionSuccessCallback(FAdjustSessionSuccess SessionSuccess) {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr) {
         if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill())) {
             Itr->OnSessionSuccessDelegate.Broadcast(SessionSuccess);
+            Itr->OnSessionSuccessNonDynamicDelegate.Broadcast(SessionSuccess);
         }
     }
 }
@@ -42,6 +44,7 @@ static void adjustSessionFailureCallback(FAdjustSessionFailure SessionFailure) {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr) {
         if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill())) {
             Itr->OnSessionFailureDelegate.Broadcast(SessionFailure);
+            Itr->OnSessionFailureNonDynamicDelegate.Broadcast(SessionFailure);
         }
     }
 }
@@ -50,6 +53,7 @@ static void adjustEventSuccessCallback(FAdjustEventSuccess EventSuccess) {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr) {
         if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill())) {
             Itr->OnEventSuccessDelegate.Broadcast(EventSuccess);
+            Itr->OnEventSuccessNonDynamicDelegate.Broadcast(EventSuccess);
         }
     }
 }
@@ -58,6 +62,7 @@ static void adjustEventFailureCallback(FAdjustEventFailure EventFailure) {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr) {
         if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill())) {
             Itr->OnEventFailureDelegate.Broadcast(EventFailure);
+            Itr->OnEventFailureNonDynamicDelegate.Broadcast(EventFailure);
         }
     }
 }
@@ -66,6 +71,7 @@ static void adjustDeferredDeeplinkCallback(FString Deeplink) {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr) {
         if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill())) {
             Itr->OnDeferredDeeplinkDelegate.Broadcast(Deeplink);
+            Itr->OnDeferredDeeplinkNonDynamicDelegate.Broadcast(Deeplink);
         }
     }
 }
@@ -74,6 +80,7 @@ static void adjustGoogleAdvertisingIdCallback(FString GoogleAdId) {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr) {
         if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill())) {
             Itr->OnGoogleAdvertisingIdDelegate.Broadcast(GoogleAdId);
+            Itr->OnGoogleAdvertisingIdNonDynamicDelegate.Broadcast(GoogleAdId);
         }
     }
 }
@@ -82,6 +89,7 @@ static void adjustAuthorizationStatusCallback(int AuthorizationStatus) {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr) {
         if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill())) {
             Itr->OnAuthorizationStatusDelegate.Broadcast(AuthorizationStatus);
+            Itr->OnAuthorizationStatusNonDynamicDelegate.Broadcast(AuthorizationStatus);
         }
     }
 }

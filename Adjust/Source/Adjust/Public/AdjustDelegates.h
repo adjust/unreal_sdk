@@ -26,6 +26,15 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeferredDeeplinkDelegate, const F
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoogleAdvertisingIdDelegate, const FString&, GoogleAdId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAuthorizationStatusDelegate, const int, AuthorizationStatus);
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAttributionChangedNonDynamicDelegate, const FAdjustAttribution&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionSuccessNonDynamicDelegate, const FAdjustSessionSuccess&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionFailureNonDynamicDelegate, const FAdjustSessionFailure&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEventSuccessNonDynamicDelegate, const FAdjustEventSuccess&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEventFailureNonDynamicDelegate, const FAdjustEventFailure&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnDeferredDeeplinkNonDynamicDelegate, const FString&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnGoogleAdvertisingIdNonDynamicDelegate, const FString&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAuthorizationStatusNonDynamicDelegate, const int);
+
 UCLASS(ClassGroup = (Adjust), meta = (BlueprintSpawnableComponent))
 class ADJUST_API UAdjustDelegates : public USceneComponent
 {
@@ -34,6 +43,7 @@ class ADJUST_API UAdjustDelegates : public USceneComponent
 public:
 	UAdjustDelegates(const FObjectInitializer& ObjectInitializer);
 
+    // dynamic delegates
 	UPROPERTY(BlueprintAssignable, Category = Adjust)
 	FOnAttributionChangedDelegate OnAttributionChangedDelegate;
 
@@ -57,4 +67,21 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = Adjust)
 	FOnAuthorizationStatusDelegate OnAuthorizationStatusDelegate;
+
+    // non dynamic delegates
+    FOnAttributionChangedNonDynamicDelegate OnAttributionChangedNonDynamicDelegate;
+
+    FOnSessionSuccessNonDynamicDelegate OnSessionSuccessNonDynamicDelegate;
+
+    FOnSessionFailureNonDynamicDelegate OnSessionFailureNonDynamicDelegate;
+
+    FOnEventSuccessNonDynamicDelegate OnEventSuccessNonDynamicDelegate;
+
+    FOnEventFailureNonDynamicDelegate OnEventFailureNonDynamicDelegate;
+
+    FOnDeferredDeeplinkNonDynamicDelegate OnDeferredDeeplinkNonDynamicDelegate;
+
+    FOnGoogleAdvertisingIdNonDynamicDelegate OnGoogleAdvertisingIdNonDynamicDelegate;
+
+    FOnAuthorizationStatusNonDynamicDelegate OnAuthorizationStatusNonDynamicDelegate;
 };
