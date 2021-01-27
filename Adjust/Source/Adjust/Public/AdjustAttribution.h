@@ -13,11 +13,11 @@
 USTRUCT(BlueprintType)
 struct FAdjustAttribution
 {
-	GENERATED_USTRUCT_BODY()
+    GENERATED_USTRUCT_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-	FString TrackerToken;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString TrackerToken;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString TrackerName;

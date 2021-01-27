@@ -11,7 +11,7 @@
 #if PLATFORM_ANDROID
 JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeAttributionCallback_attributionChanged(JNIEnv *env, jobject obj, jobject attributionObject)
 {
-	if (env->IsSameObject(attributionObject, NULL))
+    if (env->IsSameObject(attributionObject, NULL))
     {
         return;
     }
@@ -600,7 +600,7 @@ void setAttributionCallbackMethod(void (*callbackMethod)(FAdjustAttribution Attr
 {
     if (NULL == attributionCallbackMethod)
     {
-    	attributionCallbackMethod = callbackMethod;
+        attributionCallbackMethod = callbackMethod;
     }
 }
 
@@ -646,9 +646,9 @@ void setDeferredDeeplinkCallbackMethod(void (*callbackMethod)(FString Deeplink))
 
 void setGoogleAdvertisingIdCallbackMethod(void (*callbackMethod)(FString GoogleAdId))
 {
-	if (NULL == googleAdvertisingIdCallbackMethod)
+    if (NULL == googleAdvertisingIdCallbackMethod)
     {
-		googleAdvertisingIdCallbackMethod = callbackMethod;
-	}
+        googleAdvertisingIdCallbackMethod = callbackMethod;
+    }
 }
 #endif

@@ -38,35 +38,35 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnAuthorizationStatusNonDynamicDelegate, co
 UCLASS(ClassGroup = (Adjust), meta = (BlueprintSpawnableComponent))
 class ADJUST_API UAdjustDelegates : public USceneComponent
 {
-	GENERATED_BODY()
-	
+    GENERATED_BODY()
+    
 public:
-	UAdjustDelegates(const FObjectInitializer& ObjectInitializer);
+    UAdjustDelegates(const FObjectInitializer& ObjectInitializer);
 
     // dynamic delegates
-	UPROPERTY(BlueprintAssignable, Category = Adjust)
-	FOnAttributionChangedDelegate OnAttributionChangedDelegate;
+    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    FOnAttributionChangedDelegate OnAttributionChangedDelegate;
 
-	UPROPERTY(BlueprintAssignable, Category = Adjust)
-	FOnSessionSuccessDelegate OnSessionSuccessDelegate;
+    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    FOnSessionSuccessDelegate OnSessionSuccessDelegate;
 
-	UPROPERTY(BlueprintAssignable, Category = Adjust)
-	FOnSessionFailureDelegate OnSessionFailureDelegate;
+    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    FOnSessionFailureDelegate OnSessionFailureDelegate;
 
-	UPROPERTY(BlueprintAssignable, Category = Adjust)
-	FOnEventSuccessDelegate OnEventSuccessDelegate;
+    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    FOnEventSuccessDelegate OnEventSuccessDelegate;
 
-	UPROPERTY(BlueprintAssignable, Category = Adjust)
-	FOnEventFailureDelegate OnEventFailureDelegate;
+    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    FOnEventFailureDelegate OnEventFailureDelegate;
 
-	UPROPERTY(BlueprintAssignable, Category = Adjust)
-	FOnDeferredDeeplinkDelegate OnDeferredDeeplinkDelegate;
+    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    FOnDeferredDeeplinkDelegate OnDeferredDeeplinkDelegate;
 
-	UPROPERTY(BlueprintAssignable, Category = Adjust)
-	FOnGoogleAdvertisingIdDelegate OnGoogleAdvertisingIdDelegate;
+    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    FOnGoogleAdvertisingIdDelegate OnGoogleAdvertisingIdDelegate;
 
-	UPROPERTY(BlueprintAssignable, Category = Adjust)
-	FOnAuthorizationStatusDelegate OnAuthorizationStatusDelegate;
+    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    FOnAuthorizationStatusDelegate OnAuthorizationStatusDelegate;
 
     // non dynamic delegates
     FOnAttributionChangedNonDynamicDelegate OnAttributionChangedNonDynamicDelegate;

@@ -13,11 +13,11 @@
 USTRUCT(BlueprintType)
 struct FAdjustEvent
 {
-	GENERATED_USTRUCT_BODY()
+    GENERATED_USTRUCT_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-	FString EventToken;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString EventToken;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     float Revenue;

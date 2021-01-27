@@ -13,11 +13,11 @@
 USTRUCT(BlueprintType)
 struct FAdjustSessionSuccess
 {
-	GENERATED_USTRUCT_BODY()
+    GENERATED_USTRUCT_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-	FString Message;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString Message;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString Timestamp;
