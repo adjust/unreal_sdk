@@ -22,6 +22,10 @@ This is the Unreal Engine SDK of Adjust™. You can read more about Adjust™ at
       * [Delay start](#delay-start)
    * [Attribution callback](#attribution-callback)
    * [Session and event callbacks](#session-event-callbacks)
+   * [AppTrackingTransparency framework](#ad-att-framework)
+      * [App-tracking authorisation wrapper](#ad-ata-wrapper)
+      * [Get current authorisation status](#ata-getter)
+   * [SKAdNetwork framework](#ad-skadn-framework)
    * [Disable tracking](#disable-tracking)
    * [Offline mode](#offline-mode)
    * [Event buffering](#event-buffering)
@@ -306,6 +310,12 @@ FString Adid;         // The Adjust device identifier.
 
 Please make sure to consider the [applicable attribution data policies][attribution-data].
 
+If you are building your app with C++ and would like to avoid usage of dynamic delegates, you can also take advantage of non dynamic delegate:
+
+```cpp
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAttributionChangedNonDynamicDelegate, const FAdjustAttribution&);
+```
+
 ### <a id="session-event-callbacks"></a>Session and event callbacks
 
 You can register a callback to be notified of successfully tracked, as well as failed, events and/or sessions.
@@ -341,6 +351,12 @@ FString Adid;         // A unique device identifier provided by Adjust.
 
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
 FString JsonResponse; // The JSON object with the response from the server.
+```
+
+If you are building your app with C++ and would like to avoid usage of dynamic delegates, you can also take advantage of non dynamic delegate:
+
+```cpp
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEventSuccessNonDynamicDelegate, const FAdjustEventSuccess&);
 ```
 
 The following callback function is used for failed events:
@@ -379,6 +395,12 @@ UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
 bool WillRetry;       // Indicates there will be an attempt to resend the package at a later time.
 ```
 
+If you are building your app with C++ and would like to avoid usage of dynamic delegates, you can also take advantage of non dynamic delegate:
+
+```cpp
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEventFailureNonDynamicDelegate, const FAdjustEventFailure&);
+```
+
 For successfully tracked sessions:
 
 ```cpp
@@ -404,6 +426,12 @@ FString Adid;         // A unique device identifier provided by Adjust.
 
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
 FString JsonResponse; // The JSON object with the response from the server.
+```
+
+If you are building your app with C++ and would like to avoid usage of dynamic delegates, you can also take advantage of non dynamic delegate:
+
+```cpp
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionSuccessNonDynamicDelegate, const FAdjustSessionSuccess&);
 ```
 
 And for session failures:
@@ -434,6 +462,84 @@ FString JsonResponse; // The JSON object with the response from the server.
 
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
 bool WillRetry;       // Indicates there will be an attempt to resend the package at a later time.
+```
+
+If you are building your app with C++ and would like to avoid usage of dynamic delegates, you can also take advantage of non dynamic delegate:
+
+```cpp
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionFailureNonDynamicDelegate, const FAdjustSessionFailure&);
+```
+
+### <a id="att-framework"></a>AppTrackingTransparency framework
+
+**Note**: This feature exists only in iOS platform.
+
+For each package sent, the Adjust backend receives one of the following four (4) states of consent for access to app-related data that can be used for tracking the user or the device:
+
+- Authorized
+- Denied
+- Not Determined
+- Restricted
+
+After a device receives an authorization request to approve access to app-related data, which is used for user device tracking, the returned status will either be Authorized or Denied.
+
+Before a device receives an authorization request for access to app-related data, which is used for tracking the user or device, the returned status will be Not Determined.
+
+If authorization to use app tracking data is restricted, the returned status will be Restricted.
+
+The SDK has a built-in mechanism to receive an updated status after a user responds to the pop-up dialog, in case you don't want to customize your displayed dialog pop-up. To conveniently and efficiently communicate the new state of consent to the backend, Adjust SDK offers a wrapper around the app tracking authorization method described in the following chapter, App-tracking authorization wrapper.
+
+### <a id="ad-ata-wrapper"></a>App-tracking authorisation wrapper
+
+**Note**: This feature exists only in iOS platform.
+
+Adjust SDK offers the possibility to use it for requesting user authorization in accessing their app-related data. Adjust SDK has a wrapper built on top of the [requestTrackingAuthorizationWithCompletionHandler:](https://developer.apple.com/documentation/apptrackingtransparency/attrackingmanager/3547037-requesttrackingauthorizationwith?language=objc) method, where you can as well define the callback method to get information about a user's choice. Also, with the use of this wrapper, as soon as a user responds to the pop-up dialog, it's then communicated back using your callback method. The SDK will also inform the backend of the user's choice. The `NSUInteger` value will be delivered via your callback method with the following meaning:
+
+- 0: `ATTrackingManagerAuthorizationStatusNotDetermined`
+- 1: `ATTrackingManagerAuthorizationStatusRestricted`
+- 2: `ATTrackingManagerAuthorizationStatusDenied`
+- 3: `ATTrackingManagerAuthorizationStatusAuthorized`
+
+To use this wrapper, you need to register your callback method where authorisation status value will be delivered and call make a call to `requestTrackingAuthorizationWithCompletionHandler` method of `Adjust` class.
+
+```cpp
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAuthorizationStatusDelegate, const int, AuthorizationStatus);
+
+// ...
+
+UPROPERTY(BlueprintAssignable, Category = Adjust)
+FOnAuthorizationStatusDelegate OnAuthorizationStatusDelegate;
+```
+
+If you are building your app with C++ and would like to avoid usage of dynamic delegates, you can also take advantage of non dynamic delegate:
+
+```cpp
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAuthorizationStatusNonDynamicDelegate, const int);
+```
+
+### <a id="ata-getter"></a>Get current authorisation status
+
+**Note**: This feature exists only in iOS platform.
+
+To get the current app tracking authorization status you can call `GetAppTrackingAuthorizationStatus` method of `Adjust` class that will return one of the following possibilities:
+
+* `0`: The user hasn't been asked yet
+* `1`: The user device is restricted
+* `2`: The user denied access to IDFA
+* `3`: The user authorized access to IDFA
+* `-1`: The status is not available
+
+### <a id="ad-skadn-framework"></a>SKAdNetwork framework
+
+**Note**: This feature exists only in iOS platform.
+
+If you have implemented the Adjust iOS SDK v4.23.0 or above and your app is running on iOS 14, the communication with SKAdNetwork will be set on by default, although you can choose to turn it off. When set on, Adjust automatically registers for SKAdNetwork attribution when the SDK is initialized. If events are set up in the Adjust dashboard to receive conversion values, the Adjust backend sends the conversion value data to the SDK. The SDK then sets the conversion value. After Adjust receives the SKAdNetwork callback data, it is then displayed in the dashboard.
+
+In case you don't want the Adjust SDK to automatically communicate with SKAdNetwork, you can disable that in your `FAdjustConfig` structure instance by setting the `HandleSkAdNetwork` member to `false` (is set to `true` by default):
+
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+bool HandleSkAdNetwork = true;
 ```
 
 ### <a id="disable-tracking"></a>Disable tracking
@@ -639,7 +745,7 @@ If you want to use the Adjust SDK to recognize users whose devices came with you
 
 The Adjust SDK is licensed under the MIT License.
 
-Copyright (c) 2019 Adjust GmbH, http://www.adjust.com
+Copyright (c) 2018-2021 Adjust GmbH, http://www.adjust.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
