@@ -1,4 +1,4 @@
-### Version 4.26.0 (xxth February 2021)
+### Version 4.26.0 (6th February 2021)
 #### Added
 - Added `DisableThirdPartySharing` method to `Adjust` interface to allow disabling of data sharing with third parties outside of Adjust ecosystem.
 - Added communication with `SKAdNetwork` framework by default on iOS 14.
@@ -9,7 +9,7 @@
 - Added support for Apple Search Ads attribution with usage of `AdServices.framework`.
 - Added `GetAppTrackingAuthorizationStatus` getter to `Adjust` instance to be able to get current app tracking status.
 - Added `UrlStrategy` field to `AdjustConfig` class to allow selection of URL strategy for specific market.
-- Added `PreinstallTracking` field to `AdjustConfig` to allow enabling of preintall tracking (this feature is OFF by default).
+- Added `PreinstallTracking` field to `AdjustConfig` to allow enabling of preinstall tracking (this feature is OFF by default).
 
 #### Fixed
 - Fixed compile errors due to having `EAdjustEnvironment` and `EAdjustLogLevel` enumerations not starting with 0.
