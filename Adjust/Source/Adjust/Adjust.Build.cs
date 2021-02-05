@@ -38,8 +38,7 @@ public class Adjust : ModuleRules
                 string Err = string.Format("Adjust SDK found in {0}", AdjustNFLDir);
                 System.Console.WriteLine(Err);
                 PublicAdditionalLibraries.Add(Path.Combine(AdjustNFLDir, "AdjustSdk.a"));
-                PublicWeakFrameworks.AddRange(new string[] { "AppTrackingTransparency" });
-                PublicFrameworks.AddRange(new string[] { "AdSupport", "iAd", "CoreTelephony", "StoreKit", "AdServices" });
+                PublicWeakFrameworks.AddRange(new string[] { "AdSupport", "iAd", "CoreTelephony", "StoreKit", "AdServices", "AppTrackingTransparency" });
                 PublicLibraryPaths.Add(AdjustNFLDir);
                 PublicDefinitions.Add("WITH_ADJUST=1");
                 PublicDefinitions.Add("UE4_ADJUST_VER=4.20.0");
