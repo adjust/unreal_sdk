@@ -98,4 +98,8 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     // iOS only
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void RequestTrackingAuthorizationWithCompletionHandler();
+
+    // iOS only
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void UpdateConversionValue(int ConversionValue);
 };

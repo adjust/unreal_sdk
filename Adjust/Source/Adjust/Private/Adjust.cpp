@@ -1174,3 +1174,10 @@ void UAdjust::RequestTrackingAuthorizationWithCompletionHandler()
     }];
 #endif
 }
+
+void UAdjust::UpdateConversionValue(int conversionValue)
+{
+#if PLATFORM_IOS
+    [Adjust updateConversionValue:conversionValue];
+#endif
+}

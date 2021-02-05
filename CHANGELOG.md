@@ -4,6 +4,7 @@
 - Added communication with `SKAdNetwork` framework by default on iOS 14.
 - Added `HandleSkAdNetowrk` field to `AdjustConfig` to be able to switch off default communication with `SKAdNetwork` framework in iOS 14.
 - Added wrapper method `RequestTrackingAuthorizationWithCompletionHandler` to `Adjust` to allow asking for user's consent to be tracked in iOS 14 and immediate propagation of user's choice to backend.
+- Added wrapper method `UpdateConversionValue:` method to `Adjust` to allow updating SKAdNetwork conversion value via SDK API.
 - Added handling of new `iAd.framework` error codes introduced in iOS 14.
 - Added support for Apple Search Ads attribution with usage of `AdServices.framework`.
 - Added `GetAppTrackingAuthorizationStatus` getter to `Adjust` instance to be able to get current app tracking status.
