@@ -22,10 +22,11 @@ This is the Unreal Engine SDK of Adjust™. You can read more about Adjust™ at
       * [Delay start](#delay-start)
    * [Attribution callback](#attribution-callback)
    * [Session and event callbacks](#session-event-callbacks)
-   * [AppTrackingTransparency framework](#ad-att-framework)
-      * [App-tracking authorisation wrapper](#ad-ata-wrapper)
+   * [AppTrackingTransparency framework](#att-framework)
+      * [App-tracking authorisation wrapper](#ata-wrapper)
       * [Get current authorisation status](#ata-getter)
-   * [SKAdNetwork framework](#ad-skadn-framework)
+   * [SKAdNetwork framework](#skadn-framework)
+      * [Update SKAdNetwork conversion value](#skadn-update-conversion-value)
    * [Disable tracking](#disable-tracking)
    * [Offline mode](#offline-mode)
    * [Event buffering](#event-buffering)
@@ -489,7 +490,7 @@ If authorization to use app tracking data is restricted, the returned status wil
 
 The SDK has a built-in mechanism to receive an updated status after a user responds to the pop-up dialog, in case you don't want to customize your displayed dialog pop-up. To conveniently and efficiently communicate the new state of consent to the backend, Adjust SDK offers a wrapper around the app tracking authorization method described in the following chapter, App-tracking authorization wrapper.
 
-### <a id="ad-ata-wrapper"></a>App-tracking authorisation wrapper
+### <a id="ata-wrapper"></a>App-tracking authorisation wrapper
 
 **Note**: This feature exists only in iOS platform.
 
@@ -517,6 +518,13 @@ If you are building your app with C++ and would like to avoid usage of dynamic d
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAuthorizationStatusNonDynamicDelegate, const int);
 ```
 
+In order to show the authorization dialog, you need to make sure to add text you want to be displayed in the dialog in your iOS app's `Info.plist` file. You can do that by going to `Project Settings -> Platforms -> iOS -> Extra PList Data` and adding key-value pair for this purpose:
+
+```xml
+<key>NSUserTrackingUsageDescription</key><string>Describe your reason to access IDFA in here.</string>
+
+```
+
 ### <a id="ata-getter"></a>Get current authorisation status
 
 **Note**: This feature exists only in iOS platform.
@@ -529,17 +537,25 @@ To get the current app tracking authorization status you can call `GetAppTrackin
 * `3`: The user authorized access to IDFA
 * `-1`: The status is not available
 
-### <a id="ad-skadn-framework"></a>SKAdNetwork framework
+### <a id="skadn-framework"></a>SKAdNetwork framework
 
 **Note**: This feature exists only in iOS platform.
 
-If you have implemented the Adjust iOS SDK v4.23.0 or above and your app is running on iOS 14, the communication with SKAdNetwork will be set on by default, although you can choose to turn it off. When set on, Adjust automatically registers for SKAdNetwork attribution when the SDK is initialized. If events are set up in the Adjust dashboard to receive conversion values, the Adjust backend sends the conversion value data to the SDK. The SDK then sets the conversion value. After Adjust receives the SKAdNetwork callback data, it is then displayed in the dashboard.
+If you have implemented the Adjust SDK v4.26.0 or above and your app is running on iOS 14, the communication with SKAdNetwork will be set on by default, although you can choose to turn it off. When set on, Adjust automatically registers for SKAdNetwork attribution when the SDK is initialized. If events are set up in the Adjust dashboard to receive conversion values, the Adjust backend sends the conversion value data to the SDK. The SDK then sets the conversion value. After Adjust receives the SKAdNetwork callback data, it is then displayed in the dashboard.
 
 In case you don't want the Adjust SDK to automatically communicate with SKAdNetwork, you can disable that in your `FAdjustConfig` structure instance by setting the `HandleSkAdNetwork` member to `false` (is set to `true` by default):
 
 ```cpp
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
 bool HandleSkAdNetwork = true;
+```
+
+### <a id="skadn-update-conversion-value"></a>Update SKAdNetwork conversion value
+
+As of Adjust SDK v4.26.0 you can use Adjust SDK wrapper method `UpdateConversionValue` to update SKAdNetwork conversion value for your user:
+
+```cpp
+UAdjust::UpdateConversionValue(6);
 ```
 
 ### <a id="disable-tracking"></a>Disable tracking
