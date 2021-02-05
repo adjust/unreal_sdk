@@ -2,6 +2,6 @@
 <!-- Adjust plugin additions -->
 <root xmlns:android="http://schemas.ios.com/res/ios">
     <init>
-	    <log text="Adjust Init"/>
+        <log text="Adjust Init"/>
     </init>
 </root>

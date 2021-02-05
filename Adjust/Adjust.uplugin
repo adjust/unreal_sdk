@@ -1,28 +1,28 @@
 {
-	"FileVersion": 3,
-	"Version": 1,
-	"VersionName": "4.25.0",
-	"FriendlyName": "Adjust",
-	"Description": "Adjust GmbH",
-	"Category": "Mobile Analytics",
-	"CreatedBy": "Adjust",
-	"CreatedByURL": "https://adjust.com",
-	"DocsURL": "",
-	"MarketplaceURL": "",
-	"SupportURL": "https://adjust.com",
-	"CanContainContent": true,
-	"IsBetaVersion": false,
-	"Installed": false,
-	"Modules": [
-	{
-	  "Name": "Adjust",
-	  "Type": "Runtime",
-	  "LoadingPhase": "Default",
-	  "WhitelistPlatforms": [
-		"Win64",
-		"Android",
-		"IOS"
-	  ]
-	}
-	]
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "4.25.0",
+    "FriendlyName": "Adjust",
+    "Description": "Adjust GmbH",
+    "Category": "Mobile Analytics",
+    "CreatedBy": "Adjust",
+    "CreatedByURL": "https://adjust.com",
+    "DocsURL": "",
+    "MarketplaceURL": "",
+    "SupportURL": "https://adjust.com",
+    "CanContainContent": true,
+    "IsBetaVersion": false,
+    "Installed": false,
+    "Modules": [
+    {
+      "Name": "Adjust",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "WhitelistPlatforms": [
+        "Win64",
+        "Android",
+        "IOS"
+      ]
+    }
+    ]
 }
