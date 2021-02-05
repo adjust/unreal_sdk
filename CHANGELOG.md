@@ -1,4 +1,4 @@
-### Version 4.25.0 (xxth February 2021)
+### Version 4.26.0 (xxth February 2021)
 #### Added
 - Added `DisableThirdPartySharing` method to `Adjust` interface to allow disabling of data sharing with third parties outside of Adjust ecosystem.
 - Added communication with `SKAdNetwork` framework by default on iOS 14.
@@ -14,8 +14,8 @@
 - Fixed compile errors due to having `EAdjustEnvironment` and `EAdjustLogLevel` enumerations not starting with 0.
 
 #### Native SDKs
-- [Android@v4.26.1][android_sdk_v4.26.1]
-- [iOS@v4.25.2][ios_sdk_v4.25.2]
+- [Android@v4.26.2][android_sdk_v4.26.2]
+- [iOS@v4.26.1][ios_sdk_v4.26.1]
 
 ---
 
@@ -43,8 +43,8 @@
 
 [android_sdk_v4.17.0]: https://github.com/adjust/android_sdk/tree/v4.17.0
 [android_sdk_v4.18.1]: https://github.com/adjust/android_sdk/tree/v4.18.1
-[android_sdk_v4.26.1]: https://github.com/adjust/android_sdk/tree/v4.26.1
+[android_sdk_v4.26.2]: https://github.com/adjust/android_sdk/tree/v4.26.2
 
 [ios_sdk_v4.17.1]: https://github.com/adjust/ios_sdk/tree/v4.17.1
 [ios_sdk_v4.18.3]: https://github.com/adjust/ios_sdk/tree/v4.18.3
-[ios_sdk_v4.25.2]: https://github.com/adjust/ios_sdk/tree/v4.25.2
+[ios_sdk_v4.26.1]: https://github.com/adjust/ios_sdk/tree/v4.26.1
