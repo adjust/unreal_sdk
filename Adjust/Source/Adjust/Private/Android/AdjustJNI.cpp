@@ -3,14 +3,16 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 4th October 2018.
-//  Copyright © 2018 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
 //
 
 #import "AdjustJNI.h"
 
 #if PLATFORM_ANDROID
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeAttributionCallback_attributionChanged(JNIEnv *env, jobject obj, jobject attributionObject) {
-	if (env->IsSameObject(attributionObject, NULL)) {
+JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeAttributionCallback_attributionChanged(JNIEnv *env, jobject obj, jobject attributionObject)
+{
+    if (env->IsSameObject(attributionObject, NULL))
+    {
         return;
     }
 
@@ -41,39 +43,51 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeAttribut
     jstring jClickLabel = (jstring)env->GetObjectField(attributionObject, jfidClickLabelID);
     jstring jAdid = (jstring)env->GetObjectField(attributionObject, jfidAdidID);
 
-    if (!env->IsSameObject(jTrackerToken, NULL)) {
+    if (!env->IsSameObject(jTrackerToken, NULL))
+    {
         const char *trackerTokenCStr = env->GetStringUTFChars(jTrackerToken, NULL);
         trackerToken = FString(UTF8_TO_TCHAR(trackerTokenCStr));
         env->ReleaseStringUTFChars(jTrackerToken, trackerTokenCStr);
         env->DeleteLocalRef(jTrackerToken);
-    } else {
+    }
+    else
+    {
         trackerToken = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jTrackerName, NULL)) {
+    if (!env->IsSameObject(jTrackerName, NULL))
+    {
         const char *trackerNameCStr = env->GetStringUTFChars(jTrackerName, NULL);
         trackerName = FString(UTF8_TO_TCHAR(trackerNameCStr));
         env->ReleaseStringUTFChars(jTrackerName, trackerNameCStr);
         env->DeleteLocalRef(jTrackerName);
-    } else {
+    }
+    else
+    {
         trackerName = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jNetwork, NULL)) {
+    if (!env->IsSameObject(jNetwork, NULL))
+    {
         const char *networkCStr = env->GetStringUTFChars(jNetwork, NULL);
         network = FString(UTF8_TO_TCHAR(networkCStr));
         env->ReleaseStringUTFChars(jNetwork, networkCStr);
         env->DeleteLocalRef(jNetwork);
-    } else {
+    }
+    else
+    {
         network = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jCampaign, NULL)) {
+    if (!env->IsSameObject(jCampaign, NULL))
+    {
         const char *campaignCStr = env->GetStringUTFChars(jCampaign, NULL);
         campaign = FString(UTF8_TO_TCHAR(campaignCStr));
         env->ReleaseStringUTFChars(jCampaign, campaignCStr);
         env->DeleteLocalRef(jCampaign);
-    } else {
+    }
+    else
+    {
         campaign = FString(UTF8_TO_TCHAR(""));
     }
 
@@ -82,34 +96,45 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeAttribut
         adgroup = FString(UTF8_TO_TCHAR(adgroupCStr));
         env->ReleaseStringUTFChars(jAdgroup, adgroupCStr);
         env->DeleteLocalRef(jAdgroup);
-    } else {
+    }
+    else
+    {
         adgroup = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jCreative, NULL)) {
+    if (!env->IsSameObject(jCreative, NULL))
+    {
         const char *creativeCStr = env->GetStringUTFChars(jCreative, NULL);
         creative = FString(UTF8_TO_TCHAR(creativeCStr));
         env->ReleaseStringUTFChars(jCreative, creativeCStr);
         env->DeleteLocalRef(jCreative);
-    } else {
+    }
+    else
+    {
         creative = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jClickLabel, NULL)) {
+    if (!env->IsSameObject(jClickLabel, NULL))
+    {
         const char *clickLabelCStr = env->GetStringUTFChars(jClickLabel, NULL);
         clickLabel = FString(UTF8_TO_TCHAR(clickLabelCStr));
         env->ReleaseStringUTFChars(jClickLabel, clickLabelCStr);
         env->DeleteLocalRef(jClickLabel);
-    } else {
+    }
+    else
+    {
         clickLabel = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jAdid, NULL)) {
+    if (!env->IsSameObject(jAdid, NULL))
+    {
         const char *adidCStr = env->GetStringUTFChars(jAdid, NULL);
         adid = FString(UTF8_TO_TCHAR(adidCStr));
         env->ReleaseStringUTFChars(jAdid, adidCStr);
         env->DeleteLocalRef(jAdid);
-    } else {
+    }
+    else
+    {
         adid = FString(UTF8_TO_TCHAR(""));
     }
 
@@ -125,8 +150,10 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeAttribut
     attributionCallbackMethod(ueAttribution);
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeSessionSuccessCallback_sessionSuccess(JNIEnv *env, jobject obj, jobject sessionSuccessObject) {
-    if (env->IsSameObject(sessionSuccessObject, NULL)) {
+JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeSessionSuccessCallback_sessionSuccess(JNIEnv *env, jobject obj, jobject sessionSuccessObject)
+{
+    if (env->IsSameObject(sessionSuccessObject, NULL))
+    {
         return;
     }
 
@@ -147,44 +174,57 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeSessionS
     jobject joJsonResponse = (jobject)env->GetObjectField(sessionSuccessObject, jfidJsonResponseID);
     jstring jJsonResponse;
 
-    if (!env->IsSameObject(jMessage, NULL)) {
+    if (!env->IsSameObject(jMessage, NULL))
+    {
         const char *messageCStr = env->GetStringUTFChars(jMessage, NULL);
         message = FString(UTF8_TO_TCHAR(messageCStr));
         env->ReleaseStringUTFChars(jMessage, messageCStr);
         env->DeleteLocalRef(jMessage);
-    } else {
+    }
+    else
+    {
         message = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jTimestamp, NULL)) {
+    if (!env->IsSameObject(jTimestamp, NULL))
+    {
         const char *timestampCStr = env->GetStringUTFChars(jTimestamp, NULL);
         timestamp = FString(UTF8_TO_TCHAR(timestampCStr));
         env->ReleaseStringUTFChars(jTimestamp, timestampCStr);
         env->DeleteLocalRef(jTimestamp);
-    } else {
+    }
+    else
+    {
         timestamp = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jAdid, NULL)) {
+    if (!env->IsSameObject(jAdid, NULL))
+    {
         const char *adidCStr = env->GetStringUTFChars(jAdid, NULL);
         adid = FString(UTF8_TO_TCHAR(adidCStr));
         env->ReleaseStringUTFChars(jAdid, adidCStr);
         env->DeleteLocalRef(jAdid);
-    } else {
+    }
+    else
+    {
         adid = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(joJsonResponse, NULL)) {
+    if (!env->IsSameObject(joJsonResponse, NULL))
+    {
         jclass jcJsonObject = env->FindClass("org/json/JSONObject");
         jmethodID jToStringID = env->GetMethodID(jcJsonObject, "toString", "()Ljava/lang/String;");
         jJsonResponse = (jstring)env->CallObjectMethod(joJsonResponse, jToStringID);
 
-        if (!env->IsSameObject(jJsonResponse, NULL)) {
+        if (!env->IsSameObject(jJsonResponse, NULL))
+        {
             const char *jsonResponseCStr = env->GetStringUTFChars(jJsonResponse, NULL);
             jsonResponse = FString(UTF8_TO_TCHAR(jsonResponseCStr));
             env->ReleaseStringUTFChars(jJsonResponse, jsonResponseCStr);
             env->DeleteLocalRef(jJsonResponse);
-        } else {
+        }
+        else
+        {
             jsonResponse = FString(UTF8_TO_TCHAR(""));
         }
     }
@@ -197,8 +237,10 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeSessionS
     sessionSuccessCallbackMethod(ueSessionSuccess);
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeSessionFailureCallback_sessionFailure(JNIEnv *env, jobject obj, jobject sessionFailureObject) {
-    if (env->IsSameObject(sessionFailureObject, NULL)) {
+JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeSessionFailureCallback_sessionFailure(JNIEnv *env, jobject obj, jobject sessionFailureObject)
+{
+    if (env->IsSameObject(sessionFailureObject, NULL))
+    {
         return;
     }
 
@@ -221,46 +263,59 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeSessionF
     jobject joJsonResponse = env->GetObjectField(sessionFailureObject, jfidJsonResponseID);
     jstring jJsonResponse;
 
-    if (!env->IsSameObject(jMessage, NULL)) {
+    if (!env->IsSameObject(jMessage, NULL))
+    {
         const char *messageCStr = env->GetStringUTFChars(jMessage, NULL);
         message = FString(UTF8_TO_TCHAR(messageCStr));
         env->ReleaseStringUTFChars(jMessage, messageCStr);
         env->DeleteLocalRef(jMessage);
-    } else {
+    }
+    else
+    {
         message = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jTimestamp, NULL)) {
+    if (!env->IsSameObject(jTimestamp, NULL))
+    {
         const char *timestampCStr = env->GetStringUTFChars(jTimestamp, NULL);
         timestamp = FString(UTF8_TO_TCHAR(timestampCStr));
         env->ReleaseStringUTFChars(jTimestamp, timestampCStr);
         env->DeleteLocalRef(jTimestamp);
-    } else {
+    }
+    else
+    {
         timestamp = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jAdid, NULL)) {
+    if (!env->IsSameObject(jAdid, NULL))
+    {
         const char *adidCStr = env->GetStringUTFChars(jAdid, NULL);
         adid = FString(UTF8_TO_TCHAR(adidCStr));
         env->ReleaseStringUTFChars(jAdid, adidCStr);
         env->DeleteLocalRef(jAdid);
-    } else {
+    }
+    else
+    {
         adid = FString(UTF8_TO_TCHAR(""));
     }
 
     willRetry = JNI_TRUE == joWillRetry;
 
-    if (!env->IsSameObject(joJsonResponse, NULL)) {
+    if (!env->IsSameObject(joJsonResponse, NULL))
+    {
         jclass jcJsonObject = env->FindClass("org/json/JSONObject");
         jmethodID jToStringID = env->GetMethodID(jcJsonObject, "toString", "()Ljava/lang/String;");
         jJsonResponse = (jstring)env->CallObjectMethod(joJsonResponse, jToStringID);
 
-        if (!env->IsSameObject(jJsonResponse, NULL)) {
+        if (!env->IsSameObject(jJsonResponse, NULL))
+        {
             const char *jsonResponseCStr = env->GetStringUTFChars(jJsonResponse, NULL);
             jsonResponse = FString(UTF8_TO_TCHAR(jsonResponseCStr));
             env->ReleaseStringUTFChars(jJsonResponse, jsonResponseCStr);
             env->DeleteLocalRef(jJsonResponse);
-        } else {
+        }
+        else
+        {
             jsonResponse = FString(UTF8_TO_TCHAR(""));
         }
     }
@@ -274,8 +329,10 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeSessionF
     sessionFailureCallbackMethod(ueSessionFailure);
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventSuccessCallback_eventSuccess(JNIEnv *env, jobject obj, jobject eventSuccessObject) {
-    if (env->IsSameObject(eventSuccessObject, NULL)) {
+JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventSuccessCallback_eventSuccess(JNIEnv *env, jobject obj, jobject eventSuccessObject)
+{
+    if (env->IsSameObject(eventSuccessObject, NULL))
+    {
         return;
     }
 
@@ -301,62 +358,81 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventSuc
     jobject joJsonResponse = (jobject)env->GetObjectField(eventSuccessObject, jfidJsonResponseID);
     jstring jJsonResponse;
 
-    if (!env->IsSameObject(jMessage, NULL)) {
+    if (!env->IsSameObject(jMessage, NULL))
+    {
         const char *messageCStr = env->GetStringUTFChars(jMessage, NULL);
         message = FString(UTF8_TO_TCHAR(messageCStr));
         env->ReleaseStringUTFChars(jMessage, messageCStr);
         env->DeleteLocalRef(jMessage);
-    } else {
+    }
+    else
+    {
         message = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jTimestamp, NULL)) {
+    if (!env->IsSameObject(jTimestamp, NULL))
+    {
         const char *timestampCStr = env->GetStringUTFChars(jTimestamp, NULL);
         timestamp = FString(UTF8_TO_TCHAR(timestampCStr));
         env->ReleaseStringUTFChars(jTimestamp, timestampCStr);
         env->DeleteLocalRef(jTimestamp);
-    } else {
+    }
+    else
+    {
         timestamp = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jAdid, NULL)) {
+    if (!env->IsSameObject(jAdid, NULL))
+    {
         const char *adidCStr = env->GetStringUTFChars(jAdid, NULL);
         adid = FString(UTF8_TO_TCHAR(adidCStr));
         env->ReleaseStringUTFChars(jAdid, adidCStr);
         env->DeleteLocalRef(jAdid);
-    } else {
+    }
+    else
+    {
         adid = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jEventToken, NULL)) {
+    if (!env->IsSameObject(jEventToken, NULL))
+    {
         const char *eventTokenCStr = env->GetStringUTFChars(jEventToken, NULL);
         eventToken = FString(UTF8_TO_TCHAR(eventTokenCStr));
         env->ReleaseStringUTFChars(jEventToken, eventTokenCStr);
         env->DeleteLocalRef(jEventToken);
-    } else {
+    }
+    else
+    {
         eventToken = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jCallbackId, NULL)) {
+    if (!env->IsSameObject(jCallbackId, NULL))
+    {
         const char *callbackIdCStr = env->GetStringUTFChars(jCallbackId, NULL);
         callbackId = FString(UTF8_TO_TCHAR(callbackIdCStr));
         env->ReleaseStringUTFChars(jCallbackId, callbackIdCStr);
         env->DeleteLocalRef(jCallbackId);
-    } else {
+    }
+    else
+    {
         callbackId = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(joJsonResponse, NULL)) {
+    if (!env->IsSameObject(joJsonResponse, NULL))
+    {
         jclass jcJsonObject = env->FindClass("org/json/JSONObject");
         jmethodID jToStringID = env->GetMethodID(jcJsonObject, "toString", "()Ljava/lang/String;");
         jJsonResponse = (jstring)env->CallObjectMethod(joJsonResponse, jToStringID);
 
-        if (!env->IsSameObject(jJsonResponse, NULL)) {
+        if (!env->IsSameObject(jJsonResponse, NULL))
+        {
             const char *jsonResponseCStr = env->GetStringUTFChars(jJsonResponse, NULL);
             jsonResponse = FString(UTF8_TO_TCHAR(jsonResponseCStr));
             env->ReleaseStringUTFChars(jJsonResponse, jsonResponseCStr);
             env->DeleteLocalRef(jJsonResponse);
-        } else {
+        }
+        else
+        {
             jsonResponse = FString(UTF8_TO_TCHAR(""));
         }
     }
@@ -371,8 +447,10 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventSuc
     eventSuccessCallbackMethod(ueEventSuccess);
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventFailureCallback_eventFailure(JNIEnv *env, jobject obj, jobject eventFailureObject) {
-    if (env->IsSameObject(eventFailureObject, NULL)) {
+JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventFailureCallback_eventFailure(JNIEnv *env, jobject obj, jobject eventFailureObject)
+{
+    if (env->IsSameObject(eventFailureObject, NULL))
+    {
         return;
     }
 
@@ -401,30 +479,39 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventFai
     jobject joJsonResponse = env->GetObjectField(eventFailureObject, jfidJsonResponseID);
     jstring jJsonResponse;
 
-    if (!env->IsSameObject(jMessage, NULL)) {
+    if (!env->IsSameObject(jMessage, NULL))
+    {
         const char *messageCStr = env->GetStringUTFChars(jMessage, NULL);
         message = FString(UTF8_TO_TCHAR(messageCStr));
         env->ReleaseStringUTFChars(jMessage, messageCStr);
         env->DeleteLocalRef(jMessage);
-    } else {
+    }
+    else
+    {
         message = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jTimestamp, NULL)) {
+    if (!env->IsSameObject(jTimestamp, NULL))
+    {
         const char *timestampCStr = env->GetStringUTFChars(jTimestamp, NULL);
         timestamp = FString(UTF8_TO_TCHAR(timestampCStr));
         env->ReleaseStringUTFChars(jTimestamp, timestampCStr);
         env->DeleteLocalRef(jTimestamp);
-    } else {
+    }
+    else
+    {
         timestamp = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jAdid, NULL)) {
+    if (!env->IsSameObject(jAdid, NULL))
+    {
         const char *adidCStr = env->GetStringUTFChars(jAdid, NULL);
         adid = FString(UTF8_TO_TCHAR(adidCStr));
         env->ReleaseStringUTFChars(jAdid, adidCStr);
         env->DeleteLocalRef(jAdid);
-    } else {
+    }
+    else
+    {
         adid = FString(UTF8_TO_TCHAR(""));
     }
 
@@ -433,32 +520,41 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventFai
         eventToken = FString(UTF8_TO_TCHAR(eventTokenCStr));
         env->ReleaseStringUTFChars(jEventToken, eventTokenCStr);
         env->DeleteLocalRef(jEventToken);
-    } else {
+    }
+    else
+    {
         eventToken = FString(UTF8_TO_TCHAR(""));
     }
 
-    if (!env->IsSameObject(jCallbackId, NULL)) {
+    if (!env->IsSameObject(jCallbackId, NULL))
+    {
         const char *callbackIdCStr = env->GetStringUTFChars(jCallbackId, NULL);
         callbackId = FString(UTF8_TO_TCHAR(callbackIdCStr));
         env->ReleaseStringUTFChars(jCallbackId, callbackIdCStr);
         env->DeleteLocalRef(jCallbackId);
-    } else {
+    }
+    else
+    {
         callbackId = FString(UTF8_TO_TCHAR(""));
     }
 
     willRetry = JNI_TRUE == joWillRetry;
 
-    if (!env->IsSameObject(joJsonResponse, NULL)) {
+    if (!env->IsSameObject(joJsonResponse, NULL))
+    {
         jclass jcJsonObject = env->FindClass("org/json/JSONObject");
         jmethodID jToStringID = env->GetMethodID(jcJsonObject, "toString", "()Ljava/lang/String;");
         jJsonResponse = (jstring)env->CallObjectMethod(joJsonResponse, jToStringID);
 
-        if (!env->IsSameObject(jJsonResponse, NULL)) {
+        if (!env->IsSameObject(jJsonResponse, NULL))
+        {
             const char *jsonResponseCStr = env->GetStringUTFChars(jJsonResponse, NULL);
             jsonResponse = FString(UTF8_TO_TCHAR(jsonResponseCStr));
             env->ReleaseStringUTFChars(jJsonResponse, jsonResponseCStr);
             env->DeleteLocalRef(jJsonResponse);
-        } else {
+        }
+        else
+        {
             jsonResponse = FString(UTF8_TO_TCHAR(""));
         }
     }
@@ -474,8 +570,10 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventFai
     eventFailureCallbackMethod(ueEventFailure);
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeDeferredDeeplinkCallback_deferredDeeplinkReceived(JNIEnv *env, jobject obj, jstring jDeeplink) {
-    if (env->IsSameObject(jDeeplink, NULL)) {
+JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeDeferredDeeplinkCallback_deferredDeeplinkReceived(JNIEnv *env, jobject obj, jstring jDeeplink)
+{
+    if (env->IsSameObject(jDeeplink, NULL))
+    {
         return;
     }
 
@@ -485,8 +583,10 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeDeferred
     env->ReleaseStringUTFChars(jDeeplink, deeplinkCStr);
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeGoogleAdvertisingIdCallback_googleAdvertisingIdRead(JNIEnv *env, jobject obj, jstring jGoogleAdId) {
-    if (env->IsSameObject(jGoogleAdId, NULL)) {
+JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeGoogleAdvertisingIdCallback_googleAdvertisingIdRead(JNIEnv *env, jobject obj, jstring jGoogleAdId)
+{
+    if (env->IsSameObject(jGoogleAdId, NULL))
+    {
         return;
     }
 
@@ -496,45 +596,59 @@ JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeGoogleAd
     env->ReleaseStringUTFChars(jGoogleAdId, googleAdIdCStr);    
 }
 
-void setAttributionCallbackMethod(void (*callbackMethod)(FAdjustAttribution Attribution)) {
-    if (NULL == attributionCallbackMethod) {
-    	attributionCallbackMethod = callbackMethod;
+void setAttributionCallbackMethod(void (*callbackMethod)(FAdjustAttribution Attribution))
+{
+    if (NULL == attributionCallbackMethod)
+    {
+        attributionCallbackMethod = callbackMethod;
     }
 }
 
-void setSessionSuccessCallbackMethod(void (*callbackMethod)(FAdjustSessionSuccess SessionSuccess)) {
-    if (NULL == sessionSuccessCallbackMethod) {
+void setSessionSuccessCallbackMethod(void (*callbackMethod)(FAdjustSessionSuccess SessionSuccess))
+{
+    if (NULL == sessionSuccessCallbackMethod)
+    {
         sessionSuccessCallbackMethod = callbackMethod;
     }
 }
 
-void setSessionFailureCallbackMethod(void (*callbackMethod)(FAdjustSessionFailure SessionFailure)) {
-    if (NULL == sessionFailureCallbackMethod) {
+void setSessionFailureCallbackMethod(void (*callbackMethod)(FAdjustSessionFailure SessionFailure))
+{
+    if (NULL == sessionFailureCallbackMethod)
+    {
         sessionFailureCallbackMethod = callbackMethod;
     }
 }
 
-void setEventSuccessCallbackMethod(void (*callbackMethod)(FAdjustEventSuccess EventSuccess)) {
-    if (NULL == eventSuccessCallbackMethod) {
+void setEventSuccessCallbackMethod(void (*callbackMethod)(FAdjustEventSuccess EventSuccess))
+{
+    if (NULL == eventSuccessCallbackMethod)
+    {
         eventSuccessCallbackMethod = callbackMethod;
     }
 }
 
-void setEventFailureCallbackMethod(void (*callbackMethod)(FAdjustEventFailure EventFailure)) {
-    if (NULL == eventFailureCallbackMethod) {
+void setEventFailureCallbackMethod(void (*callbackMethod)(FAdjustEventFailure EventFailure))
+{
+    if (NULL == eventFailureCallbackMethod)
+    {
         eventFailureCallbackMethod = callbackMethod;
     }
 }
 
-void setDeferredDeeplinkCallbackMethod(void (*callbackMethod)(FString Deeplink)) {
-    if (NULL == deferredDeeplinkCallbackMethod) {
+void setDeferredDeeplinkCallbackMethod(void (*callbackMethod)(FString Deeplink))
+{
+    if (NULL == deferredDeeplinkCallbackMethod)
+    {
         deferredDeeplinkCallbackMethod = callbackMethod;
     }
 }
 
-void setGoogleAdvertisingIdCallbackMethod(void (*callbackMethod)(FString GoogleAdId)) {
-	if (NULL == googleAdvertisingIdCallbackMethod) {
-		googleAdvertisingIdCallbackMethod = callbackMethod;
-	}
+void setGoogleAdvertisingIdCallbackMethod(void (*callbackMethod)(FString GoogleAdId))
+{
+    if (NULL == googleAdvertisingIdCallbackMethod)
+    {
+        googleAdvertisingIdCallbackMethod = callbackMethod;
+    }
 }
 #endif

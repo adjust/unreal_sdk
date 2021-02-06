@@ -621,7 +621,7 @@ Adjust SDK를 사용하여 본인의 앱이 사전에 설치된 기기가 있는
 
 Adjust SDK는 MIT 라이센스하에 사용이 허가됩니다.
 
-Copyright (c) 2019 Adjust GmbH, http://www.adjust.com
+Copyright (c) 2018-2021 Adjust GmbH, http://www.adjust.com
 
 다음 조건하에 본 소프트웨어와 관련 문서 파일(이하 "소프트웨어")의 사본을 보유한 제3자에게
 소프트웨어의 사용, 복사, 수정, 병합, 게시, 배포, 재실시권 및/또는 사본의 판매 등을 포함하여

@@ -3,7 +3,7 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 28th September 2018.
-//  Copyright © 2018-2019 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
 //
 
 #pragma once
@@ -13,11 +13,11 @@
 USTRUCT(BlueprintType)
 struct FAdjustSessionSuccess
 {
-	GENERATED_USTRUCT_BODY()
+    GENERATED_USTRUCT_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-	FString Message;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString Message;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString Timestamp;

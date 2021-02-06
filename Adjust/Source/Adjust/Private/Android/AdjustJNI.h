@@ -3,7 +3,7 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 4th October 2018.
-//  Copyright © 2018-2019 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
 //
 
 #pragma once
@@ -18,7 +18,8 @@
 #include "../Public/AdjustSessionSuccess.h"
 #include "../Public/AdjustSessionFailure.h"
 
-extern "C" {
+extern "C"
+{
     static void (*attributionCallbackMethod)(FAdjustAttribution Attribution);
     static void (*sessionSuccessCallbackMethod)(FAdjustSessionSuccess SessionSuccess);
     static void (*sessionFailureCallbackMethod)(FAdjustSessionFailure SessionFailure);

@@ -3,14 +3,16 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 27th September 2018.
-//  Copyright © 2018-2019 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
 //
 
 using System.IO;
 using UnrealBuildTool;
 
-public class Adjust : ModuleRules {
-    public Adjust(ReadOnlyTargetRules Target) : base(Target) {
+public class Adjust : ModuleRules
+{
+    public Adjust(ReadOnlyTargetRules Target) : base(Target)
+    {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicIncludePaths.AddRange(new string[] {});
@@ -20,41 +22,52 @@ public class Adjust : ModuleRules {
         PrivateDependencyModuleNames.AddRange(new string[] {});
         DynamicallyLoadedModuleNames.AddRange(new string[] {});
 
-        if (Target.Platform == UnrealTargetPlatform.IOS) {
+        if (Target.Platform == UnrealTargetPlatform.IOS)
+        {
             bool bHasAdjust = false;
             string AdjustNFLDir = "";
-            try {
+            try
+            {
                 AdjustNFLDir = System.IO.Path.Combine(ModuleDirectory, "../ThirdParty/IOS");
                 bHasAdjust = System.IO.Directory.Exists(AdjustNFLDir);
-            } catch (System.Exception) {}
+            }
+            catch (System.Exception) {}
 
-            if (bHasAdjust) {
+            if (bHasAdjust)
+            {
                 string Err = string.Format("Adjust SDK found in {0}", AdjustNFLDir);
                 System.Console.WriteLine(Err);
                 PublicAdditionalLibraries.Add(Path.Combine(AdjustNFLDir, "AdjustSdk.a"));
-                PublicFrameworks.AddRange(new string[] { "AdSupport", "iAd", "CoreTelephony" });
+                PublicWeakFrameworks.AddRange(new string[] { "AdSupport", "iAd", "CoreTelephony", "StoreKit", "AdServices", "AppTrackingTransparency" });
                 PublicLibraryPaths.Add(AdjustNFLDir);
                 PublicDefinitions.Add("WITH_ADJUST=1");
                 PublicDefinitions.Add("UE4_ADJUST_VER=4.20.0");
                 PrivateIncludePaths.Add("Adjust/Private/IOS");
                 PublicAdditionalLibraries.Add("z");
                 PublicAdditionalLibraries.Add("sqlite3");
-            } else {
+            }
+            else
+            {
                 string Err = string.Format("Adjust SDK not found in {0}", AdjustNFLDir);
                 System.Console.WriteLine(Err);
                 PublicDefinitions.Add("WITH_ADJUST=0");
             }
-        } else if (Target.Platform == UnrealTargetPlatform.Android) {
+        }
+        else if (Target.Platform == UnrealTargetPlatform.Android)
+        {
             bool bHasAdjust = false;
             string AdjustNFLDir = "";
-            try {
+            try
+            {
                 AdjustNFLDir = System.IO.Path.Combine(ModuleDirectory, "../ThirdParty/Android");
                 bHasAdjust = System.IO.Directory.Exists(AdjustNFLDir);
-            } catch (System.Exception) {}
+            }
+            catch (System.Exception) {}
 
             PublicIncludePathModuleNames.Add("Launch");
 
-            if (bHasAdjust) {
+            if (bHasAdjust)
+            {
                 string Err = string.Format("Adjust SDK found in {0}", AdjustNFLDir);
                 System.Console.WriteLine(Err);
                 PublicLibraryPaths.Add(AdjustNFLDir);
@@ -65,12 +78,16 @@ public class Adjust : ModuleRules {
 
                 string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
                 AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(PluginPath, "Adjust_UPL_Android.xml"));
-            } else {
+            }
+            else
+            {
                 string Err = string.Format("Adjust SDK not found in {0}", AdjustNFLDir);
                 System.Console.WriteLine(Err);
                 PublicDefinitions.Add("WITH_ADJUST=0");
             }
-        } else {
+        }
+        else
+        {
             PublicDefinitions.Add("WITH_ADJUST=0");
         }
     }
