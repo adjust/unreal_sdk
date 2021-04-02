@@ -1,3 +1,13 @@
+### Version 4.28.0 (3rd April 2021)
+#### Changed
+- Removed native iOS legacy code.
+
+#### Native SDKs
+- [Android@v4.26.2][android_sdk_v4.26.2]
+- [iOS@v4.28.0][ios_sdk_v4.28.0]
+
+---
+
 ### Version 4.26.0 (6th February 2021)
 #### Added
 - Added `DisableThirdPartySharing` method to `Adjust` interface to allow disabling of data sharing with third parties outside of Adjust ecosystem.
@@ -49,3 +59,4 @@
 [ios_sdk_v4.17.1]: https://github.com/adjust/ios_sdk/tree/v4.17.1
 [ios_sdk_v4.18.3]: https://github.com/adjust/ios_sdk/tree/v4.18.3
 [ios_sdk_v4.26.1]: https://github.com/adjust/ios_sdk/tree/v4.26.1
+[ios_sdk_v4.28.0]: https://github.com/adjust/ios_sdk/tree/v4.28.0
