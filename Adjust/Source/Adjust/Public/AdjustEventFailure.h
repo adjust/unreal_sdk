@@ -3,7 +3,7 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 28th September 2018.
-//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-Present Adjust GmbH. All rights reserved.
 //
 
 #pragma once
@@ -36,4 +36,6 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool WillRetry;
+
+    FAdjustEventFailure() : WillRetry(false) {}
 };

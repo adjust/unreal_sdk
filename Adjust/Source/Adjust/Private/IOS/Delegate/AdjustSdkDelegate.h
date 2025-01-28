@@ -3,16 +3,17 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 27th September 2018.
-//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-Present Adjust GmbH. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
 #import "../Native/Adjust.h"
-#import "../../Public/AdjustAttribution.h"
-#import "../../Public/AdjustSessionSuccess.h"
-#import "../../Public/AdjustSessionFailure.h"
-#import "../../Public/AdjustEventSuccess.h"
-#import "../../Public/AdjustEventFailure.h"
+#import "../Native/ADJConfig.h"
+#import "../../../Public/AdjustAttribution.h"
+#import "../../../Public/AdjustSessionSuccess.h"
+#import "../../../Public/AdjustSessionFailure.h"
+#import "../../../Public/AdjustEventSuccess.h"
+#import "../../../Public/AdjustEventFailure.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

@@ -3,7 +3,7 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 27th September 2018.
-//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-Present Adjust GmbH. All rights reserved.
 //
 
 #include "Adjust.h"
@@ -15,6 +15,21 @@
 
 #if PLATFORM_IOS
 #import "IOS/Native/Adjust.h"
+#import "IOS/Native/ADJEvent.h"
+#import "IOS/Native/ADJThirdPartySharing.h"
+#import "IOS/Native/ADJConfig.h"
+#import "IOS/Native/ADJLogger.h"
+#import "IOS/Native/ADJAttribution.h"
+#import "IOS/Native/ADJAppStoreSubscription.h"
+#import "IOS/Native/ADJEventSuccess.h"
+#import "IOS/Native/ADJEventFailure.h"
+#import "IOS/Native/ADJSessionSuccess.h"
+#import "IOS/Native/ADJSessionFailure.h"
+#import "IOS/Native/ADJAdRevenue.h"
+#import "IOS/Native/ADJLinkResolution.h"
+#import "IOS/Native/ADJAppStorePurchase.h"
+#import "IOS/Native/ADJPurchaseVerificationResult.h"
+#import "IOS/Native/ADJDeeplink.h"
 #import "IOS/Delegate/AdjustSdkDelegate.h"
 #elif PLATFORM_ANDROID
 #include "Android/AdjustJNI.h"
@@ -26,11 +41,7 @@ static void adjustAttributionCallback(FAdjustAttribution Attribution)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
-        if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill()))
-        {
-            Itr->OnAttributionChangedDelegate.Broadcast(Attribution);
-            Itr->OnAttributionChangedNonDynamicDelegate.Broadcast(Attribution);
-        }
+        Itr->OnAttributionChangedDelegate.Broadcast(Attribution);
     }
 }
 
@@ -38,11 +49,7 @@ static void adjustSessionSuccessCallback(FAdjustSessionSuccess SessionSuccess)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
-        if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill()))
-        {
-            Itr->OnSessionSuccessDelegate.Broadcast(SessionSuccess);
-            Itr->OnSessionSuccessNonDynamicDelegate.Broadcast(SessionSuccess);
-        }
+        Itr->OnSessionSuccessDelegate.Broadcast(SessionSuccess);
     }
 }
 
@@ -50,11 +57,7 @@ static void adjustSessionFailureCallback(FAdjustSessionFailure SessionFailure)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
-        if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill()))
-        {
-            Itr->OnSessionFailureDelegate.Broadcast(SessionFailure);
-            Itr->OnSessionFailureNonDynamicDelegate.Broadcast(SessionFailure);
-        }
+        Itr->OnSessionFailureDelegate.Broadcast(SessionFailure);
     }
 }
 
@@ -62,11 +65,7 @@ static void adjustEventSuccessCallback(FAdjustEventSuccess EventSuccess)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
-        if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill()))
-        {
-            Itr->OnEventSuccessDelegate.Broadcast(EventSuccess);
-            Itr->OnEventSuccessNonDynamicDelegate.Broadcast(EventSuccess);
-        }
+        Itr->OnEventSuccessDelegate.Broadcast(EventSuccess);
     }
 }
 
@@ -74,11 +73,7 @@ static void adjustEventFailureCallback(FAdjustEventFailure EventFailure)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
-        if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill()))
-        {
-            Itr->OnEventFailureDelegate.Broadcast(EventFailure);
-            Itr->OnEventFailureNonDynamicDelegate.Broadcast(EventFailure);
-        }
+        Itr->OnEventFailureDelegate.Broadcast(EventFailure);
     }
 }
 
@@ -86,23 +81,31 @@ static void adjustDeferredDeeplinkCallback(FString Deeplink)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
-        if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill()))
-        {
-            Itr->OnDeferredDeeplinkDelegate.Broadcast(Deeplink);
-            Itr->OnDeferredDeeplinkNonDynamicDelegate.Broadcast(Deeplink);
-        }
+        Itr->OnDeferredDeeplinkDelegate.Broadcast(Deeplink);
     }
 }
 
-static void adjustGoogleAdvertisingIdCallback(FString GoogleAdId)
+static void adjustAdidGetterCallback(FString Adid)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
-        if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill()))
-        {
-            Itr->OnGoogleAdvertisingIdDelegate.Broadcast(GoogleAdId);
-            Itr->OnGoogleAdvertisingIdNonDynamicDelegate.Broadcast(GoogleAdId);
-        }
+        Itr->OnAdidGetterDelegate.Broadcast(Adid);
+    }
+}
+
+static void adjustAttributionGetterCallback(FAdjustAttribution Attribution)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnAttributionGetterDelegate.Broadcast(Attribution);
+    }
+}
+
+static void adjustLastDeeplinkGetterCallback(FString LastDeeplink)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnLastDeeplinkGetterDelegate.Broadcast(LastDeeplink);
     }
 }
 
@@ -110,15 +113,83 @@ static void adjustAuthorizationStatusCallback(int AuthorizationStatus)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
-        if (Itr->GetWorld() != nullptr && (Itr->GetWorld()->WorldType == EWorldType::Game || Itr->GetWorld()->WorldType == EWorldType::PIE) && (!Itr->IsPendingKill()))
-        {
-            Itr->OnAuthorizationStatusDelegate.Broadcast(AuthorizationStatus);
-            Itr->OnAuthorizationStatusNonDynamicDelegate.Broadcast(AuthorizationStatus);
-        }
+        Itr->OnAuthorizationStatusGetterDelegate.Broadcast(AuthorizationStatus);
     }
 }
 
-void UAdjust::Initialize(const FAdjustConfig& Config)
+static void adjustDeeplinkResolutionCallback(FString ResolvedLink)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnDeeplinkResolutionDelegate.Broadcast(ResolvedLink);
+    }
+}
+
+static void adjustSdkVersionGetterCallback(FString SdkVersion)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnSdkVersionGetterDelegate.Broadcast(SdkVersion);
+    }
+}
+
+static void adjustIdfaGetterCallback(FString Idfa)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnIdfaGetterDelegate.Broadcast(Idfa);
+    }
+}
+
+static void adjustIdfvGetterCallback(FString Idfv)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnIdfvGetterDelegate.Broadcast(Idfv);
+    }
+}
+
+static void adjustAuthorizationStatusGetterCallback(int AuthorizationStatus)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnAuthorizationStatusGetterDelegate.Broadcast(AuthorizationStatus);
+    }
+}
+
+static void adjustRequestAppAuthorizationStatusCallback(int AuthorizationStatus)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnRequestTrackingAuthorizationDelegate.Broadcast(AuthorizationStatus);
+    }
+}
+
+static void adjustUpdateSkanConversionValueCallback(FString Error)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnUpdateSkanConversionValueDelegate.Broadcast(Error);
+    }
+}
+
+static void adjustGoogleAdIdGetterCallback(FString GoogleAdId)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnGoogleAdIdGetterDelegate.Broadcast(GoogleAdId);
+    }
+}
+
+static void adjustAmazonAdIdGetterCallback(FString AmazonAdId)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnAmazonAdIdGetterDelegate.Broadcast(AmazonAdId);
+    }
+}
+
+void UAdjust::InitSdk(const FAdjustConfig& Config)
 {
 #if PLATFORM_IOS
     // app token
@@ -171,14 +242,12 @@ void UAdjust::Initialize(const FAdjustConfig& Config)
             break;
     }
 
-    ADJConfig *adjustConfig = [ADJConfig configWithAppToken:strAppToken environment:environment allowSuppressLogLevel:allowSuppressLevel];
-    if (![adjustConfig isValid])
-    {
-        return;
-    }
+    ADJConfig *adjustConfig = [[ADJConfig alloc] initWithAppToken:strAppToken
+                                                      environment:environment
+                                                 suppressLogLevel:allowSuppressLevel];
 
     // SDK prefix
-    [adjustConfig setSdkPrefix:@"unreal4.28.0"];
+    [adjustConfig setSdkPrefix:@"unreal5.0.0"];
 
     // log level
     [adjustConfig setLogLevel:logLevel];
@@ -191,16 +260,8 @@ void UAdjust::Initialize(const FAdjustConfig& Config)
     [delegate setEventSuccessCallback:adjustEventSuccessCallback];
     [delegate setEventFailureCallback:adjustEventFailureCallback];
     [delegate setDeferredDeeplinkCallback:adjustDeferredDeeplinkCallback];
-    [delegate setShouldOpenDeferredDeeplink:Config.OpenDeferredDeeplink];
+    [delegate setShouldOpenDeferredDeeplink:Config.IsDeferredDeeplinkOpeningEnabled];
     adjustConfig.delegate = delegate;
-
-    // user agent
-    CFStringRef cfstrUserAgent = FPlatformString::TCHARToCFString(*Config.UserAgent);
-    NSString *strUserAgent = (NSString *)cfstrUserAgent;
-    if ([strUserAgent length] > 0)
-    {
-        [adjustConfig setUserAgent:strUserAgent];
-    }
 
     // default tracker
     CFStringRef cfstrDefaultTracker = FPlatformString::TCHARToCFString(*Config.DefaultTracker);
@@ -218,82 +279,60 @@ void UAdjust::Initialize(const FAdjustConfig& Config)
         [adjustConfig setExternalDeviceId:strExternalDeviceId];
     }
 
-    // URL strategy
-    CFStringRef cfstrUrlStrategy = FPlatformString::TCHARToCFString(*Config.UrlStrategy);
-    NSString *strUrlStrategy = (NSString *)cfstrUrlStrategy;
-    if (strUrlStrategy != nil && [strUrlStrategy length] > 0)
-    {
-        if ([strUrlStrategy isEqualToString:@"china"])
-        {
-            [adjustConfig setUrlStrategy:ADJUrlStrategyChina];
-        }
-        else if ([strUrlStrategy isEqualToString:@"india"])
-        {
-            [adjustConfig setUrlStrategy:ADJUrlStrategyIndia];
-        }
-    }
-
-    // delay start
-    CFStringRef cfstrDelayStart = FPlatformString::TCHARToCFString(*Config.DelayStart);
-    NSString *strDelayStart = (NSString *)cfstrDelayStart;
-    if ([strDelayStart length] > 0)
-    {
-        [adjustConfig setDelayStart:[strDelayStart doubleValue]];
-    }
-
-    // app secret
-    CFStringRef cfstrSecretId = FPlatformString::TCHARToCFString(*Config.SecretId);
-    CFStringRef cfstrInfo1 = FPlatformString::TCHARToCFString(*Config.Info1);
-    CFStringRef cfstrInfo2 = FPlatformString::TCHARToCFString(*Config.Info2);
-    CFStringRef cfstrInfo3 = FPlatformString::TCHARToCFString(*Config.Info3);
-    CFStringRef cfstrInfo4 = FPlatformString::TCHARToCFString(*Config.Info4);
-    NSString *strSecretId = (NSString *)cfstrSecretId;
-    NSString *strInfo1 = (NSString *)cfstrInfo1;
-    NSString *strInfo2 = (NSString *)cfstrInfo2;
-    NSString *strInfo3 = (NSString *)cfstrInfo3;
-    NSString *strInfo4 = (NSString *)cfstrInfo4;
-    if ([strSecretId length] > 0
-        && [strInfo1 length] > 0
-        && [strInfo2 length] > 0
-        && [strInfo3 length] > 0
-        && [strInfo4 length] > 0)
-    {
-        [adjustConfig setAppSecret:[[NSNumber numberWithLongLong:[strSecretId longLongValue]] unsignedIntegerValue]
-                             info1:[[NSNumber numberWithLongLong:[strInfo1 longLongValue]] unsignedIntegerValue]
-                             info2:[[NSNumber numberWithLongLong:[strInfo2 longLongValue]] unsignedIntegerValue]
-                             info3:[[NSNumber numberWithLongLong:[strInfo3 longLongValue]] unsignedIntegerValue]
-                             info4:[[NSNumber numberWithLongLong:[strInfo4 longLongValue]] unsignedIntegerValue]];
-    }
-
-    // event buffering
-    [adjustConfig setEventBufferingEnabled:Config.EventBuffering];
-
     // send in background
-    [adjustConfig setSendInBackground:Config.SendInBackground];
-
-    // is device known
-    [adjustConfig setIsDeviceKnown:Config.IsDeviceKnown];
-
-    // handle SKAdNetwork
-    if (Config.HandleSkAdNetwork == false)
-    {
-        [adjustConfig deactivateSKAdNetworkHandling];
+    if (Config.IsSendingInBackgroundEnabled == true) {
+        [adjustConfig enableSendingInBackground];
     }
-    
-    // allow iAd info reading
-    if (Config.AllowiAdInfoReading == false)
-    {
-        [adjustConfig setAllowiAdInfoReading:NO];
+
+    // COPPA compliance
+    if (Config.IsCoppaComplianceEnabled == true) {
+        [adjustConfig enableCoppaCompliance];
     }
-    
-    // allow AdServices info reading
-    if (Config.AllowAdServicesInfoReading == false)
+
+    // read device info just once
+    if (Config.IsDeviceIdsReadingOnceEnabled == true) {
+        [adjustConfig enableDeviceIdsReadingOnce];
+    }
+
+    // cost data in attribution
+    if (Config.IsCostDataInAttributionEnabled == true) {
+        [adjustConfig enableCostDataInAttribution];
+    }
+
+    // disable IDFA reading
+    if (Config.IsIdfaReadingEnabled == false) {
+        [adjustConfig disableIdfaReading];
+    }
+
+    // disable IDFV reading
+    if (Config.IsIdfvReadingEnabled == false) {
+        [adjustConfig disableIdfvReading];
+    }
+
+    // LinkMe
+    if (Config.IsLinkMeEnabled == true) {
+        [adjustConfig enableLinkMe];
+    }
+
+    // SKAN attribution
+    if (Config.IsSkanAttributionEnabled == false)
     {
-        [adjustConfig setAllowAdServicesInfoReading:NO];
+        [adjustConfig disableSkanAttribution];
+    }
+
+    // AdServices.framework handling (Apple Search Ads)
+    if (Config.IsAdServicesEnabled == false)
+    {
+        [adjustConfig disableAdServices];
+    }
+
+    // ATT consent waiting interval
+    if (Config.AttConsentWaitingInterval > 0) {
+        [adjustConfig setAttConsentWaitingInterval:Config.AttConsentWaitingInterval];
     }
 
     // start SDK
-    [Adjust appDidLaunch:adjustConfig];
+    [Adjust initSdk:adjustConfig];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
 
@@ -338,7 +377,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config)
             cLogLevel = "ASSERT";
             break;
         case EAdjustLogLevel::Suppress:
-            cLogLevel = "SUPRESS";
+            cLogLevel = "SUPPRESS";
             allowSuppressLevel = true;
             break;
         default:
@@ -354,7 +393,7 @@ void UAdjust::Initialize(const FAdjustConfig& Config)
     Env->DeleteLocalRef(jEnvironment);
 
     // SDK prefix
-    const char* cstrSdkPrefix = "unreal4.28.0";
+    const char* cstrSdkPrefix = "unreal5.0.0";
     jstring jSdkPrefix = Env->NewStringUTF(cstrSdkPrefix);
     jmethodID jmidAdjustConfigSetSdkPrefix = Env->GetMethodID(jcslAdjustConfig, "setSdkPrefix", "(Ljava/lang/String;)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSdkPrefix, jSdkPrefix);
@@ -370,63 +409,57 @@ void UAdjust::Initialize(const FAdjustConfig& Config)
 
     // attribution callback
     setAttributionCallbackMethod(adjustAttributionCallback);
-    jclass jcslUeAttributionCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeAttributionCallback");
+    jclass jcslUeAttributionCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeAttributionCallback");
     jmethodID jmidAdjustConfigSetAttributionCallback = Env->GetMethodID(jcslAdjustConfig, "setOnAttributionChangedListener", "(Lcom/adjust/sdk/OnAttributionChangedListener;)V");
-    jmethodID jmidUeAttributionCallbackInit = Env->GetMethodID(jcslUeAttributionCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jmethodID jmidUeAttributionCallbackInit = Env->GetMethodID(jcslUeAttributionCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
     jobject joAttributionCallbackProxy = Env->NewObject(jcslUeAttributionCallback, jmidUeAttributionCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetAttributionCallback, joAttributionCallbackProxy);
     Env->DeleteLocalRef(joAttributionCallbackProxy);
 
     // session success callback
     setSessionSuccessCallbackMethod(adjustSessionSuccessCallback);
-    jclass jcslUeSessionSuccessCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeSessionSuccessCallback");
+    jclass jcslUeSessionSuccessCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeSessionSuccessCallback");
     jmethodID jmidAdjustConfigSetSessionSuccessCallback = Env->GetMethodID(jcslAdjustConfig, "setOnSessionTrackingSucceededListener", "(Lcom/adjust/sdk/OnSessionTrackingSucceededListener;)V");
-    jmethodID jmidUeSessionSuccessCallbackInit = Env->GetMethodID(jcslUeSessionSuccessCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jmethodID jmidUeSessionSuccessCallbackInit = Env->GetMethodID(jcslUeSessionSuccessCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
     jobject joSessionSuccessCallbackProxy = Env->NewObject(jcslUeSessionSuccessCallback, jmidUeSessionSuccessCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSessionSuccessCallback, joSessionSuccessCallbackProxy);
     Env->DeleteLocalRef(joSessionSuccessCallbackProxy);
 
     // session failure callback
     setSessionFailureCallbackMethod(adjustSessionFailureCallback);
-    jclass jcslUeSessionFailureCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeSessionFailureCallback");
+    jclass jcslUeSessionFailureCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeSessionFailureCallback");
     jmethodID jmidAdjustConfigSetSessionFailureCallback = Env->GetMethodID(jcslAdjustConfig, "setOnSessionTrackingFailedListener", "(Lcom/adjust/sdk/OnSessionTrackingFailedListener;)V");
-    jmethodID jmidUeSessionFailureCallbackInit = Env->GetMethodID(jcslUeSessionFailureCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jmethodID jmidUeSessionFailureCallbackInit = Env->GetMethodID(jcslUeSessionFailureCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
     jobject joSessionFailureCallbackProxy = Env->NewObject(jcslUeSessionFailureCallback, jmidUeSessionFailureCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSessionFailureCallback, joSessionFailureCallbackProxy);
     Env->DeleteLocalRef(joSessionFailureCallbackProxy);
 
     // event success callback
     setEventSuccessCallbackMethod(adjustEventSuccessCallback);
-    jclass jcslUeEventSuccessCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeEventSuccessCallback");
+    jclass jcslUeEventSuccessCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeEventSuccessCallback");
     jmethodID jmidAdjustConfigSetEventSuccessCallback = Env->GetMethodID(jcslAdjustConfig, "setOnEventTrackingSucceededListener", "(Lcom/adjust/sdk/OnEventTrackingSucceededListener;)V");
-    jmethodID jmidUeEventSuccessCallbackInit = Env->GetMethodID(jcslUeEventSuccessCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jmethodID jmidUeEventSuccessCallbackInit = Env->GetMethodID(jcslUeEventSuccessCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
     jobject joEventSuccessCallbackProxy = Env->NewObject(jcslUeEventSuccessCallback, jmidUeEventSuccessCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetEventSuccessCallback, joEventSuccessCallbackProxy);
     Env->DeleteLocalRef(joEventSuccessCallbackProxy);
 
     // event failure callback
     setEventFailureCallbackMethod(adjustEventFailureCallback);
-    jclass jcslUeEventFailureCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeEventFailureCallback");
+    jclass jcslUeEventFailureCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeEventFailureCallback");
     jmethodID jmidAdjustConfigSetEventFailureCallback = Env->GetMethodID(jcslAdjustConfig, "setOnEventTrackingFailedListener", "(Lcom/adjust/sdk/OnEventTrackingFailedListener;)V");
-    jmethodID jmidUeEventFailureCallbackInit = Env->GetMethodID(jcslUeEventFailureCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jmethodID jmidUeEventFailureCallbackInit = Env->GetMethodID(jcslUeEventFailureCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
     jobject joEventFailureCallbackProxy = Env->NewObject(jcslUeEventFailureCallback, jmidUeEventFailureCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetEventFailureCallback, joEventFailureCallbackProxy);
     Env->DeleteLocalRef(joEventFailureCallbackProxy);
 
     // deferred deep link callback
     setDeferredDeeplinkCallbackMethod(adjustDeferredDeeplinkCallback);
-    jclass jcslUeDeferredDeeplinkCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeDeferredDeeplinkCallback");
-    jmethodID jmidAdjustConfigSetDeferredDeeplinkCallback = Env->GetMethodID(jcslAdjustConfig, "setOnDeeplinkResponseListener", "(Lcom/adjust/sdk/OnDeeplinkResponseListener;)V");
-    jmethodID jmidUeDeferredDeeplinkCallbackInit = Env->GetMethodID(jcslUeDeferredDeeplinkCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;Z)V");
-    jobject joDeferredDeeplinkCallbackProxy = Env->NewObject(jcslUeDeferredDeeplinkCallback, jmidUeDeferredDeeplinkCallbackInit, FJavaWrapper::GameActivityThis, Config.OpenDeferredDeeplink);
+    jclass jcslUeDeferredDeeplinkCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeDeferredDeeplinkCallback");
+    jmethodID jmidAdjustConfigSetDeferredDeeplinkCallback = Env->GetMethodID(jcslAdjustConfig, "setOnDeferredDeeplinkResponseListener", "(Lcom/adjust/sdk/OnDeferredDeeplinkResponseListener;)V");
+    jmethodID jmidUeDeferredDeeplinkCallbackInit = Env->GetMethodID(jcslUeDeferredDeeplinkCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;Z)V");
+    jobject joDeferredDeeplinkCallbackProxy = Env->NewObject(jcslUeDeferredDeeplinkCallback, jmidUeDeferredDeeplinkCallbackInit, FJavaWrapper::GameActivityThis, Config.IsDeferredDeeplinkOpeningEnabled);
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetDeferredDeeplinkCallback, joDeferredDeeplinkCallbackProxy);
     Env->DeleteLocalRef(joDeferredDeeplinkCallbackProxy);
-
-    // user agent
-    jstring jUserAgent = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.UserAgent));
-    jmethodID jmidAdjustConfigSetUserAgent = Env->GetMethodID(jcslAdjustConfig, "setUserAgent", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetUserAgent, jUserAgent);
-    Env->DeleteLocalRef(jUserAgent);
 
     // default tracker
     jstring jDefaultTracker = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.DefaultTracker));
@@ -434,81 +467,46 @@ void UAdjust::Initialize(const FAdjustConfig& Config)
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetDefaultTracker, jDefaultTracker);
     Env->DeleteLocalRef(jDefaultTracker);
 
-    // External device ID.
+    // external device ID
     jstring jExternalDeviceId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.ExternalDeviceId));
     jmethodID jmidAdjustConfigSetExternalDeviceId = Env->GetMethodID(jcslAdjustConfig, "setExternalDeviceId", "(Ljava/lang/String;)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetExternalDeviceId, jExternalDeviceId);
     Env->DeleteLocalRef(jExternalDeviceId);
 
-    // URL strategy
-    if (*Config.UrlStrategy != NULL)
-    {
-        jmethodID jmidAdjustConfigSetUrlStrategy = Env->GetMethodID(jcslAdjustConfig, "setUrlStrategy", "(Ljava/lang/String;)V");
-        if (Config.UrlStrategy.Equals(TEXT("china"), ESearchCase::CaseSensitive) == 0)
-        {
-            jstring jUrlStrategy = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.UrlStrategy));
-            jclass jclsAdjustConfig = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustConfig");
-            jfieldID jfidUrlStrategyChina = Env->GetStaticFieldID(jclsAdjustConfig, "URL_STRATEGY_CHINA", "Ljava/lang/String;");
-            jstring jUrlStrategyChina = (jstring)Env->GetStaticObjectField(jclsAdjustConfig, jfidUrlStrategyChina);
-            Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetUrlStrategy, jUrlStrategyChina);
-            Env->DeleteLocalRef(jUrlStrategyChina);
-            Env->DeleteLocalRef(jUrlStrategy);
-        }
-        else if (Config.UrlStrategy.Equals(TEXT("india"), ESearchCase::CaseSensitive) == 0)
-        {
-            jstring jUrlStrategy = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.UrlStrategy));
-            jclass jclsAdjustConfig = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustConfig");
-            jfieldID jfidUrlStrategyIndia = Env->GetStaticFieldID(jclsAdjustConfig, "URL_STRATEGY_INDIA", "Ljava/lang/String;");
-            jstring jUrlStrategyIndia = (jstring)Env->GetStaticObjectField(jclsAdjustConfig, jfidUrlStrategyIndia);
-            Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetUrlStrategy, jUrlStrategyIndia);
-            Env->DeleteLocalRef(jUrlStrategyIndia);
-            Env->DeleteLocalRef(jUrlStrategy);
-        }
-    }
-
-    // delay start
-    float fDelayStart = FCString::Atof(*Config.DelayStart);
-    jmethodID jmidAdjustConfigSetDelayStart = Env->GetMethodID(jcslAdjustConfig, "setDelayStart", "(D)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetDelayStart, (double)fDelayStart);
-
-    // app secret
-    uint64 secretId = FCString::Strtoui64(*Config.SecretId, NULL, 10);
-    uint64 info1 = FCString::Strtoui64(*Config.Info1, NULL, 10);
-    uint64 info2 = FCString::Strtoui64(*Config.Info2, NULL, 10);
-    uint64 info3 = FCString::Strtoui64(*Config.Info3, NULL, 10);
-    uint64 info4 = FCString::Strtoui64(*Config.Info4, NULL, 10);
-    if (secretId > 0 && info1 > 0 && info2 > 0 && info3 > 0 && info4 > 0)
-    {
-        jmethodID jmidAdjustConfigSetAppSecret = Env->GetMethodID(jcslAdjustConfig, "setAppSecret", "(JJJJJ)V");
-        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetAppSecret, secretId, info1, info2, info3, info4);
-    }
-
-    // event buffering
-    jmethodID jmidAdjustConfigSetEventBufferingEnabled = Env->GetMethodID(jcslAdjustConfig, "setEventBufferingEnabled", "(Ljava/lang/Boolean;)V");
-    jclass jclsBoolean = Env->FindClass("java/lang/Boolean");
-    jmethodID jmidValueOf = Env->GetStaticMethodID(jclsBoolean, "valueOf", "(Z)Ljava/lang/Boolean;");
-    jobject joIsEnabled = Env->CallStaticObjectMethod(jclsBoolean, jmidValueOf, Config.EventBuffering);
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetEventBufferingEnabled, joIsEnabled);
-    Env->DeleteLocalRef(joIsEnabled);
+    // FB app ID
+    jstring jFbAppId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.FbAppId));
+    jmethodID jmidAdjustConfigSetFbAppId = Env->GetMethodID(jcslAdjustConfig, "setFbAppId", "(Ljava/lang/String;)V");
+    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetFbAppId, jFbAppId);
+    Env->DeleteLocalRef(jFbAppId);
 
     // send in background
-    jmethodID jmidAdjustConfigSetSendInBackground = Env->GetMethodID(jcslAdjustConfig, "setSendInBackground", "(Z)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSendInBackground, Config.SendInBackground);
+    if (Config.IsSendingInBackgroundEnabled == true) {
+        jmethodID jmidAdjustConfigSetSendInBackground = Env->GetMethodID(jcslAdjustConfig, "enableSendingInBackground", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSendInBackground);
+    }
 
-    // preinstall tracking
-    jmethodID jmidAdjustConfigSetPreinstallTrackingEnabled = Env->GetMethodID(jcslAdjustConfig, "setPreinstallTrackingEnabled", "(Z)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetPreinstallTrackingEnabled, Config.PreinstallTracking);
+    // COPPA compliance
+    if (Config.IsCoppaComplianceEnabled == true) {
+        jmethodID jmidAdjustConfigEnableCoppa = Env->GetMethodID(jcslAdjustConfig, "enableCoppaCompliance", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigEnableCoppa);
+    }
 
-    // is device known
-    jmethodID jmidAdjustConfigSetIsDeviceKnown = Env->GetMethodID(jcslAdjustConfig, "setDeviceKnown", "(Z)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetIsDeviceKnown, Config.IsDeviceKnown);
+    // read device info just once
+    if (Config.IsDeviceIdsReadingOnceEnabled == true) {
+        jmethodID jmidAdjustConfigReadDeviceIdsOnce = Env->GetMethodID(jcslAdjustConfig, "enableDeviceIdsReadingOnce", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigReadDeviceIdsOnce);
+    }
+
+    // cost data in attribution
+    if (Config.IsCostDataInAttributionEnabled == true) {
+        jmethodID jmidAdjustConfigCostDataInAttribution = Env->GetMethodID(jcslAdjustConfig, "enableCostDataInAttribution", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigCostDataInAttribution);
+    }
 
     // start SDK
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustOnCreate = Env->GetStaticMethodID(jcslAdjust, "onCreate", "(Lcom/adjust/sdk/AdjustConfig;)V");
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustOnCreate, joAdjustConfig);
-    jmethodID jmidAdjustOnResume = Env->GetStaticMethodID(jcslAdjust, "onResume", "()V");
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustOnResume);
+    jmethodID jmidAdjustInitSdk = Env->GetStaticMethodID(jcslAdjust, "initSdk", "(Lcom/adjust/sdk/AdjustConfig;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustInitSdk, joAdjustConfig);
     Env->DeleteLocalRef(joAdjustConfig);
 #endif
 }
@@ -516,15 +514,11 @@ void UAdjust::Initialize(const FAdjustConfig& Config)
 void UAdjust::TrackEvent(const FAdjustEvent& Event)
 {
 #if PLATFORM_IOS
-    // event token.
+    // event token
     CFStringRef cfstrEventToken = FPlatformString::TCHARToCFString(*Event.EventToken);
     NSString *strEventToken = (NSString *)cfstrEventToken;
 
-    ADJEvent *adjustEvent = [ADJEvent eventWithEventToken:strEventToken];
-    if (![adjustEvent isValid])
-    {
-        return;
-    }
+    ADJEvent *adjustEvent = [[ADJEvent alloc] initWithEventToken:strEventToken];
 
     // revenue & currency
     CFStringRef cfstrCurrency = FPlatformString::TCHARToCFString(*Event.Currency);
@@ -553,10 +547,10 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
         [adjustEvent addPartnerParameter:strKey value:strValue];
     }
 
-    // transaction ID
-    CFStringRef cfstrTransactionId = FPlatformString::TCHARToCFString(*Event.TransactionId);
-    NSString *strTransactionId = (NSString *)cfstrTransactionId;
-    [adjustEvent setTransactionId:strTransactionId];
+    // deduplication ID
+    CFStringRef cfstrDeduplicationId = FPlatformString::TCHARToCFString(*Event.DeduplicationId);
+    NSString *strDeduplicationId = (NSString *)cfstrDeduplicationId;
+    [adjustEvent setDeduplicationId:strDeduplicationId];
 
     // callback ID
     CFStringRef cfstrCallbackId = FPlatformString::TCHARToCFString(*Event.CallbackId);
@@ -583,6 +577,18 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
     Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetRevenue, (double)Event.Revenue, jCurrency);
     Env->DeleteLocalRef(jCurrency);
 
+    // deduplication ID
+    jstring jDeduplicationId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.DeduplicationId));
+    jmethodID jmidAdjustEventSetDeduplicationId = Env->GetMethodID(jcslAdjustEvent, "setDeduplicationId", "(Ljava/lang/String;)V");
+    Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetDeduplicationId, jDeduplicationId);
+    Env->DeleteLocalRef(jDeduplicationId);
+
+    // callback ID
+    jstring jCallbackId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.CallbackId));
+    jmethodID jmidAdjustEventSetCallbackId = Env->GetMethodID(jcslAdjustEvent, "setCallbackId", "(Ljava/lang/String;)V");
+    Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetCallbackId, jCallbackId);
+    Env->DeleteLocalRef(jCallbackId);
+
     // callback parameters
     jmethodID jmidAdjustEventAddCallbackParameter = Env->GetMethodID(jcslAdjustEvent, "addCallbackParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
     TMap<FString, FString> callbackParams = Event.CallbackParameters;
@@ -607,18 +613,6 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
         Env->DeleteLocalRef(jValue);
     }
 
-    // order ID
-    jstring jTransactionId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.TransactionId));
-    jmethodID jmidAdjustEventSetOrderId = Env->GetMethodID(jcslAdjustEvent, "setOrderId", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetOrderId, jTransactionId);
-    Env->DeleteLocalRef(jTransactionId);
-
-    // callback ID
-    jstring jCallbackId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.CallbackId));
-    jmethodID jmidAdjustEventSetCallbackId = Env->GetMethodID(jcslAdjustEvent, "setCallbackId", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetCallbackId, jCallbackId);
-    Env->DeleteLocalRef(jCallbackId);
-
     // track event
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustTrackEvent = Env->GetStaticMethodID(jcslAdjust, "trackEvent", "(Lcom/adjust/sdk/AdjustEvent;)V");
@@ -627,62 +621,97 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
 #endif
 }
 
-void UAdjust::SetEnabled(bool Enable)
+void UAdjust::Enable()
 {
 #if PLATFORM_IOS
-    [Adjust setEnabled:Enable];
+    [Adjust enable];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustSetEnabled = Env->GetStaticMethodID(jcslAdjust, "setEnabled", "(Z)V");
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustSetEnabled, Enable);
+    jmethodID jmidAdjustEnable = Env->GetStaticMethodID(jcslAdjust, "enable", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustEnable);
 #endif
 }
 
-bool UAdjust::IsEnabled()
+void UAdjust::Disable()
 {
 #if PLATFORM_IOS
-    return [Adjust isEnabled];
+    [Adjust disable];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustIsEnabled = Env->GetStaticMethodID(jcslAdjust, "isEnabled", "()Z");
-    jboolean jIsEnabled = Env->CallStaticBooleanMethod(jcslAdjust, jmidAdjustIsEnabled);
-    return jIsEnabled;
+    jmethodID jmidAdjustDisable = Env->GetStaticMethodID(jcslAdjust, "disable", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustDisable);
 #endif
-    return false;
 }
 
-void UAdjust::AppWillOpenUrl(const FString& Url)
+void UAdjust::ProcessDeeplink(const FAdjustDeeplink& Deeplink)
 {
 #if PLATFORM_IOS
-    NSURL *url;
-    CFStringRef cfstrUrl = FPlatformString::TCHARToCFString(*Url);
+    CFStringRef cfstrUrl = FPlatformString::TCHARToCFString(*(Deeplink.Deeplink));
     NSString *strUrl = (NSString *)cfstrUrl;
-    if ([NSString instancesRespondToSelector:@selector(stringByAddingPercentEncodingWithAllowedCharacters:)])
-    {
-        url = [NSURL URLWithString:[strUrl stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLFragmentAllowedCharacterSet]]];
-    }
-    else
-    {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        url = [NSURL URLWithString:[strUrl stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
-    }
-#pragma clang diagnostic pop
-    [Adjust appWillOpenUrl:url];
+    NSURL *url = [NSURL URLWithString:strUrl];
+    [Adjust processDeeplink:[[ADJDeeplink alloc] initWithDeeplink:url]];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+
+    // create Uri from string
     jclass jcslUri = Env->FindClass("android/net/Uri");
     jmethodID jmidUriParse = Env->GetStaticMethodID(jcslUri, "parse", "(Ljava/lang/String;)Landroid/net/Uri;");
-    jstring jUrl = Env->NewStringUTF(TCHAR_TO_UTF8(*Url));
-    jobject joUri = Env->CallStaticObjectMethod(jcslUri, jmidUriParse, jUrl);
+    jstring jstrUrl = Env->NewStringUTF(TCHAR_TO_UTF8(*(Deeplink.Deeplink)));
+    jobject joUri = Env->CallStaticObjectMethod(jcslUri, jmidUriParse, jstrUrl);
 
-    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustAppWillOpenUrl = Env->GetStaticMethodID(jcslAdjust, "appWillOpenUrl", "(Landroid/net/Uri;Landroid/content/Context;)V");
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustAppWillOpenUrl, joUri, FJavaWrapper::GameActivityThis);
-    Env->DeleteLocalRef(jUrl);
+    // create deep link object
+    jclass jcslAdjustDeeplink = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustDeeplink");
+    jmethodID jmidAdjustDeeplinkInit = Env->GetMethodID(jcslAdjustDeeplink, "<init>", "(Landroid/net/Uri;)V");
+    jobject joAdjustDeeplink = Env->NewObject(jcslAdjustDeeplink, jmidAdjustDeeplinkInit, joUri);
     Env->DeleteLocalRef(joUri);
+
+    // process deep link
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustProcessDeeplink = Env->GetStaticMethodID(jcslAdjust, "processDeeplink", "(Lcom/adjust/sdk/AdjustDeeplink;Landroid/content/Context;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustProcessDeeplink, joAdjustDeeplink, FJavaWrapper::GameActivityThis);
+    Env->DeleteLocalRef(joAdjustDeeplink);
+#endif
+}
+
+void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink)
+{
+#if PLATFORM_IOS
+    CFStringRef cfstrUrl = FPlatformString::TCHARToCFString(*(Deeplink.Deeplink));
+    NSString *strUrl = (NSString *)cfstrUrl;
+    NSURL *url = [NSURL URLWithString:strUrl];
+    ADJDeeplink *deepLink = [[ADJDeeplink alloc] initWithDeeplink:url];
+    [Adjust processAndResolveDeeplink:deepLink
+                withCompletionHandler:^(NSString * _Nullable resolvedLink) {
+        adjustDeeplinkResolutionCallback(FString(UTF8_TO_TCHAR([resolvedLink UTF8String])));
+    }];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+
+    // create Uri from string
+    jclass jcslUri = Env->FindClass("android/net/Uri");
+    jmethodID jmidUriParse = Env->GetStaticMethodID(jcslUri, "parse", "(Ljava/lang/String;)Landroid/net/Uri;");
+    jstring jstrUrl = Env->NewStringUTF(TCHAR_TO_UTF8(*(Deeplink.Deeplink)));
+    jobject joUri = Env->CallStaticObjectMethod(jcslUri, jmidUriParse, jstrUrl);
+
+    // create deep link object
+    jclass jcslAdjustDeeplink = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustDeeplink");
+    jmethodID jmidAdjustDeeplinkInit = Env->GetMethodID(jcslAdjustDeeplink, "<init>", "(Landroid/net/Uri;)V");
+    jobject joAdjustDeeplink = Env->NewObject(jcslAdjustDeeplink, jmidAdjustDeeplinkInit, joUri);
+    Env->DeleteLocalRef(joUri);
+
+    setDeeplinkResolutionCallback(adjustDeeplinkResolutionCallback);
+    jclass jcslUeDeeplinkResolvedCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeDeeplinkResolvedCallback");
+    jmethodID jmidUeDeeplinkResolvedCallbackInit = Env->GetMethodID(jcslUeDeeplinkResolvedCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joDeeplinkResolvedCallbackProxy = Env->NewObject(jcslUeDeeplinkResolvedCallback, jmidUeDeeplinkResolvedCallbackInit, FJavaWrapper::GameActivityThis);
+
+    // process deep link
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustProcessAndResolveDeeplink = Env->GetStaticMethodID(jcslAdjust, "processAndResolveDeeplink", "(Lcom/adjust/sdk/AdjustDeeplink;Landroid/content/Context;Lcom/adjust/sdk/OnDeeplinkResolvedListener;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustProcessAndResolveDeeplink, joAdjustDeeplink, FJavaWrapper::GameActivityThis, joDeeplinkResolvedCallbackProxy);
+    Env->DeleteLocalRef(joAdjustDeeplink);
+    Env->DeleteLocalRef(joDeeplinkResolvedCallbackProxy);
 #endif
 }
 
@@ -691,7 +720,7 @@ void UAdjust::SetPushToken(const FString& PushToken)
 #if PLATFORM_IOS
     CFStringRef cfstrPushToken = FPlatformString::TCHARToCFString(*PushToken);
     NSString *strPushToken = (NSString *)cfstrPushToken;
-    [Adjust setPushToken:strPushToken];
+    [Adjust setPushTokenAsString:strPushToken];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
@@ -702,416 +731,258 @@ void UAdjust::SetPushToken(const FString& PushToken)
 #endif
 }
 
-void UAdjust::SetOfflineMode(bool Offline)
+void UAdjust::TrackMeasurementConsent(bool MeasurementConsent)
 {
 #if PLATFORM_IOS
-    [Adjust setOfflineMode:Offline];
+    [Adjust trackMeasurementConsent:MeasurementConsent];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustSetOfflineMode = Env->GetStaticMethodID(jcslAdjust, "setOfflineMode", "(Z)V");
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustSetOfflineMode, Offline);
+    jmethodID jmidAdjustTrackMeasurementConsent = Env->GetStaticMethodID(jcslAdjust, "trackMeasurementConsent", "(Z)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustTrackMeasurementConsent, MeasurementConsent);
 #endif
 }
 
-FString UAdjust::GetAdid()
+void UAdjust::SwitchToOfflineMode()
 {
 #if PLATFORM_IOS
-    FString adid = *FString([Adjust adid]);
-    return adid;
+    [Adjust switchToOfflineMode];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustGetAdid = Env->GetStaticMethodID(jcslAdjust, "getAdid", "()Ljava/lang/String;");
-    jstring jAdid = (jstring)Env->CallStaticObjectMethod(jcslAdjust, jmidAdjustGetAdid);
-
-    FString Adid = FString(UTF8_TO_TCHAR(""));
-    if (NULL != jAdid)
-    {
-        const char* adidCStr = Env->GetStringUTFChars(jAdid, NULL);
-        Adid = FString(UTF8_TO_TCHAR(adidCStr));
-        Env->ReleaseStringUTFChars(jAdid, adidCStr);
-    }
-
-    Env->DeleteLocalRef(jAdid);
-    return Adid;
-#else
-    FString Adid = FString(UTF8_TO_TCHAR(""));
-    return Adid;
+    jmethodID jmidAdjustSwitchToOfflineMode = Env->GetStaticMethodID(jcslAdjust, "switchToOfflineMode", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustSwitchToOfflineMode);
 #endif
 }
 
-FString UAdjust::GetIdfa()
+void UAdjust::SwitchBackToOnlineMode()
 {
 #if PLATFORM_IOS
-    FString Idfa = *FString([Adjust idfa]);
-    return Idfa;
-#else
-    FString Idfa = FString(UTF8_TO_TCHAR(""));
-    return Idfa;
+    [Adjust switchBackToOnlineMode];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustSwitchBackToOnlineMode = Env->GetStaticMethodID(jcslAdjust, "switchBackToOnlineMode", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustSwitchBackToOnlineMode);
 #endif
 }
 
-int UAdjust::GetAppTrackingAuthorizationStatus()
+void UAdjust::GetIdfa()
 {
 #if PLATFORM_IOS
-    int AppTrackingAuthorizationStatus = [Adjust appTrackingAuthorizationStatus];
-    return AppTrackingAuthorizationStatus;
-#else
-    int AppTrackingAuthorizationStatus = -1;
-    return AppTrackingAuthorizationStatus;
+    [Adjust idfaWithCompletionHandler:^(NSString * _Nullable idfa) {
+        adjustIdfaGetterCallback(FString(UTF8_TO_TCHAR([idfa UTF8String])));
+    }];
+#endif
+}
+
+void UAdjust::GetIdfv()
+{
+#if PLATFORM_IOS
+    [Adjust idfvWithCompletionHandler:^(NSString * _Nullable idfv) {
+        adjustIdfvGetterCallback(FString(UTF8_TO_TCHAR([idfv UTF8String])));
+    }];
 #endif
 }
 
 void UAdjust::GetGoogleAdId()
 {
 #if PLATFORM_ANDROID
-    setGoogleAdvertisingIdCallbackMethod(adjustGoogleAdvertisingIdCallback);
+    setGoogleAdIdGetterCallbackMethod(adjustGoogleAdIdGetterCallback);
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustGetGoogleAdvertisingId = Env->GetStaticMethodID(jcslAdjust, "getGoogleAdId", "(Landroid/content/Context;Lcom/adjust/sdk/OnDeviceIdsRead;)V");
-    jclass jcslUeGoogleAdvertisingIdCallback = FAndroidApplication::FindJavaClass("com/epicgames/ue4/GameActivity$AdjustUeGoogleAdvertisingIdCallback");
-    jmethodID jmidUeGoogleAdvertisingIdCallbackInit = Env->GetMethodID(jcslUeGoogleAdvertisingIdCallback, "<init>", "(Lcom/epicgames/ue4/GameActivity;)V");
+    jmethodID jmidAdjustGetGoogleAdvertisingId = Env->GetStaticMethodID(jcslAdjust, "getGoogleAdId", "(Landroid/content/Context;Lcom/adjust/sdk/OnGoogleAdIdReadListener;)V");
+    jclass jcslUeGoogleAdvertisingIdCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeGoogleAdIdGetterCallback");
+    jmethodID jmidUeGoogleAdvertisingIdCallbackInit = Env->GetMethodID(jcslUeGoogleAdvertisingIdCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
     jobject joGoogleAdvertisingIdCallbackProxy = Env->NewObject(jcslUeGoogleAdvertisingIdCallback, jmidUeGoogleAdvertisingIdCallbackInit, FJavaWrapper::GameActivityThis);
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetGoogleAdvertisingId, FJavaWrapper::GameActivityThis, joGoogleAdvertisingIdCallbackProxy);
     Env->DeleteLocalRef(joGoogleAdvertisingIdCallbackProxy);
 #endif
 }
 
-FString UAdjust::GetAmazonAdId()
+void UAdjust::GetAmazonAdId()
 {
 #if PLATFORM_ANDROID
+    setAmazonAdIdGetterCallbackMethod(adjustAmazonAdIdGetterCallback);
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustGetAmazonAdId = Env->GetStaticMethodID(jcslAdjust, "getAmazonAdId", "(Landroid/content/Context;)Ljava/lang/String;");
-    jstring jAmazonAdId = (jstring)Env->CallStaticObjectMethod(jcslAdjust, jmidAdjustGetAmazonAdId, FJavaWrapper::GameActivityThis);
-
-    FString AmazonAdId = FString(UTF8_TO_TCHAR(""));
-    if (NULL != jAmazonAdId)
-    {
-        const char* amazonAdIdCStr = Env->GetStringUTFChars(jAmazonAdId, NULL);
-        AmazonAdId = FString(UTF8_TO_TCHAR(amazonAdIdCStr));
-        Env->ReleaseStringUTFChars(jAmazonAdId, amazonAdIdCStr);
-    }
-
-    Env->DeleteLocalRef(jAmazonAdId);
-    return AmazonAdId;
-#else
-    FString AmazonAdId = FString(UTF8_TO_TCHAR(""));
-    return AmazonAdId;
+    jmethodID jmidAdjustGetAmazonAdvertisingId = Env->GetStaticMethodID(jcslAdjust, "getAmazonAdId", "(Landroid/content/Context;Lcom/adjust/sdk/OnAmazonAdIdReadListener;)V");
+    jclass jcslUeAmazonAdvertisingIdCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeAmazonAdIdGetterCallback");
+    jmethodID jmidUeAmazonAdvertisingIdCallbackInit = Env->GetMethodID(jcslUeAmazonAdvertisingIdCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joAmazonAdvertisingIdCallbackProxy = Env->NewObject(jcslUeAmazonAdvertisingIdCallback, jmidUeAmazonAdvertisingIdCallbackInit, FJavaWrapper::GameActivityThis);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetAmazonAdvertisingId, FJavaWrapper::GameActivityThis, joAmazonAdvertisingIdCallbackProxy);
+    Env->DeleteLocalRef(joAmazonAdvertisingIdCallbackProxy);
 #endif
 }
 
-FAdjustAttribution UAdjust::GetAttribution()
+void UAdjust::GetAdid()
 {
-#if PLATFORM_IOS
-    ADJAttribution *attribution = [Adjust attribution];
-    if (attribution == nil)
-    {
-        FAdjustAttribution ueAttribution;
-        return ueAttribution;
-    }
-
-    FAdjustAttribution ueAttribution;
-    ueAttribution.TrackerToken = *FString(attribution.trackerToken);
-    ueAttribution.TrackerName = *FString(attribution.trackerName);
-    ueAttribution.Network = *FString(attribution.network);
-    ueAttribution.Campaign = *FString(attribution.campaign);
-    ueAttribution.Adgroup = *FString(attribution.adgroup);
-    ueAttribution.Creative = *FString(attribution.creative);
-    ueAttribution.ClickLabel = *FString(attribution.clickLabel);
-    ueAttribution.Adid = *FString(attribution.adid);
-    return ueAttribution;
-#elif PLATFORM_ANDROID
+#if PLATFORM_ANDROID
+    setAdidGetterCallbackMethod(adjustAdidGetterCallback);
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustGetAttribution = Env->GetStaticMethodID(jcslAdjust, "getAttribution", "()Lcom/adjust/sdk/AdjustAttribution;");
-    jobject joAttribution = Env->CallStaticObjectMethod(jcslAdjust, jmidAdjustGetAttribution);
-    if (Env->IsSameObject(joAttribution, NULL))
-    {
-        FAdjustAttribution ueAttribution;
-        return ueAttribution;
-    }
-
-    FString trackerToken;
-    FString trackerName;
-    FString network;
-    FString campaign;
-    FString adgroup;
-    FString creative;
-    FString clickLabel;
-    FString adid;
-
-    jclass clsAdjustAttribution = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustAttribution");
-    jfieldID fTrackerTokenID = Env->GetFieldID(clsAdjustAttribution, "trackerToken", "Ljava/lang/String;");
-    jfieldID fTrackerNameID = Env->GetFieldID(clsAdjustAttribution, "trackerName", "Ljava/lang/String;");
-    jfieldID fNetworkID = Env->GetFieldID(clsAdjustAttribution, "network", "Ljava/lang/String;");
-    jfieldID fCampaignID = Env->GetFieldID(clsAdjustAttribution, "campaign", "Ljava/lang/String;");
-    jfieldID fAdgroupID = Env->GetFieldID(clsAdjustAttribution, "adgroup", "Ljava/lang/String;");
-    jfieldID fCreativeID = Env->GetFieldID(clsAdjustAttribution, "creative", "Ljava/lang/String;");
-    jfieldID fClickLabelID = Env->GetFieldID(clsAdjustAttribution, "clickLabel", "Ljava/lang/String;");
-    jfieldID fAdidID = Env->GetFieldID(clsAdjustAttribution, "adid", "Ljava/lang/String;");
-    jstring jTrackerToken = (jstring)Env->GetObjectField(joAttribution, fTrackerTokenID);
-    jstring jTrackerName = (jstring)Env->GetObjectField(joAttribution, fTrackerNameID);
-    jstring jNetwork = (jstring)Env->GetObjectField(joAttribution, fNetworkID);
-    jstring jCampaign = (jstring)Env->GetObjectField(joAttribution, fCampaignID);
-    jstring jAdgroup = (jstring)Env->GetObjectField(joAttribution, fAdgroupID);
-    jstring jCreative = (jstring)Env->GetObjectField(joAttribution, fCreativeID);
-    jstring jClickLabel = (jstring)Env->GetObjectField(joAttribution, fClickLabelID);
-    jstring jAdid = (jstring)Env->GetObjectField(joAttribution, fAdidID);
-
-    if (NULL != jTrackerToken)
-    {
-        const char *trackerTokenCStr = Env->GetStringUTFChars(jTrackerToken, NULL);
-        trackerToken = FString(UTF8_TO_TCHAR(trackerTokenCStr));
-        Env->ReleaseStringUTFChars(jTrackerToken, trackerTokenCStr);
-        Env->DeleteLocalRef(jTrackerToken);
-    }
-    else
-    {
-        trackerToken = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (NULL != jTrackerName)
-    {
-        const char *trackerNameCStr = Env->GetStringUTFChars(jTrackerName, NULL);
-        trackerName = FString(UTF8_TO_TCHAR(trackerNameCStr));
-        Env->ReleaseStringUTFChars(jTrackerName, trackerNameCStr);
-        Env->DeleteLocalRef(jTrackerName);
-    }
-    else
-    {
-        trackerName = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (NULL != jNetwork)
-    {
-        const char *networkCStr = Env->GetStringUTFChars(jNetwork, NULL);
-        network = FString(UTF8_TO_TCHAR(networkCStr));
-        Env->ReleaseStringUTFChars(jNetwork, networkCStr);
-        Env->DeleteLocalRef(jNetwork);
-    }
-    else
-    {
-        network = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (NULL != jCampaign)
-    {
-        const char *campaignCStr = Env->GetStringUTFChars(jCampaign, NULL);
-        campaign = FString(UTF8_TO_TCHAR(campaignCStr));
-        Env->ReleaseStringUTFChars(jCampaign, campaignCStr);
-        Env->DeleteLocalRef(jCampaign);
-    }
-    else
-    {
-        campaign = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (NULL != jAdgroup)
-    {
-        const char *adgroupCStr = Env->GetStringUTFChars(jAdgroup, NULL);
-        adgroup = FString(UTF8_TO_TCHAR(adgroupCStr));
-        Env->ReleaseStringUTFChars(jAdgroup, adgroupCStr);
-        Env->DeleteLocalRef(jAdgroup);
-    }
-    else
-    {
-        adgroup = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (NULL != jCreative)
-    {
-        const char *creativeCStr = Env->GetStringUTFChars(jCreative, NULL);
-        creative = FString(UTF8_TO_TCHAR(creativeCStr));
-        Env->ReleaseStringUTFChars(jCreative, creativeCStr);
-        Env->DeleteLocalRef(jCreative);
-    }
-    else
-    {
-        creative = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (NULL != jClickLabel)
-    {
-        const char *clickLabelCStr = Env->GetStringUTFChars(jClickLabel, NULL);
-        clickLabel = FString(UTF8_TO_TCHAR(clickLabelCStr));
-        Env->ReleaseStringUTFChars(jClickLabel, clickLabelCStr);
-        Env->DeleteLocalRef(jClickLabel);
-    }
-    else
-    {
-        clickLabel = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (NULL != jAdid)
-    {
-        const char *adidCStr = Env->GetStringUTFChars(jAdid, NULL);
-        adid = FString(UTF8_TO_TCHAR(adidCStr));
-        Env->ReleaseStringUTFChars(jAdid, adidCStr);
-        Env->DeleteLocalRef(jAdid);
-    }
-    else
-    {
-        adid = FString(UTF8_TO_TCHAR(""));
-    }
-
-    FAdjustAttribution ueAttribution;
-    ueAttribution.TrackerToken = trackerToken;
-    ueAttribution.TrackerName = trackerName;
-    ueAttribution.Network = network;
-    ueAttribution.Campaign = campaign;
-    ueAttribution.Adgroup = adgroup;
-    ueAttribution.Creative = creative;
-    ueAttribution.ClickLabel = clickLabel;
-    ueAttribution.Adid = adid;
-
-    Env->DeleteLocalRef(joAttribution);
-    return ueAttribution;
-#else
-    FAdjustAttribution ueAttribution;
-    return ueAttribution;
+    jmethodID jmidAdjustGetAdidId = Env->GetStaticMethodID(jcslAdjust, "getAdid", "(Lcom/adjust/sdk/OnAdidReadListener;)V");
+    jclass jcslUeAdidGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeAdidGetterCallback");
+    jmethodID jmidUeAdidGetterCallbackInit = Env->GetMethodID(jcslUeAdidGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joAdidGetterCallbackProxy = Env->NewObject(jcslUeAdidGetterCallback, jmidUeAdidGetterCallbackInit, FJavaWrapper::GameActivityThis);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetAdidId, joAdidGetterCallbackProxy);
+    Env->DeleteLocalRef(joAdidGetterCallbackProxy);
+#elif PLATFORM_IOS
+    [Adjust adidWithCompletionHandler:^(NSString * _Nullable adid) {
+        adjustAdidGetterCallback(FString(UTF8_TO_TCHAR([adid UTF8String])));
+    }];
 #endif
 }
 
-FString UAdjust::GetSdkVersion()
+void UAdjust::GetAttribution()
+{
+#if PLATFORM_ANDROID
+    setAttributionGetterCallbackMethod(adjustAttributionGetterCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustGetAttributionId = Env->GetStaticMethodID(jcslAdjust, "getAttribution", "(Lcom/adjust/sdk/OnAttributionReadListener;)V");
+    jclass jcslUeAttributionGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeAttributionGetterCallback");
+    jmethodID jmidUeAttributionGetterCallbackInit = Env->GetMethodID(jcslUeAttributionGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joAttributionGetterCallbackProxy = Env->NewObject(jcslUeAttributionGetterCallback, jmidUeAttributionGetterCallbackInit, FJavaWrapper::GameActivityThis);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetAttributionId, joAttributionGetterCallbackProxy);
+    Env->DeleteLocalRef(joAttributionGetterCallbackProxy);
+#elif PLATFORM_IOS
+    [Adjust attributionWithCompletionHandler:^(ADJAttribution * _Nullable attribution) {
+        if (attribution == nil) {
+            return;
+        }
+
+        FAdjustAttribution ueAttribution;
+        ueAttribution.TrackerToken = *FString(attribution.trackerToken);
+        ueAttribution.TrackerName = *FString(attribution.trackerName);
+        ueAttribution.Network = *FString(attribution.network);
+        ueAttribution.Campaign = *FString(attribution.campaign);
+        ueAttribution.Adgroup = *FString(attribution.adgroup);
+        ueAttribution.Creative = *FString(attribution.creative);
+        ueAttribution.ClickLabel = *FString(attribution.clickLabel);
+        adjustAttributionGetterCallback(ueAttribution);
+    }];
+#endif
+}
+
+void UAdjust::GetSdkVersion()
 {
 #if PLATFORM_IOS
     FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.28.0"));
-    FString SdkVersion = *FString([Adjust sdkVersion]);
-    FString FinalVersion = SdkPrefix + Separator + SdkVersion;
-    return FinalVersion;
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal5.0.0"));
+    [Adjust sdkVersionWithCompletionHandler:^(NSString * _Nullable sdkVersion) {
+        FString FinalVersion = SdkPrefix + Separator + FString(UTF8_TO_TCHAR([sdkVersion UTF8String]));
+        adjustSdkVersionGetterCallback(FinalVersion);
+    }];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    setSdkVersionGetterCallbackMethod(adjustSdkVersionGetterCallback);
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustGetSdkVersion = Env->GetStaticMethodID(jcslAdjust, "getSdkVersion", "()Ljava/lang/String;");
-    jstring jSdkVersion = (jstring)Env->CallStaticObjectMethod(jcslAdjust, jmidAdjustGetSdkVersion);
-
-    FString SdkVersion = FString(UTF8_TO_TCHAR(""));
-    if (NULL != jSdkVersion)
-    {
-        const char* sdkVersionCStr = Env->GetStringUTFChars(jSdkVersion, NULL);
-        SdkVersion = FString(UTF8_TO_TCHAR(sdkVersionCStr));
-        Env->ReleaseStringUTFChars(jSdkVersion, sdkVersionCStr);
-    }
-    Env->DeleteLocalRef(jSdkVersion);
-
-    FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal4.28.0"));
-    FString FinalVersion = SdkPrefix + Separator + SdkVersion;
-    return FinalVersion;
-#else
-    FString FinalVersion = FString(UTF8_TO_TCHAR(""));
-    return FinalVersion;
+    jmethodID jmidAdjustGetSdkVersionId = Env->GetStaticMethodID(jcslAdjust, "getSdkVersion", "(Lcom/adjust/sdk/OnSdkVersionReadListener;)V");
+    jclass jcslUeSdkVersionGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeSdkVersionGetterCallback");
+    jmethodID jmidUeSdkVersionGetterCallbackInit = Env->GetMethodID(jcslUeSdkVersionGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;Ljava/lang/String;)V");
+    // TODO: temp hack, parametrize this
+    jstring jSdkPrefix = Env->NewStringUTF("unreal5.0.0");
+    jobject joSdkVersionGetterCallbackProxy = Env->NewObject(jcslUeSdkVersionGetterCallback, jmidUeSdkVersionGetterCallbackInit, FJavaWrapper::GameActivityThis, jSdkPrefix);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetSdkVersionId, joSdkVersionGetterCallbackProxy);
+    Env->DeleteLocalRef(joSdkVersionGetterCallbackProxy);
+    Env->DeleteLocalRef(jSdkPrefix);
 #endif
 }
 
-void UAdjust::AddSessionCallbackParameter(const FString& Key, const FString& Value)
+void UAdjust::AddGlobalCallbackParameter(const FString& Key, const FString& Value)
 {
 #if PLATFORM_IOS
     CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*Key);
     NSString *strKey = (NSString *)cfstrKey;
     CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*Value);
     NSString *strValue = (NSString *)cfstrValue;
-    [Adjust addSessionCallbackParameter:strKey value:strValue];
+    [Adjust addGlobalCallbackParameter:strValue forKey:strKey];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustAddSessionCallbackParameter = Env->GetStaticMethodID(jcslAdjust, "addSessionCallbackParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    jmethodID jmidAdjustAddGlobalCallbackParameter = Env->GetStaticMethodID(jcslAdjust, "addGlobalCallbackParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
     jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*Key));
     jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*Value));
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustAddSessionCallbackParameter, jKey, jValue);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustAddGlobalCallbackParameter, jKey, jValue);
     Env->DeleteLocalRef(jKey);
     Env->DeleteLocalRef(jValue);
 #endif
 }
 
-void UAdjust::AddSessionPartnerParameter(const FString& Key, const FString& Value)
+void UAdjust::AddGlobalPartnerParameter(const FString& Key, const FString& Value)
 {
 #if PLATFORM_IOS
     CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*Key);
     NSString *strKey = (NSString *)cfstrKey;
     CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*Value);
     NSString *strValue = (NSString *)cfstrValue;
-    [Adjust addSessionPartnerParameter:strKey value:strValue];
+    [Adjust addGlobalPartnerParameter:strValue forKey:strKey];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustAddSessionPartnerParameter = Env->GetStaticMethodID(jcslAdjust, "addSessionPartnerParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    jmethodID jmidAdjustAddGlobalPartnerParameter = Env->GetStaticMethodID(jcslAdjust, "addGlobalPartnerParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
     jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*Key));
     jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*Value));
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustAddSessionPartnerParameter, jKey, jValue);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustAddGlobalPartnerParameter, jKey, jValue);
     Env->DeleteLocalRef(jKey);
     Env->DeleteLocalRef(jValue);
 #endif
 }
 
-void UAdjust::RemoveSessionCallbackParameter(const FString& Key)
+void UAdjust::RemoveGlobalCallbackParameter(const FString& Key)
 {
 #if PLATFORM_IOS
     CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*Key);
     NSString *strKey = (NSString *)cfstrKey;
-    [Adjust removeSessionCallbackParameter:strKey];
+    [Adjust removeGlobalCallbackParameterForKey:strKey];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustRemoveSessionCallbackParameter = Env->GetStaticMethodID(jcslAdjust, "removeSessionCallbackParameter", "(Ljava/lang/String;)V");
+    jmethodID jmidAdjustRemoveGlobalCallbackParameter = Env->GetStaticMethodID(jcslAdjust, "removeGlobalCallbackParameter", "(Ljava/lang/String;)V");
     jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*Key));
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustRemoveSessionCallbackParameter, jKey);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustRemoveGlobalCallbackParameter, jKey);
     Env->DeleteLocalRef(jKey);
 #endif
 }
 
-void UAdjust::RemoveSessionPartnerParameter(const FString& Key)
+void UAdjust::RemoveGlobalPartnerParameter(const FString& Key)
 {
 #if PLATFORM_IOS
     CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*Key);
     NSString *strKey = (NSString *)cfstrKey;
-    [Adjust removeSessionPartnerParameter:strKey];
+    [Adjust removeGlobalPartnerParameterForKey:strKey];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustRemoveSessionPartnerParameter = Env->GetStaticMethodID(jcslAdjust, "removeSessionPartnerParameter", "(Ljava/lang/String;)V");
+    jmethodID jmidAdjustRemoveGlobalPartnerParameter = Env->GetStaticMethodID(jcslAdjust, "removeGlobalPartnerParameter", "(Ljava/lang/String;)V");
     jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*Key));
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustRemoveSessionPartnerParameter, jKey);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustRemoveGlobalPartnerParameter, jKey);
     Env->DeleteLocalRef(jKey);
 #endif
 }
 
-void UAdjust::ResetSessionCallbackParameters()
+void UAdjust::RemoveGlobalCallbackParameters()
 {
 #if PLATFORM_IOS
-    [Adjust resetSessionCallbackParameters];
+    [Adjust removeGlobalCallbackParameters];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustResetSessionCallbackParameters = Env->GetStaticMethodID(jcslAdjust, "resetSessionCallbackParameters", "()V");
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustResetSessionCallbackParameters);
+    jmethodID jmidAdjustRemoveGlobalCallbackParameters = Env->GetStaticMethodID(jcslAdjust, "removeGlobalCallbackParameters", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustRemoveGlobalCallbackParameters);
 #endif
 }
 
-void UAdjust::ResetSessionPartnerParameters()
+void UAdjust::RemoveGlobalPartnerParameters()
 {
 #if PLATFORM_IOS
-    [Adjust resetSessionPartnerParameters];
+    [Adjust removeGlobalPartnerParameters];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustResetSessionPartnerParameters = Env->GetStaticMethodID(jcslAdjust, "resetSessionPartnerParameters", "()V");
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustResetSessionPartnerParameters);
-#endif
-}
-
-void UAdjust::SendFirstPackages()
-{
-#if PLATFORM_IOS
-    [Adjust sendFirstPackages];
-#elif PLATFORM_ANDROID
-    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
-    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustSendFirstPackages = Env->GetStaticMethodID(jcslAdjust, "sendFirstPackages", "()V");
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustSendFirstPackages);
+    jmethodID jmidAdjustRemoveGlobalPartnerParameters = Env->GetStaticMethodID(jcslAdjust, "removeGlobalPartnerParameters", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustRemoveGlobalPartnerParameters);
 #endif
 }
 
@@ -1127,57 +998,308 @@ void UAdjust::GdprForgetMe()
 #endif
 }
 
-void UAdjust::TrackAdRevenue(const FString& Source, const FString& Payload)
+void UAdjust::TrackAdRevenue(const FAdjustAdRevenue& AdRevenue)
 {
 #if PLATFORM_IOS
-    CFStringRef cfstrSource = FPlatformString::TCHARToCFString(*Source);
+    // source
+    CFStringRef cfstrSource = FPlatformString::TCHARToCFString(*AdRevenue.Source);
     NSString *strSource = (NSString *)cfstrSource;
-    CFStringRef cfstrPayload = FPlatformString::TCHARToCFString(*Payload);
-    NSString *strPayload = (NSString *)cfstrPayload;
-    NSData *dataPayload = [strPayload dataUsingEncoding:NSUTF8StringEncoding];
-    [Adjust trackAdRevenue:strSource payload:dataPayload];
-#elif PLATFORM_ANDROID
-    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
-    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustTrackAdRevenue = Env->GetStaticMethodID(jcslAdjust, "trackAdRevenue", "(Ljava/lang/String;Lorg/json/JSONObject;)V");
-    jstring jSource = Env->NewStringUTF(TCHAR_TO_UTF8(*Source));
-    jstring jPayload = Env->NewStringUTF(TCHAR_TO_UTF8(*Payload));
 
-    jclass jcslJsonObject = FAndroidApplication::FindJavaClass("org/json/JSONObject");
-    jmethodID jmidJsonObjectInit = Env->GetMethodID(jcslJsonObject, "<init>", "(Ljava/lang/String;)V");
-    jobject joJsonPayload = Env->NewObject(jcslJsonObject, jmidJsonObjectInit, jPayload);
+    ADJAdRevenue *adjustAdRevenue = [[ADJAdRevenue alloc] initWithSource:strSource];
 
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustTrackAdRevenue, jSource, joJsonPayload);
-    Env->DeleteLocalRef(jSource);
-    Env->DeleteLocalRef(jPayload);
-#endif
-}
+    // revenue & currency
+    CFStringRef cfstrCurrency = FPlatformString::TCHARToCFString(*AdRevenue.Currency);
+    NSString *strCurrency = (NSString *)cfstrCurrency;
+    [adjustAdRevenue setRevenue:(double)AdRevenue.Revenue currency:strCurrency];
 
-void UAdjust::DisableThirdPartySharing()
-{
-#if PLATFORM_IOS
-    [Adjust disableThirdPartySharing];
-#elif PLATFORM_ANDROID
-    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
-    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidAdjustDisableThirdPartySharing = Env->GetStaticMethodID(jcslAdjust, "disableThirdPartySharing", "(Landroid/content/Context;)V");
-    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustDisableThirdPartySharing, FJavaWrapper::GameActivityThis);
-#endif
-}
+    // ad impressions count
+    if (AdRevenue.AdImpressionsCount > 0) {
+        [adjustAdRevenue setAdImpressionsCount:AdRevenue.AdImpressionsCount];
+    }
 
-void UAdjust::RequestTrackingAuthorizationWithCompletionHandler()
-{
-#if PLATFORM_IOS
-    [Adjust requestTrackingAuthorizationWithCompletionHandler:^(NSUInteger status)
+    // ad revenue network
+    CFStringRef cfstrAdRevenueNetwork = FPlatformString::TCHARToCFString(*AdRevenue.AdRevenueNetwork);
+    NSString *strAdRevenueNetwork = (NSString *)cfstrAdRevenueNetwork;
+    [adjustAdRevenue setAdRevenueNetwork:strAdRevenueNetwork];
+
+    // ad revenue unit
+    CFStringRef cfstrAdRevenueUnit = FPlatformString::TCHARToCFString(*AdRevenue.AdRevenueUnit);
+    NSString *strAdRevenueUnit = (NSString *)cfstrAdRevenueUnit;
+    [adjustAdRevenue setAdRevenueUnit:strAdRevenueUnit];
+
+    // ad revenue placement
+    CFStringRef cfstrAdRevenuePlacement = FPlatformString::TCHARToCFString(*AdRevenue.AdRevenuePlacement);
+    NSString *strAdRevenuePlacement = (NSString *)cfstrAdRevenuePlacement;
+    [adjustAdRevenue setAdRevenuePlacement:strAdRevenuePlacement];
+
+    // callback parameters
+    TMap<FString, FString> callbackParams = AdRevenue.CallbackParameters;
+    for (TPair<FString, FString> pair : callbackParams)
     {
-        adjustAuthorizationStatusCallback((int)status);
+        CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*pair.Key);
+        NSString *strKey = (NSString *)cfstrKey;
+        CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*pair.Value);
+        NSString *strValue = (NSString *)cfstrValue;
+        [adjustAdRevenue addCallbackParameter:strKey value:strValue];
+    }
+
+    // partner parameters
+    TMap<FString, FString> partnerParams = AdRevenue.PartnerParameters;
+    for (TPair<FString, FString> pair : partnerParams)
+    {
+        CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*pair.Key);
+        NSString *strKey = (NSString *)cfstrKey;
+        CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*pair.Value);
+        NSString *strValue = (NSString *)cfstrValue;
+        [adjustAdRevenue addPartnerParameter:strKey value:strValue];
+    }
+
+    // track ad revenue
+    [Adjust trackAdRevenue:adjustAdRevenue];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+
+    // source
+    jstring jSource = Env->NewStringUTF(TCHAR_TO_UTF8(*AdRevenue.Source));
+
+    // create ad revenue object
+    jclass jcslAdjustAdRevenue = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustAdRevenue");
+    jmethodID jmidAdjustAdRevenueInit = Env->GetMethodID(jcslAdjustAdRevenue, "<init>", "(Ljava/lang/String;)V");
+    jobject joAdjustAdRevenue = Env->NewObject(jcslAdjustAdRevenue, jmidAdjustAdRevenueInit, jSource);
+    Env->DeleteLocalRef(jSource);
+
+    // revenue & currency
+    jclass clsDouble = Env->FindClass("java/lang/Double");
+    jmethodID midInit = Env->GetMethodID(clsDouble, "<init>", "(D)V");
+    jobject jRevenue = Env->NewObject(clsDouble, midInit, AdRevenue.Revenue);
+    jstring jCurrency = Env->NewStringUTF(TCHAR_TO_UTF8(*AdRevenue.Currency));
+    jmethodID jmidAdjustAdRevenueSetRevenue = Env->GetMethodID(jcslAdjustAdRevenue, "setRevenue", "(Ljava/lang/Double;Ljava/lang/String;)V");
+    Env->CallVoidMethod(joAdjustAdRevenue, jmidAdjustAdRevenueSetRevenue, jRevenue, jCurrency);
+    Env->DeleteLocalRef(jRevenue);
+    Env->DeleteLocalRef(jCurrency);
+
+    // ad impressions count
+    jclass clsInteger = Env->FindClass("java/lang/Integer");
+    midInit = Env->GetMethodID(clsInteger, "<init>", "(I)V");
+    jobject jAdImpressionsCount = Env->NewObject(clsInteger, midInit, AdRevenue.AdImpressionsCount);
+    jmethodID jmidAdjustAdRevenueSetAdImpressionsCount = Env->GetMethodID(jcslAdjustAdRevenue, "setAdImpressionsCount", "(Ljava/lang/Integer;)V");
+    Env->CallVoidMethod(joAdjustAdRevenue, jmidAdjustAdRevenueSetAdImpressionsCount, jAdImpressionsCount);
+    Env->DeleteLocalRef(jAdImpressionsCount);
+
+    // ad revenue network
+    jstring jAdRevenueNetwork = Env->NewStringUTF(TCHAR_TO_UTF8(*AdRevenue.AdRevenueNetwork));
+    jmethodID jmidAdjustAdRevenueSetAdRevenueNetwork = Env->GetMethodID(jcslAdjustAdRevenue, "setAdRevenueNetwork", "(Ljava/lang/String;)V");
+    Env->CallVoidMethod(joAdjustAdRevenue, jmidAdjustAdRevenueSetAdRevenueNetwork, jAdRevenueNetwork);
+    Env->DeleteLocalRef(jAdRevenueNetwork);
+
+    // ad revenue unit
+    jstring jAdRevenueUnit = Env->NewStringUTF(TCHAR_TO_UTF8(*AdRevenue.AdRevenueUnit));
+    jmethodID jmidAdjustAdRevenueSetAdRevenueUnit = Env->GetMethodID(jcslAdjustAdRevenue, "setAdRevenueUnit", "(Ljava/lang/String;)V");
+    Env->CallVoidMethod(joAdjustAdRevenue, jmidAdjustAdRevenueSetAdRevenueUnit, jAdRevenueUnit);
+    Env->DeleteLocalRef(jAdRevenueUnit);
+
+    // ad revenue placement
+    jstring jAdRevenuePlacement = Env->NewStringUTF(TCHAR_TO_UTF8(*AdRevenue.AdRevenuePlacement));
+    jmethodID jmidAdjustAdRevenueSetAdRevenuePlacement = Env->GetMethodID(jcslAdjustAdRevenue, "setAdRevenuePlacement", "(Ljava/lang/String;)V");
+    Env->CallVoidMethod(joAdjustAdRevenue, jmidAdjustAdRevenueSetAdRevenuePlacement, jAdRevenuePlacement);
+    Env->DeleteLocalRef(jAdRevenuePlacement);
+
+    // callback parameters
+    jmethodID jmidAdjustAdRevenueAddCallbackParameter = Env->GetMethodID(jcslAdjustAdRevenue, "addCallbackParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    TMap<FString, FString> callbackParams = AdRevenue.CallbackParameters;
+    for (TPair<FString, FString> pair : callbackParams)
+    {
+        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Key));
+        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Value));
+        Env->CallVoidMethod(joAdjustAdRevenue, jmidAdjustAdRevenueAddCallbackParameter, jKey, jValue);
+        Env->DeleteLocalRef(jKey);
+        Env->DeleteLocalRef(jValue);
+    }
+
+    // partner parameters
+    jmethodID jmidAdjustAdRevenueAddPartnerParameter = Env->GetMethodID(jcslAdjustAdRevenue, "addPartnerParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    TMap<FString, FString> partnerParams = AdRevenue.PartnerParameters;
+    for (TPair<FString, FString> pair : partnerParams)
+    {
+        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Key));
+        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Value));
+        Env->CallVoidMethod(joAdjustAdRevenue, jmidAdjustAdRevenueAddPartnerParameter, jKey, jValue);
+        Env->DeleteLocalRef(jKey);
+        Env->DeleteLocalRef(jValue);
+    }
+
+    // track ad revenue
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustTrackAdRevenue = Env->GetStaticMethodID(jcslAdjust, "trackAdRevenue", "(Lcom/adjust/sdk/AdjustAdRevenue;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustTrackAdRevenue, joAdjustAdRevenue);
+    Env->DeleteLocalRef(joAdjustAdRevenue);
+#endif
+}
+
+void UAdjust::TrackThirdPartySharing(const FAdjustThirdPartySharing& ThirdPartySharing)
+{
+#if PLATFORM_IOS
+    // sharing
+    EAdjustThirdPartySharingState eSharing = ThirdPartySharing.Sharing;
+    NSNumber *sharing = nil;
+    switch (eSharing)
+    {
+        case EAdjustThirdPartySharingState::Enable:
+            sharing = @YES;
+            break;
+        case EAdjustThirdPartySharingState::Disable:
+            sharing = @NO;
+            break;
+    }
+
+    ADJThirdPartySharing *adjustThirdPartySharing = [[ADJThirdPartySharing alloc] initWithIsEnabled:sharing];
+
+    // granular options
+    const TMap<FString, FAdjustGranularOption>& GranularOptions = ThirdPartySharing.GranularOptions;
+    for (const TPair<FString, FAdjustGranularOption>& GranularOptionPair : GranularOptions)
+    {
+        CFStringRef cfstrPartner = FPlatformString::TCHARToCFString(*GranularOptionPair.Key);
+        NSString *strPartner = (NSString *)cfstrPartner;
+
+        const TMap<FString, FString>& GranularOptionMap = GranularOptionPair.Value.GranularOption;
+        for (const TPair<FString, FString>& OptionPair : GranularOptionMap)
+        {
+            CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*OptionPair.Key);
+            NSString *strKey = (NSString *)cfstrKey;
+
+            CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*OptionPair.Value);
+            NSString *strValue = (NSString *)cfstrValue;
+
+            [adjustThirdPartySharing addGranularOption:strPartner
+                                                   key:strKey
+                                                 value:strValue];
+        }
+    }
+
+    // partner sharing settings
+    const TMap<FString, FAdjustPartnerSharingSetting>& PartnerSharingSettings = ThirdPartySharing.PartnerSharingSettings;
+    for (const TPair<FString, FAdjustPartnerSharingSetting>& PartnerSettingPair : PartnerSharingSettings)
+    {
+        CFStringRef cfstrPartner = FPlatformString::TCHARToCFString(*PartnerSettingPair.Key);
+        NSString *strPartner = (NSString*) cfstrPartner;
+
+        const TMap<FString, bool>& PartnerSettingMap = PartnerSettingPair.Value.PartnerSharingSetting; // Now TMap<FString, bool>
+        for (const TPair<FString, bool>& SettingPair : PartnerSettingMap)
+        {
+            CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*SettingPair.Key);
+            NSString *strKey = (NSString*) cfstrKey;
+
+            [adjustThirdPartySharing addPartnerSharingSetting:strPartner
+                                                          key:strKey
+                                                        value:SettingPair.Value];
+        }
+    }
+
+    // track third party sharing
+    [Adjust trackThirdPartySharing:adjustThirdPartySharing];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+
+    // sharing
+    jclass jclsBoolean = Env->FindClass("java/lang/Boolean");
+    jmethodID jmidValueOf = Env->GetStaticMethodID(jclsBoolean, "valueOf", "(Z)Ljava/lang/Boolean;");
+    jobject jIsEnabled = nullptr;
+    EAdjustThirdPartySharingState eSharing = ThirdPartySharing.Sharing;
+    switch (eSharing)
+    {
+        case EAdjustThirdPartySharingState::Enable:
+            jIsEnabled = Env->CallStaticObjectMethod(jclsBoolean, jmidValueOf, true);
+            break;
+        case EAdjustThirdPartySharingState::Disable:
+            jIsEnabled = Env->CallStaticObjectMethod(jclsBoolean, jmidValueOf, false);
+            break;
+    }
+
+    // create third party sharing object
+    jclass jcslAdjustThirdPartySharing = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustThirdPartySharing");
+    jmethodID jmidInit = Env->GetMethodID(jcslAdjustThirdPartySharing, "<init>", "(Ljava/lang/Boolean;)V");
+    jobject joAdjustThirdPartySharing = Env->NewObject(jcslAdjustThirdPartySharing, jmidInit, jIsEnabled);
+    Env->DeleteLocalRef(jIsEnabled);
+
+    // granular options
+    jmethodID jmidAddGranularOption = Env->GetMethodID(jcslAdjustThirdPartySharing, "addGranularOption", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+    const TMap<FString, FAdjustGranularOption>& GranularOptions = ThirdPartySharing.GranularOptions;
+    for (const TPair<FString, FAdjustGranularOption>& GranularOptionPair : GranularOptions)
+    {
+        jstring jstrPartnerName = Env->NewStringUTF(TCHAR_TO_UTF8(*GranularOptionPair.Key));
+        const TMap<FString, FString>& GranularOptionMap = GranularOptionPair.Value.GranularOption;
+        for (const TPair<FString, FString>& OptionPair : GranularOptionMap)
+        {
+            jstring jstrKey = Env->NewStringUTF(TCHAR_TO_UTF8(*OptionPair.Key));
+            jstring jstrValue = Env->NewStringUTF(TCHAR_TO_UTF8(*OptionPair.Value));
+            Env->CallVoidMethod(
+                joAdjustThirdPartySharing,
+                jmidAddGranularOption,
+                jstrPartnerName,
+                jstrKey,
+                jstrValue);
+            Env->DeleteLocalRef(jstrKey);
+            Env->DeleteLocalRef(jstrValue);
+        }
+        Env->DeleteLocalRef(jstrPartnerName);
+    }
+
+    // partner sharing settings
+    jmethodID jmidAddPartnerSharingSetting = Env->GetMethodID(jcslAdjustThirdPartySharing, "addPartnerSharingSetting", "(Ljava/lang/String;Ljava/lang/String;Z)V");
+    const TMap<FString, FAdjustPartnerSharingSetting>& PartnerSharingSettings = ThirdPartySharing.PartnerSharingSettings;
+    for (const TPair<FString, FAdjustPartnerSharingSetting>& PartnerSettingPair : PartnerSharingSettings)
+    {
+        jstring jstrPartnerName = Env->NewStringUTF(TCHAR_TO_UTF8(*PartnerSettingPair.Key));
+        const TMap<FString, bool>& PartnerSettingMap = PartnerSettingPair.Value.PartnerSharingSetting; // Now TMap<FString, bool>
+        for (const TPair<FString, bool>& SettingPair : PartnerSettingMap)
+        {
+            jstring jstrKey = Env->NewStringUTF(TCHAR_TO_UTF8(*SettingPair.Key));
+            Env->CallVoidMethod(
+                joAdjustThirdPartySharing,
+                jmidAddPartnerSharingSetting,
+                jstrPartnerName,
+                jstrKey,
+                SettingPair.Value);
+            Env->DeleteLocalRef(jstrKey);
+        }
+        Env->DeleteLocalRef(jstrPartnerName);
+    }
+
+    // track third party sharing
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustTrackThirdPartySharing = Env->GetStaticMethodID(jcslAdjust, "trackThirdPartySharing", "(Lcom/adjust/sdk/AdjustThirdPartySharing;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustTrackThirdPartySharing, joAdjustThirdPartySharing);
+    Env->DeleteLocalRef(joAdjustThirdPartySharing);
+#endif
+}
+
+void UAdjust::RequestAppTrackingAuthorization()
+{
+#if PLATFORM_IOS
+    [Adjust requestAppTrackingAuthorizationWithCompletionHandler:^(NSUInteger status) {
+        adjustRequestAppAuthorizationStatusCallback((int)status);
     }];
 #endif
 }
 
-void UAdjust::UpdateConversionValue(int conversionValue)
+void UAdjust::GetAppTrackingAuthorizationStatus()
 {
 #if PLATFORM_IOS
-    [Adjust updateConversionValue:conversionValue];
+    int status = [Adjust appTrackingAuthorizationStatus];
+    adjustAuthorizationStatusGetterCallback((int)status);
+#endif
+}
+
+void UAdjust::UpdateSkanConversionValue(int ConversionValue, const FString& CoarseValue, bool lockWindow)
+{
+#if PLATFORM_IOS
+    CFStringRef cfstrCoarseValue = FPlatformString::TCHARToCFString(*CoarseValue);
+    NSString *strCoarseValue = (NSString *)cfstrCoarseValue;
+    [Adjust updateSkanConversionValue:ConversionValue
+                          coarseValue:strCoarseValue
+                           lockWindow:[NSNumber numberWithBool:lockWindow]
+                withCompletionHandler:^(NSError * _Nullable error) {
+        adjustUpdateSkanConversionValueCallback(FString(UTF8_TO_TCHAR([[error localizedDescription] UTF8String])));
+    }];
 #endif
 }

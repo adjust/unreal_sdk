@@ -3,13 +3,13 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 27th September 2018.
-//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-Present Adjust GmbH. All rights reserved.
 //
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/SceneComponent.h"
+#include "Components/ActorComponent.h"
 #include "AdjustAttribution.h"
 #include "AdjustSessionSuccess.h"
 #include "AdjustSessionFailure.h"
@@ -17,71 +17,99 @@
 #include "AdjustEventFailure.h"
 #include "AdjustDelegates.generated.h"
 
+// subscription multiplatform delegates
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributionChangedDelegate, const FAdjustAttribution&, Attribution);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionSuccessDelegate, const FAdjustSessionSuccess&, SessionSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSessionFailureDelegate, const FAdjustSessionFailure&, SessionFailure);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEventSuccessDelegate, const FAdjustEventSuccess&, EventSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEventFailureDelegate, const FAdjustEventFailure&, EventFailure);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeferredDeeplinkDelegate, const FString&, Deeplink);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoogleAdvertisingIdDelegate, const FString&, GoogleAdId);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAuthorizationStatusDelegate, const int, AuthorizationStatus);
+// subscription ios delegates
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnAttributionChangedNonDynamicDelegate, const FAdjustAttribution&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionSuccessNonDynamicDelegate, const FAdjustSessionSuccess&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnSessionFailureNonDynamicDelegate, const FAdjustSessionFailure&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnEventSuccessNonDynamicDelegate, const FAdjustEventSuccess&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnEventFailureNonDynamicDelegate, const FAdjustEventFailure&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnDeferredDeeplinkNonDynamicDelegate, const FString&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnGoogleAdvertisingIdNonDynamicDelegate, const FString&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnAuthorizationStatusNonDynamicDelegate, const int);
+// one-time multiplatform delegates
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAdidGetterDelegate, const FString&, Adid);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributionGetterDelegate, const FAdjustAttribution&, Attribution);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLastDeeplinkGetterDelegate, const FString&, LastDeeplink);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeeplinkResolutionDelegate, const FString&, ResolvedLink);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSdkVersionGetterDelegate, const FString&, SdkVersion);
+// one-time ios delegates
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIdfaGetterDelegate, const FString&, Idfa);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIdfvGetterDelegate, const FString&, Idfv);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAuthorizationStatusGetterDelegate, const int, AuthorizationStatus);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRequestTrackingAuthorizationDelegate, const int, AuthorizationStatus);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUpdateSkanConversionValueDelegate, const FString&, Error);
+// one-time android delegates
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoogleAdIdGetterDelegate, const FString&, GoogleAdId);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAmazonAdIdGetterDelegate, const FString&, AmazonAdId);
 
-UCLASS(ClassGroup = (Adjust), meta = (BlueprintSpawnableComponent))
-class ADJUST_API UAdjustDelegates : public USceneComponent
+
+UCLASS(Blueprintable)
+class ADJUST_API UAdjustDelegates : public UObject
 {
     GENERATED_BODY()
     
 public:
-    UAdjustDelegates(const FObjectInitializer& ObjectInitializer);
+    UAdjustDelegates();
 
-    // dynamic delegates
-    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    // subscription multiplatform delegates
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnAttributionChangedDelegate OnAttributionChangedDelegate;
 
-    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnSessionSuccessDelegate OnSessionSuccessDelegate;
 
-    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnSessionFailureDelegate OnSessionFailureDelegate;
 
-    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnEventSuccessDelegate OnEventSuccessDelegate;
 
-    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnEventFailureDelegate OnEventFailureDelegate;
 
-    UPROPERTY(BlueprintAssignable, Category = Adjust)
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnDeferredDeeplinkDelegate OnDeferredDeeplinkDelegate;
 
-    UPROPERTY(BlueprintAssignable, Category = Adjust)
-    FOnGoogleAdvertisingIdDelegate OnGoogleAdvertisingIdDelegate;
+    // one-time multiplatform delegates
 
-    UPROPERTY(BlueprintAssignable, Category = Adjust)
-    FOnAuthorizationStatusDelegate OnAuthorizationStatusDelegate;
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnAdidGetterDelegate OnAdidGetterDelegate;
 
-    // non dynamic delegates
-    FOnAttributionChangedNonDynamicDelegate OnAttributionChangedNonDynamicDelegate;
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnAttributionGetterDelegate OnAttributionGetterDelegate;
 
-    FOnSessionSuccessNonDynamicDelegate OnSessionSuccessNonDynamicDelegate;
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnLastDeeplinkGetterDelegate OnLastDeeplinkGetterDelegate;
 
-    FOnSessionFailureNonDynamicDelegate OnSessionFailureNonDynamicDelegate;
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnDeeplinkResolutionDelegate OnDeeplinkResolutionDelegate;
 
-    FOnEventSuccessNonDynamicDelegate OnEventSuccessNonDynamicDelegate;
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnSdkVersionGetterDelegate OnSdkVersionGetterDelegate;
 
-    FOnEventFailureNonDynamicDelegate OnEventFailureNonDynamicDelegate;
+    // one-time ios delegates
 
-    FOnDeferredDeeplinkNonDynamicDelegate OnDeferredDeeplinkNonDynamicDelegate;
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnIdfaGetterDelegate OnIdfaGetterDelegate;
 
-    FOnGoogleAdvertisingIdNonDynamicDelegate OnGoogleAdvertisingIdNonDynamicDelegate;
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnIdfvGetterDelegate OnIdfvGetterDelegate;
 
-    FOnAuthorizationStatusNonDynamicDelegate OnAuthorizationStatusNonDynamicDelegate;
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnAuthorizationStatusGetterDelegate OnAuthorizationStatusGetterDelegate;
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnRequestTrackingAuthorizationDelegate OnRequestTrackingAuthorizationDelegate;
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnUpdateSkanConversionValueDelegate OnUpdateSkanConversionValueDelegate;
+
+    // one-time android delegates
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnGoogleAdIdGetterDelegate OnGoogleAdIdGetterDelegate;
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnAmazonAdIdGetterDelegate OnAmazonAdIdGetterDelegate;
 };

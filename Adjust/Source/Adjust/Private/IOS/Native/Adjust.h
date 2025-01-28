@@ -1,73 +1,40 @@
 //
 //  Adjust.h
-//  Adjust
+//  Adjust SDK
 //
-//  V4.28.3
-//  Created by Christian Wellenbrock (wellle) on 23rd July 2013.
-//  Copyright © 2012-2017 Adjust GmbH. All rights reserved.
+//  V5.0.1
+//  Created by Christian Wellenbrock (@wellle) on 23rd July 2013.
+//  Copyright (c) 2012-Present Adjust GmbH. All rights reserved.
 //
 
-#import "ADJEvent.h"
-#import "ADJConfig.h"
-#import "ADJAttribution.h"
-#import "ADJSubscription.h"
-#import "ADJThirdPartySharing.h"
+#import <Foundation/Foundation.h>
 
-@interface AdjustTestOptions : NSObject
+@class ADJEvent;
+@class ADJConfig;
+@class ADJAttribution;
+@class ADJAppStoreSubscription;
+@class ADJThirdPartySharing;
+@class ADJAdRevenue;
+@class ADJLinkResolution;
+@class ADJAppStorePurchase;
+@class ADJPurchaseVerificationResult;
+@class ADJDeeplink;
 
-@property (nonatomic, copy, nullable) NSString *baseUrl;
-@property (nonatomic, copy, nullable) NSString *gdprUrl;
-@property (nonatomic, copy, nullable) NSString *subscriptionUrl;
-@property (nonatomic, copy, nullable) NSString *extraPath;
-@property (nonatomic, copy, nullable) NSNumber *timerIntervalInMilliseconds;
-@property (nonatomic, copy, nullable) NSNumber *timerStartInMilliseconds;
-@property (nonatomic, copy, nullable) NSNumber *sessionIntervalInMilliseconds;
-@property (nonatomic, copy, nullable) NSNumber *subsessionIntervalInMilliseconds;
-@property (nonatomic, assign) BOOL teardown;
-@property (nonatomic, assign) BOOL deleteState;
-@property (nonatomic, assign) BOOL noBackoffWait;
-@property (nonatomic, assign) BOOL iAdFrameworkEnabled;
-@property (nonatomic, assign) BOOL adServicesFrameworkEnabled;
-@property (nonatomic, assign) BOOL enableSigning;
-@property (nonatomic, assign) BOOL disableSigning;
-
-@end
+typedef void(^ADJResolvedDeeplinkBlock)(NSString * _Nullable resolvedLink);
+typedef void(^ADJAttributionGetterBlock)(ADJAttribution * _Nullable attribution);
+typedef void(^ADJIdfaGetterBlock)(NSString * _Nullable idfa);
+typedef void(^ADJIdfvGetterBlock)(NSString * _Nullable idfv);
+typedef void(^ADJSdkVersionGetterBlock)(NSString * _Nullable sdkVersion);
+typedef void(^ADJLastDeeplinkGetterBlock)(NSURL * _Nullable lastDeeplink);
+typedef void(^ADJAdidGetterBlock)(NSString * _Nullable adid);
+typedef void(^ADJIsEnabledGetterBlock)(BOOL isEnabled);
+typedef void(^ADJVerificationResultBlock)(ADJPurchaseVerificationResult * _Nonnull verificationResult);
 
 /**
- * Constants for our supported tracking environments
+ * Constants for our supported tracking environments.
  */
 extern NSString * __nonnull const ADJEnvironmentSandbox;
 extern NSString * __nonnull const ADJEnvironmentProduction;
-
-/**
- * Constants for supported ad revenue sources.
- */
-extern NSString * __nonnull const ADJAdRevenueSourceMopub;
-extern NSString * __nonnull const ADJAdRevenueSourceAdmob;
-extern NSString * __nonnull const ADJAdRevenueSourceFbNativeAd;
-extern NSString * __nonnull const ADJAdRevenueSourceFbAudienceNetwork;
-extern NSString * __nonnull const ADJAdRevenueSourceIronsource;
-extern NSString * __nonnull const ADJAdRevenueSourceFyber;
-extern NSString * __nonnull const ADJAdRevenueSourceAerserv;
-extern NSString * __nonnull const ADJAdRevenueSourceAppodeal;
-extern NSString * __nonnull const ADJAdRevenueSourceAdincube;
-extern NSString * __nonnull const ADJAdRevenueSourceFusePowered;
-extern NSString * __nonnull const ADJAdRevenueSourceAddaptr;
-extern NSString * __nonnull const ADJAdRevenueSourceMillennialMeditation;
-extern NSString * __nonnull const ADJAdRevenueSourceFlurry;
-extern NSString * __nonnull const ADJAdRevenueSourceAdmost;
-extern NSString * __nonnull const ADJAdRevenueSourceDeltadna;
-extern NSString * __nonnull const ADJAdRevenueSourceUpsight;
-extern NSString * __nonnull const ADJAdRevenueSourceUnityads;
-extern NSString * __nonnull const ADJAdRevenueSourceAdtoapp;
-extern NSString * __nonnull const ADJAdRevenueSourceTapdaq;
-
-/**
- * Constants for country apps url strategies.
- */
-extern NSString * __nonnull const ADJUrlStrategyIndia;
-extern NSString * __nonnull const ADJUrlStrategyChina;
-extern NSString * __nonnull const ADJDataResidencyEU;
 
 /**
  * @brief The main interface to Adjust.
@@ -89,7 +56,7 @@ extern NSString * __nonnull const ADJDataResidencyEU;
  *                     be found it in your dashboard at http://adjust.com and should always
  *                     be 12 characters long.
  */
-+ (void)appDidLaunch:(nullable ADJConfig *)adjustConfig;
++ (void)initSdk:(nullable ADJConfig *)adjustConfig;
 
 /**
  * @brief Tell Adjust that a particular event has happened.
@@ -103,96 +70,102 @@ extern NSString * __nonnull const ADJDataResidencyEU;
 + (void)trackEvent:(nullable ADJEvent *)event;
 
 /**
- * @brief Tell adjust that the application resumed.
- *
- * @note Only necessary if the native notifications can't be used
- *       or if they will happen before call to appDidLaunch: is made.
+ * @brief Enable Adjust SDK. This setting is saved for future sessions.
  */
-+ (void)trackSubsessionStart;
++ (void)enable;
 
 /**
- * @brief Tell adjust that the application paused.
- *
- * @note Only necessary if the native notifications can't be used.
+ * @brief Disable Adjust SDK. This setting is saved for future sessions.
  */
-+ (void)trackSubsessionEnd;
++ (void)disable;
 
 /**
- * @brief Enable or disable the adjust SDK. This setting is saved for future sessions.
+ * @brief Check if the SDK is enabled or disabled through a callback.
  *
- * @param enabled The flag to enable or disable the adjust SDK.
+ * @param completion Completion block to be pinged with the enabled state of the SDK.
  */
-+ (void)setEnabled:(BOOL)enabled;
-
-/**
- * @brief Check if the SDK is enabled or disabled.
- *
- * return Boolean indicating whether SDK is enabled or not.
- */
-+ (BOOL)isEnabled;
++ (void)isEnabledWithCompletionHandler:(nonnull ADJIsEnabledGetterBlock)completion;
 
 /**
  * @brief Read the URL that opened the application to search for an adjust deep link.
  *
- * @param url URL object which contains info about adjust deep link.
+ * @param deeplink Deeplink object which contains info about adjust deep link.
  */
-+ (void)appWillOpenUrl:(nonnull NSURL *)url;
++ (void)processDeeplink:(nonnull ADJDeeplink *)deeplink;
 
 /**
- * @brief Set the device token used by push notifications.
+ * @brief Process the deep link that has opened an app and potentially get a resolved link.
  *
- * @param deviceToken Apple push notification token for iOS device as NSData.
+ * @param deeplink URL object which contains info about adjust deep link.
+ * @param completion Completion block where either resolved or echoed deep link will be sent.
  */
-+ (void)setDeviceToken:(nonnull NSData *)deviceToken;
++ (void)processAndResolveDeeplink:(nonnull ADJDeeplink *)deeplink
+            withCompletionHandler:(nonnull ADJResolvedDeeplinkBlock)completion;
 
 /**
- * @brief Set the device token used by push notifications.
+ * @brief Set the APNs push token.
+ *
+ * @param pushToken APNs push token.
+ */
++ (void)setPushToken:(nonnull NSData *)pushToken;
+
+/**
+ * @brief Set the APNs push token as stirng.
  *        This method is only used by Adjust non native SDKs. Don't use it anywhere else.
  *
- * @param pushToken Apple push notification token for iOS device as NSString.
+ * @param pushToken APNs push token as string.
  */
-+ (void)setPushToken:(nonnull NSString *)pushToken;
++ (void)setPushTokenAsString:(nonnull NSString *)pushToken;
 
 /**
- * @brief Enable or disable offline mode. Activities won't be sent but they are saved when
+ * @brief Enable offline mode. Activities won't be sent but they are saved when
  *        offline mode is disabled. This feature is not saved for future sessions.
- *
- * @param enabled The flag to enable or disable offline mode.
  */
-+ (void)setOfflineMode:(BOOL)enabled;
++ (void)switchToOfflineMode;
 
 /**
- * @brief Retrieve iOS device IDFA value.
- *
- * @return Device IDFA value.
+ * @brief Disable offline mode. Activities won't be sent but they are saved when
+ *        offline mode is disabled. This feature is not saved for future sessions.
  */
-+ (nullable NSString *)idfa;
++ (void)switchBackToOnlineMode;
 
 /**
- * @brief Get current adjust identifier for the user.
+ * @brief Retrieve iOS device IDFA value through a callback.
+ *
+ * @param completion Completion block to get IDFA value delivered to.
+ */
++ (void)idfaWithCompletionHandler:(nonnull ADJIdfaGetterBlock)completion;
+
+/**
+ * @brief Retrieve iOS device IDFV value through a callback.
+ *
+ * @param completion Completion block to get the IDFV value delivered to.
+ */
++ (void)idfvWithCompletionHandler:(nonnull ADJIdfvGetterBlock)completion;
+
+/**
+ * @brief Get current adjust identifier for the user through a callback.
+ *
+ * @param completion Completion block to get the adid value delivered to.
  *
  * @note Adjust identifier is available only after installation has been successfully tracked.
- *
- * @return Current adjust identifier value for the user.
  */
-+ (nullable NSString *)adid;
++ (void)adidWithCompletionHandler:(nonnull ADJAdidGetterBlock)completion;
 
 /**
- * @brief Get current attribution for the user.
+ * @brief Get current attribution for the user through a callback.
  *
  * @note Attribution information is available only after installation has been successfully tracked
  *       and attribution information arrived after that from the backend.
- *
- * @return Current attribution value for the user.
  */
-+ (nullable ADJAttribution *)attribution;
++ (void)attributionWithCompletionHandler:(nonnull ADJAttributionGetterBlock)completion;
 
 /**
- * @brief Get current Adjust SDK version string.
+ * @brief Get current Adjust SDK version string through a callback.
  *
- * @return Adjust SDK version string (iosX.Y.Z).
+ * @param completion Completion block to get the Adjust SDK version string (iosX.Y.Z) delivered to.
  */
-+ (nullable NSString *)sdkVersion;
++ (void)sdkVersionWithCompletionHandler:(nonnull ADJSdkVersionGetterBlock)completion;
 
 /**
  * @brief Convert a universal link style URL to a deeplink style URL with the corresponding scheme.
@@ -202,62 +175,47 @@ extern NSString * __nonnull const ADJDataResidencyEU;
  *
  * @return URL object in custom URL scheme style prefixed with given scheme name.
  */
-+ (nullable NSURL *)convertUniversalLink:(nonnull NSURL *)url scheme:(nonnull NSString *)scheme;
-
-/**
- * @brief Tell the adjust SDK to stop waiting for delayed initialisation timer to complete but rather to start
- *        upon this call. This should be called if you have obtained needed callback/partner parameters which you
- *        wanted to put as default ones before the delayedStart value you have set on ADJConfig has expired.
- */
-+ (void)sendFirstPackages;
-
-/**
- * @brief Tell adjust to send the request to Google and check if the installation
- *        belongs to Google AdWords campaign.
- *
- * @note Deprecated method, should not be used.
- */
-+ (void)sendAdWordsRequest;
++ (nullable NSURL *)convertUniversalLink:(nonnull NSURL *)url withScheme:(nonnull NSString *)scheme;
 
 /**
  * @brief Add default callback parameter key-value pair which is going to be sent with each tracked session and event.
  *
+ * @param param Default callback parameter value.
  * @param key Default callback parameter key.
- * @param value Default callback parameter value.
  */
-+ (void)addSessionCallbackParameter:(nonnull NSString *)key value:(nonnull NSString *)value;
++ (void)addGlobalCallbackParameter:(nonnull NSString *)param forKey:(nonnull NSString *)key;
 
 /**
  * @brief Add default partner parameter key-value pair which is going to be sent with each tracked session.
  *
+ * @param param Default partner parameter value.
  * @param key Default partner parameter key.
- * @param value Default partner parameter value.
  */
-+ (void)addSessionPartnerParameter:(nonnull NSString *)key value:(nonnull NSString *)value;
++ (void)addGlobalPartnerParameter:(nonnull NSString *)param forKey:(nonnull NSString *)key;
 
 /**
- * @brief Remove default callback parameter from the session packages.
+ * @brief Remove default callback parameter from the tracked session and event packages.
  *
  * @param key Default callback parameter key.
  */
-+ (void)removeSessionCallbackParameter:(nonnull NSString *)key;
++ (void)removeGlobalCallbackParameterForKey:(nonnull NSString *)key;
 
 /**
- * @brief Remove default partner parameter from the session packages.
+ * @brief Remove default partner parameter from the tracked session and event packages.
  *
  * @param key Default partner parameter key.
  */
-+ (void)removeSessionPartnerParameter:(nonnull NSString *)key;
++ (void)removeGlobalPartnerParameterForKey:(nonnull NSString *)key;
 
 /**
- * @brief Remove all default callback parameters from the session packages.
+ * @brief Remove all default callback parameters from the tracked session and event packages.
  */
-+ (void)resetSessionCallbackParameters;
++ (void)removeGlobalCallbackParameters;
 
 /**
- * @brief Remove all default partner parameters from the session packages.
+ * @brief Remove all default partner parameters from the tracked session and event packages.
  */
-+ (void)resetSessionPartnerParameters;
++ (void)removeGlobalPartnerParameters;
 
 /**
  * @brief Give right user to be forgotten in accordance with GDPR law.
@@ -265,98 +223,106 @@ extern NSString * __nonnull const ADJDataResidencyEU;
 + (void)gdprForgetMe;
 
 /**
- * @brief Track ad revenue for given source.
+ * @brief Track third party sharing with possibility to allow or disallow it.
  *
- * @param source Ad revenue source.
- * @param payload Ad revenue payload.
+ * @param thirdPartySharing Third party sharing choice.
  */
-+ (void)trackAdRevenue:(nonnull NSString *)source payload:(nonnull NSData *)payload;
-
-/**
- * @brief Give right user to disable sharing data to any third-party.
- */
-+ (void)disableThirdPartySharing;
-
 + (void)trackThirdPartySharing:(nonnull ADJThirdPartySharing *)thirdPartySharing;
 
+/**
+ * @brief Track measurement consent.
+ *
+ * @param enabled Value of the consent.
+ */
 + (void)trackMeasurementConsent:(BOOL)enabled;
+
+/**
+ * @brief Track ad revenue.
+ *
+ * @param adRevenue Ad revenue object instance containing all the relevant ad revenue tracking data.
+ */
++ (void)trackAdRevenue:(nonnull ADJAdRevenue *)adRevenue;
 
 /**
  * @brief Track subscription.
  *
  * @param subscription Subscription object.
  */
-+ (void)trackSubscription:(nonnull ADJSubscription *)subscription;
++ (void)trackAppStoreSubscription:(nonnull ADJAppStoreSubscription *)subscription;
 
-+ (void)requestTrackingAuthorizationWithCompletionHandler:(void (^_Nullable)(NSUInteger status))completion;
+/**
+ * @brief Adjust wrapper for requestTrackingAuthorizationWithCompletionHandler: method of ATTrackingManager.
+ *
+ * @param completion Block which value of tracking authorization status will be delivered to.
+ */
++ (void)requestAppTrackingAuthorizationWithCompletionHandler:(void (^_Nullable)(NSUInteger status))completion;
 
+/**
+ * @brief Getter for app tracking authorization status.
+ *
+ * @return Value of app tracking authorization status.
+ */
 + (int)appTrackingAuthorizationStatus;
 
-+ (void)updateConversionValue:(NSInteger)conversionValue;
+/**
+ * @brief Adjust wrapper for all SKAdNetwork's update conversion value methods.
+ *        Pass in all the required parameters for the supported SKAdNetwork version and nil for the rest.
+ *
+ * @param conversionValue Conversion value you would like SDK to set for given user.
+ * @param coarseValue One of the possible SKAdNetworkCoarseConversionValue values.
+ * @param lockWindow NSNumber wrapped Boolean value that indicates whether to send the postback before the conversion window ends.
+ * @param completion Completion handler you can provide to catch and handle any errors.
+ */
++ (void)updateSkanConversionValue:(NSInteger)conversionValue
+                      coarseValue:(nullable NSString *)coarseValue
+                       lockWindow:(nullable NSNumber *)lockWindow
+            withCompletionHandler:(void (^_Nullable)(NSError *_Nullable error))completion;
+
+/**
+ * @brief Get the last deep link which has opened the app through a callback.
+ *
+ * @param completion Completion block to get the last opened deep link delivered to.
+ */
++ (void)lastDeeplinkWithCompletionHandler:(nonnull ADJLastDeeplinkGetterBlock)completion;
+
+/**
+ * @brief Verify in-app-purchase.
+ *
+ * @param purchase   Purchase object.
+ * @param completion Callback where verification result will be reported.
+ */
++ (void)verifyAppStorePurchase:(nonnull ADJAppStorePurchase *)purchase
+         withCompletionHandler:(nonnull ADJVerificationResultBlock)completion;
+
+/**
+ * @brief Verify in-app-purchase and track event upon successfully completed verification.
+ *
+ * @param event      Adjust event to be tracked.
+ * @param completion Callback where verification result will be reported.
+ */
++ (void)verifyAndTrackAppStorePurchase:(nonnull ADJEvent *)event
+                 withCompletionHandler:(nonnull ADJVerificationResultBlock)completion;
 
 /**
  * Obtain singleton Adjust object.
  */
-+ (nullable id)getInstance;
++ (nullable instancetype)getInstance;
 
-+ (void)setTestOptions:(nullable AdjustTestOptions *)testOptions;
+#pragma mark - Methods for testing (do not use in your app)
 
-- (void)appDidLaunch:(nullable ADJConfig *)adjustConfig;
+/**
+ * @brief Method used for internal testing only. Don't use it in your app.
+ */
++ (void)setTestOptions:(nullable NSDictionary *)testOptions;
 
-- (void)trackEvent:(nullable ADJEvent *)event;
+/**
+ * @brief Method used for internal testing only. Don't use it in your app.
+ */
++ (void)trackSubsessionStart;
 
-- (void)setEnabled:(BOOL)enabled;
-
-- (void)teardown;
-
-- (void)appWillOpenUrl:(nonnull NSURL *)url;
-
-- (void)setOfflineMode:(BOOL)enabled;
-
-- (void)setDeviceToken:(nonnull NSData *)deviceToken;
-
-- (void)setPushToken:(nonnull NSString *)pushToken;
-
-- (void)sendFirstPackages;
-
-- (void)trackSubsessionEnd;
-
-- (void)trackSubsessionStart;
-
-- (void)resetSessionPartnerParameters;
-
-- (void)resetSessionCallbackParameters;
-
-- (void)removeSessionPartnerParameter:(nonnull NSString *)key;
-
-- (void)removeSessionCallbackParameter:(nonnull NSString *)key;
-
-- (void)addSessionPartnerParameter:(nonnull NSString *)key value:(nonnull NSString *)value;
-
-- (void)addSessionCallbackParameter:(nonnull NSString *)key value:(nonnull NSString *)value;
-
-- (void)gdprForgetMe;
-
-- (void)trackAdRevenue:(nonnull NSString *)source payload:(nonnull NSData *)payload;
-
-- (void)trackSubscription:(nonnull ADJSubscription *)subscription;
-
-- (BOOL)isEnabled;
-
-- (nullable NSString *)adid;
-
-- (nullable NSString *)idfa;
-
-- (nullable NSString *)sdkVersion;
-
-- (nullable ADJAttribution *)attribution;
-
-- (nullable NSURL *)convertUniversalLink:(nonnull NSURL *)url scheme:(nonnull NSString *)scheme;
-
-- (void)requestTrackingAuthorizationWithCompletionHandler:(void (^_Nullable)(NSUInteger status))completion;
-
-- (int)appTrackingAuthorizationStatus;
-
-- (void)updateConversionValue:(NSInteger)conversionValue;
+/**
+ * @brief Method used for internal testing only. Don't use it in your app.
+ */
++ (void)trackSubsessionEnd;
 
 @end
