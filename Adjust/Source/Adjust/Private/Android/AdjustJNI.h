@@ -26,6 +26,7 @@ extern "C"
     static void (*eventSuccessCallbackMethod)(FAdjustEventSuccess EventSuccess);
     static void (*eventFailureCallbackMethod)(FAdjustEventFailure EventFailure);
     static void (*deferredDeeplinkCallbackMethod)(FString Deeplink);
+    static void (*isEnabledCallbackMethod)(bool IsEnabled);
     static void (*adidGetterCallbackMethod)(FString Adid);
     static void (*sdkVersionGetterCallbackMethod)(FString Adid);
     static void (*deeplinkResolutionCallbackMethod)(FString ResolvedLink);
@@ -40,6 +41,7 @@ extern "C"
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEventSuccessCallback_eventSuccess(JNIEnv*, jobject, jobject);
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEventFailureCallback_eventFailure(JNIEnv*, jobject, jobject);
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeDeferredDeeplinkCallback_deferredDeeplinkReceived(JNIEnv*, jobject, jstring);
+    JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeIsEnabledCallback_isEnabledRead(JNIEnv*, jobject, jboolean);
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAdidGetterCallback_adidRead(JNIEnv*, jobject, jstring);
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttributionGetterCallback_attributionRead(JNIEnv*, jobject, jobject);
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSdkVersionGetterCallback_sdkVersionRead(JNIEnv*, jobject, jstring);
@@ -54,6 +56,7 @@ extern "C"
     void setEventSuccessCallbackMethod(void (*callbackMethod)(FAdjustEventSuccess EventSuccess));
     void setEventFailureCallbackMethod(void (*callbackMethod)(FAdjustEventFailure EventFailure));
     void setDeferredDeeplinkCallbackMethod(void (*callbackMethod)(FString Deeplink));
+    void setIsEnabledCallbackMethod(void (*callbackMethod)(bool IsEnabled));
     void setAdidGetterCallbackMethod(void (*callbackMethod)(FString Adid));
     void setAttributionGetterCallbackMethod(void (*callbackMethod)(FAdjustAttribution Attribution));
     void setSdkVersionGetterCallbackMethod(void (*callbackMethod)(FString SdkVersion));

@@ -55,9 +55,9 @@
             // Begin Adjust gameActivityClassAdditions
             public class AdjustUeAttributionCallback implements OnAttributionChangedListener {
                 public native void attributionChanged(Object attributionString);
-                
+
                 public AdjustUeAttributionCallback() {}
-                
+
                 @Override
                 public void onAttributionChanged(AdjustAttribution attribution) {
                     attributionChanged(attribution);
@@ -66,9 +66,9 @@
 
             public class AdjustUeSessionSuccessCallback implements OnSessionTrackingSucceededListener {
                 public native void sessionSuccess(Object sessionSuccess);
-                
+
                 public AdjustUeSessionSuccessCallback() {}
-                
+
                 @Override
                 public void onSessionTrackingSucceeded(AdjustSessionSuccess sessionSuccessResponseData) {
                     sessionSuccess(sessionSuccessResponseData);
@@ -77,9 +77,9 @@
 
             public class AdjustUeSessionFailureCallback implements OnSessionTrackingFailedListener {
                 public native void sessionFailure(Object sessionFailure);
-                
+
                 public AdjustUeSessionFailureCallback() {}
-                
+
                 @Override
                 public void onSessionTrackingFailed(AdjustSessionFailure failureResponseData) {
                     sessionFailure(failureResponseData);
@@ -88,9 +88,9 @@
 
             public class AdjustUeEventSuccessCallback implements OnEventTrackingSucceededListener {
                 public native void eventSuccess(Object eventSuccess);
-                
+
                 public AdjustUeEventSuccessCallback() {}
-                
+
                 @Override
                 public void onEventTrackingSucceeded(AdjustEventSuccess eventSuccessResponseData) {
                     eventSuccess(eventSuccessResponseData);
@@ -99,9 +99,9 @@
 
             public class AdjustUeEventFailureCallback implements OnEventTrackingFailedListener {
                 public native void eventFailure(Object eventFailure);
-                
+
                 public AdjustUeEventFailureCallback() {}
-                
+
                 @Override
                 public void onEventTrackingFailed(AdjustEventFailure eventFailureResponseData) {
                     eventFailure(eventFailureResponseData);
@@ -111,11 +111,11 @@
             public class AdjustUeDeferredDeeplinkCallback implements OnDeferredDeeplinkResponseListener {
                 private boolean launchDeeplink;
                 public native boolean deferredDeeplinkReceived(String deeplink);
-                
+
                 public AdjustUeDeferredDeeplinkCallback(boolean launchDeeplink) {
                     this.launchDeeplink = launchDeeplink;
                 }
-                
+
                 @Override
                 public boolean launchReceivedDeeplink(android.net.Uri deeplink) {
                     if (deeplink != null) {
@@ -124,6 +124,17 @@
                         deferredDeeplinkReceived("");
                     }
                     return this.launchDeeplink;
+                }
+            }
+
+            public class AdjustUeIsEnabledCallback implements OnIsEnabledListener {
+                public native void isEnabledRead(boolean isEnabled);
+
+                public AdjustUeIsEnabledCallback() {}
+
+                @Override
+                public void onIsEnabledRead(boolean isEnabled) {
+                    isEnabledRead(isEnabled);
                 }
             }
 
@@ -151,9 +162,9 @@
 
             public class AdjustUeGoogleAdIdGetterCallback implements OnGoogleAdIdReadListener {
                 public native void googleAdIdRead(String googleAdId);
-                
+
                 public AdjustUeGoogleAdIdGetterCallback() {}
-                
+
                 @Override
                 public void onGoogleAdIdRead(String googleAdId) {
                     googleAdIdRead(googleAdId);
@@ -162,9 +173,9 @@
 
             public class AdjustUeAmazonAdIdGetterCallback implements OnAmazonAdIdReadListener {
                 public native void amazonAdIdRead(String amazonAdId);
-                
+
                 public AdjustUeAmazonAdIdGetterCallback() {}
-                
+
                 @Override
                 public void onAmazonAdIdRead(String amazonAdId) {
                     amazonAdIdRead(amazonAdId);
@@ -200,11 +211,11 @@
             public class AdjustUeSdkVersionGetterCallback implements OnSdkVersionReadListener {
                 private String sdkPrefix;
                 public native void sdkVersionRead(String sdkVersion);
-                
+
                 public AdjustUeSdkVersionGetterCallback(String sdkPrefix) {
                     this.sdkPrefix = sdkPrefix;
                 }
-                
+
                 @Override
                 public void onSdkVersionRead(String sdkVersion) {
                     sdkVersionRead(this.sdkPrefix + "@" + sdkVersion);

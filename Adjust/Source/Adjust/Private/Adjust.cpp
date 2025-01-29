@@ -85,6 +85,14 @@ static void adjustDeferredDeeplinkCallback(FString Deeplink)
     }
 }
 
+static void adjustIsEnabledCallback(bool isEnabled)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnIsEnabledDelegate.Broadcast(isEnabled);
+    }
+}
+
 static void adjustAdidGetterCallback(FString Adid)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
@@ -479,16 +487,22 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetFbAppId, jFbAppId);
     Env->DeleteLocalRef(jFbAppId);
 
-    // send in background
-    if (Config.IsSendingInBackgroundEnabled == true) {
-        jmethodID jmidAdjustConfigSetSendInBackground = Env->GetMethodID(jcslAdjustConfig, "enableSendingInBackground", "()V");
-        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSendInBackground);
-    }
-
     // COPPA compliance
     if (Config.IsCoppaComplianceEnabled == true) {
         jmethodID jmidAdjustConfigEnableCoppa = Env->GetMethodID(jcslAdjustConfig, "enableCoppaCompliance", "()V");
         Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigEnableCoppa);
+    }
+
+    // Play Store Kids compliance
+    if (Config.IsPlayStoreKidsComplianceEnabled == true) {
+        jmethodID jmidAdjustConfigEnablePlayStoreKids = Env->GetMethodID(jcslAdjustConfig, "enablePlayStoreKidsCompliance", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigEnablePlayStoreKids);
+    }
+
+    // send in background
+    if (Config.IsSendingInBackgroundEnabled == true) {
+        jmethodID jmidAdjustConfigSetSendInBackground = Env->GetMethodID(jcslAdjustConfig, "enableSendingInBackground", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSendInBackground);
     }
 
     // read device info just once
@@ -830,6 +844,25 @@ void UAdjust::GetAdid()
 #elif PLATFORM_IOS
     [Adjust adidWithCompletionHandler:^(NSString * _Nullable adid) {
         adjustAdidGetterCallback(FString(UTF8_TO_TCHAR([adid UTF8String])));
+    }];
+#endif
+}
+
+void UAdjust::IsEnabled()
+{
+#if PLATFORM_ANDROID
+    setIsEnabledCallbackMethod(adjustIsEnabledCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustIsEnabled = Env->GetStaticMethodID(jcslAdjust, "isEnabled", "(Landroid/content/Context;Lcom/adjust/sdk/OnIsEnabledListener;)V");
+    jclass jcslUeIsEnabledCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeIsEnabledCallback");
+    jmethodID jmidUeIsEnabledCallbackInit = Env->GetMethodID(jcslUeIsEnabledCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joIsEnabledCallbackProxy = Env->NewObject(jcslUeIsEnabledCallback, jmidUeIsEnabledCallbackInit, FJavaWrapper::GameActivityThis);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustIsEnabled, FJavaWrapper::GameActivityThis, joIsEnabledCallbackProxy);
+    Env->DeleteLocalRef(joIsEnabledCallbackProxy);
+#elif PLATFORM_IOS
+    [Adjust isEnabledWithCompletionHandler:^(BOOL isEnabled) {
+        adjustIsEnabledCallback(isEnabled);
     }];
 #endif
 }

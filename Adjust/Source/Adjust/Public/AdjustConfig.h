@@ -88,5 +88,8 @@ public:
     // android only
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool IsPlayStoreKidsComplianceEnabled = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString FbAppId;
 };

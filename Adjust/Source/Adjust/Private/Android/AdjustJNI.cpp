@@ -466,6 +466,18 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeDefer
     });
 }
 
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeIsEnabledCallback_isEnabledRead(
+    JNIEnv *env, jobject obj, jboolean jIsEnabled)
+{
+    AsyncTask(ENamedThreads::GameThread, [jIsEnabled]()
+    {
+        if (isEnabledCallbackMethod != nullptr)
+        {
+            isEnabledCallbackMethod(jIsEnabled);
+        }
+    });
+}
+
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAdidGetterCallback_adidRead(
     JNIEnv *env, jobject obj, jstring jAdid)
 {
@@ -741,6 +753,11 @@ void setDeferredDeeplinkCallbackMethod(void (*callbackMethod)(FString Deeplink))
     {
         deferredDeeplinkCallbackMethod = callbackMethod;
     }
+}
+
+void setIsEnabledCallbackMethod(void (*callbackMethod)(bool IsEnabled))
+{
+    isEnabledCallbackMethod = callbackMethod;
 }
 
 void setAdidGetterCallbackMethod(void (*callbackMethod)(FString Adid))

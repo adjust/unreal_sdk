@@ -16,7 +16,6 @@ struct FAdjustDeeplink
     GENERATED_USTRUCT_BODY()
 
 public:
-    // tested [ios]
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString Deeplink;
 };

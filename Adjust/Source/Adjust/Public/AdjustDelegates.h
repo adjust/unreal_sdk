@@ -27,6 +27,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeferredDeeplinkDelegate, const F
 // subscription ios delegates
 
 // one-time multiplatform delegates
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIsEnabledDelegate, const bool, IsEnabled);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAdidGetterDelegate, const FString&, Adid);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributionGetterDelegate, const FAdjustAttribution&, Attribution);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLastDeeplinkGetterDelegate, const FString&, LastDeeplink);
@@ -72,6 +73,9 @@ public:
     FOnDeferredDeeplinkDelegate OnDeferredDeeplinkDelegate;
 
     // one-time multiplatform delegates
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnIsEnabledDelegate OnIsEnabledDelegate;
 
     UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnAdidGetterDelegate OnAdidGetterDelegate;

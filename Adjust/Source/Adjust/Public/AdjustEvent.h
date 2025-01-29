@@ -16,33 +16,24 @@ struct FAdjustEvent
     GENERATED_USTRUCT_BODY()
 
 public:
-    // tested [ios, android]
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString EventToken;
 
-    // tested [ios, android]
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    float Revenue;
+    double Revenue = 0.0;
 
-    // tested [ios, android]
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString Currency;
 
-    // tested [ios, android]
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString DeduplicationId;
 
-    // tested [ios, android]
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString CallbackId;
 
-    // tested [ios, android]
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     TMap<FString, FString> CallbackParameters;
 
-    // tested [ios, android]
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     TMap<FString, FString> PartnerParameters;
-
-    FAdjustEvent() : Revenue(0.0f) {}
 };
