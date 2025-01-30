@@ -1,315 +1,227 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--Adjust plugin additions-->
 <root xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- init section is always evaluated once per architecture -->
-    <init>
-        <log text="Adjust SDK Android init"/>
-
-        <!-- check if using Gradle -->
-        <setBoolFromProperty result="bGradle" ini="Engine" section="/Script/AndroidRuntimeSettings.AndroidRuntimeSettings" property="bEnableGradle" default="false"/>
-        <if condition="bGradle">
-            <true>
-                <log text="Adjust requires minimum SDK of 15"/>
-            </true>
-        </if>
-        
-        <!-- get packaging for Adjust from ini and reset it if architecture not supported -->
-        <setBoolFromProperty result="bEnabled" ini="Engine" section="Adjust" property="bEnabled" default="true"/>
-        <setStringFromProperty result="ClientId" ini="Engine" section="Adjust" property="ClientId" default="0"/>
-        <dumpvars/>
-  </init>
-    
-    <!-- optional files or directories to copy to Intermediate/Android/APK -->
-    <resourceCopies>
-    <copyFile src="$S(PluginDir)/../ThirdParty/Android/adjust-android.jar" dst="$S(BuildDir)/libs/adjust-android.jar" />
-    </resourceCopies>
-    
-    <!-- Adjust requires at least android-26 SDK platform for resources -->
-    <minimumSDKAPI>
-        <insertValue value="19"/>
-        <insertNewline/>
-    </minimumSDKAPI>
-    
-    <!-- AAR dependencies -->
-    <AARImports>
-        <if condition="bEnabled">
-            <true>
-                <if condition="bGradle">
-                    <false>
-                        <insertValue value="repository $S(PluginDir)/../../ThirdParty/Android"/>
-                        <insertNewline/>
-                        <insertValue value="com.adjust.sdk,adjust-android,release" />
-                        <insertNewline/>
-                    </false>
-                </if>
-            </true>
-        </if>
-    </AARImports>
-
     <buildGradleAdditions>
         <insert>
-dependencies {
-    implementation 'com.android.installreferrer:installreferrer:1.0'
-}
+            repositories {
+                mavenCentral()
+            }
+            dependencies {
+                implementation 'com.android.installreferrer:installreferrer:2.2'
+                implementation 'com.adjust.sdk:adjust-android:5.0.2'
+            }
+            android {
+                compileOptions {
+                    sourceCompatibility 1.8
+                    targetCompatibility 1.8
+                }
+            }
         </insert>
     </buildGradleAdditions>
-    
-    <!-- optional updates applied to AndroidManifest.xml -->
-    <androidManifestUpdates>
-        <if condition="bEnabled">
-            <true>
-<addPermission android:name="android.permission.INTERNET" />
-<addPermission android:name="android.permission.ACCESS_WIFI_STATE" />
-<addPermission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-<addElements tag="application">
-    <receiver
-        android:name="com.adjust.sdk.AdjustReferrerReceiver"
-        android:permission="android.permission.INSTALL_PACKAGES"
-        android:exported="true" >
-        <intent-filter>
-            <action android:name="com.android.vending.INSTALL_REFERRER" />
-        </intent-filter>
-    </receiver>
-</addElements>
-            </true>
-        </if>
+    <androidManifestUpdates>
+        <addPermission android:name="android.permission.INTERNET" />
+        <addPermission android:name="android.permission.ACCESS_NETWORK_STATE" />
     </androidManifestUpdates>
 
-    <!-- optional additions to proguard -->
     <proguardAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>
--keep public class com.adjust.sdk.** { *; }
--keep class com.google.android.gms.common.ConnectionResult {
-    int SUCCESS;
-}
--keep class com.google.android.gms.ads.identifier.AdvertisingIdClient {
-    com.google.android.gms.ads.identifier.AdvertisingIdClient$Info getAdvertisingIdInfo(android.content.Context);
-}
--keep class com.google.android.gms.ads.identifier.AdvertisingIdClient$Info {
-    java.lang.String getId();
-    boolean isLimitAdTrackingEnabled();
-}
--keep public class com.android.installreferrer.** { *; }
--keep public class com.epicgames.ue4.GameActivity$AdjustUeAttributionCallback { *; }
--keep public class com.epicgames.ue4.GameActivity$AdjustUeSessionSuccessCallback { *; }
--keep public class com.epicgames.ue4.GameActivity$AdjustUeSessionFailureCallback { *; }
--keep public class com.epicgames.ue4.GameActivity$AdjustUeEventSuccessCallback { *; }
--keep public class com.epicgames.ue4.GameActivity$AdjustUeEventFailureCallback { *; }
--keep public class com.epicgames.ue4.GameActivity$AdjustUeDeferredDeeplinkCallback { *; }
--keep public class com.epicgames.ue4.GameActivity$AdjustUeGoogleAdvertisingIdCallback { *; }
-                </insert>
-            </true>
-        </if>
+        <insert>
+            -keep public class com.android.installreferrer.** { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeAttributionCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeSessionSuccessCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeSessionFailureCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeEventSuccessCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeEventFailureCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeDeferredDeeplinkCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeAdidGetterCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeAttributionGetterCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeSdkVersionGetterCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeDeeplinkResolvedCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeLastDeeplinkGetterCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeGoogleAdIdGetterCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeAmazonAdIdGetterCallback { *; }
+        </insert>
     </proguardAdditions>
 
-    <!-- optional files or directories to copy or delete from Intermediate/Android/APK before ndk-build 
-    <prebuildCopies>
-    </prebuildCopies> -->
-
-    <!-- optional additions to the GameActivity imports in GameActivity.java -->
     <gameActivityImportAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>
-import com.adjust.sdk.*;
-                </insert>
-            </true>
-        </if>
+        <insert>
+            import com.adjust.sdk.*;
+        </insert>
     </gameActivityImportAdditions>
 
     <!-- optional additions to the GameActivity class in GameActivity.java -->
     <gameActivityClassAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>
-// Begin Adjust gameActivityClassAdditions
-public class AdjustUeAttributionCallback implements OnAttributionChangedListener {
-    public native void attributionChanged(Object attributionString);
-    
-    public AdjustUeAttributionCallback() {}
-    
-    @Override
-    public void onAttributionChanged(AdjustAttribution attribution) {
-        attributionChanged(attribution);
-    }
-}
+        <insert>
+            // Begin Adjust gameActivityClassAdditions
+            public class AdjustUeAttributionCallback implements OnAttributionChangedListener {
+                public native void attributionChanged(Object attributionString);
 
-public class AdjustUeSessionSuccessCallback implements OnSessionTrackingSucceededListener {
-    public native void sessionSuccess(Object sessionSuccess);
-    
-    public AdjustUeSessionSuccessCallback() {}
-    
-    @Override
-    public void onFinishedSessionTrackingSucceeded(AdjustSessionSuccess sessionSuccessResponseData) {
-        sessionSuccess(sessionSuccessResponseData);
-    }
-}
+                public AdjustUeAttributionCallback() {}
 
-public class AdjustUeSessionFailureCallback implements OnSessionTrackingFailedListener {
-    public native void sessionFailure(Object sessionFailure);
-    
-    public AdjustUeSessionFailureCallback() {}
-    
-    @Override
-    public void onFinishedSessionTrackingFailed(AdjustSessionFailure failureResponseData) {
-        sessionFailure(failureResponseData);
-    }
-}
+                @Override
+                public void onAttributionChanged(AdjustAttribution attribution) {
+                    attributionChanged(attribution);
+                }
+            }
 
-public class AdjustUeEventSuccessCallback implements OnEventTrackingSucceededListener {
-    public native void eventSuccess(Object eventSuccess);
-    
-    public AdjustUeEventSuccessCallback() {}
-    
-    @Override
-    public void onFinishedEventTrackingSucceeded(AdjustEventSuccess eventSuccessResponseData) {
-        eventSuccess(eventSuccessResponseData);
-    }
-}
+            public class AdjustUeSessionSuccessCallback implements OnSessionTrackingSucceededListener {
+                public native void sessionSuccess(Object sessionSuccess);
 
-public class AdjustUeEventFailureCallback implements OnEventTrackingFailedListener {
-    public native void eventFailure(Object eventFailure);
-    
-    public AdjustUeEventFailureCallback() {}
-    
-    @Override
-    public void onFinishedEventTrackingFailed(AdjustEventFailure eventFailureResponseData) {
-        eventFailure(eventFailureResponseData);
-    }
-}
+                public AdjustUeSessionSuccessCallback() {}
 
-public class AdjustUeDeferredDeeplinkCallback implements OnDeeplinkResponseListener {
-    private boolean launchDeeplink;
-    public native boolean deferredDeeplinkReceived(String deeplink);
-    
-    public AdjustUeDeferredDeeplinkCallback(boolean launchDeeplink) {
-        this.launchDeeplink = launchDeeplink;
-    }
-    
-    @Override
-    public boolean launchReceivedDeeplink(android.net.Uri deeplink) {
-        deferredDeeplinkReceived(deeplink.toString());
-        return this.launchDeeplink;
-    }
-}
+                @Override
+                public void onSessionTrackingSucceeded(AdjustSessionSuccess sessionSuccessResponseData) {
+                    sessionSuccess(sessionSuccessResponseData);
+                }
+            }
 
-public class AdjustUeGoogleAdvertisingIdCallback implements OnDeviceIdsRead {
-    public native void googleAdvertisingIdRead(String googleAdId);
-    
-    public AdjustUeGoogleAdvertisingIdCallback() {}
-    
-    @Override
-    public void onGoogleAdIdRead(String googleAdId) {
-        googleAdvertisingIdRead(googleAdId);
-    }
-}
-// End Adjust gameActivityClassAdditions
-                </insert>
-            </true>
-        </if>
+            public class AdjustUeSessionFailureCallback implements OnSessionTrackingFailedListener {
+                public native void sessionFailure(Object sessionFailure);
+
+                public AdjustUeSessionFailureCallback() {}
+
+                @Override
+                public void onSessionTrackingFailed(AdjustSessionFailure failureResponseData) {
+                    sessionFailure(failureResponseData);
+                }
+            }
+
+            public class AdjustUeEventSuccessCallback implements OnEventTrackingSucceededListener {
+                public native void eventSuccess(Object eventSuccess);
+
+                public AdjustUeEventSuccessCallback() {}
+
+                @Override
+                public void onEventTrackingSucceeded(AdjustEventSuccess eventSuccessResponseData) {
+                    eventSuccess(eventSuccessResponseData);
+                }
+            }
+
+            public class AdjustUeEventFailureCallback implements OnEventTrackingFailedListener {
+                public native void eventFailure(Object eventFailure);
+
+                public AdjustUeEventFailureCallback() {}
+
+                @Override
+                public void onEventTrackingFailed(AdjustEventFailure eventFailureResponseData) {
+                    eventFailure(eventFailureResponseData);
+                }
+            }
+
+            public class AdjustUeDeferredDeeplinkCallback implements OnDeferredDeeplinkResponseListener {
+                private boolean launchDeeplink;
+                public native boolean deferredDeeplinkReceived(String deeplink);
+
+                public AdjustUeDeferredDeeplinkCallback(boolean launchDeeplink) {
+                    this.launchDeeplink = launchDeeplink;
+                }
+
+                @Override
+                public boolean launchReceivedDeeplink(android.net.Uri deeplink) {
+                    if (deeplink != null) {
+                        deferredDeeplinkReceived(deeplink.toString());
+                    } else {
+                        deferredDeeplinkReceived("");
+                    }
+                    return this.launchDeeplink;
+                }
+            }
+
+            public class AdjustUeIsEnabledCallback implements OnIsEnabledListener {
+                public native void isEnabledRead(boolean isEnabled);
+
+                public AdjustUeIsEnabledCallback() {}
+
+                @Override
+                public void onIsEnabledRead(boolean isEnabled) {
+                    isEnabledRead(isEnabled);
+                }
+            }
+
+            public class AdjustUeAdidGetterCallback implements OnAdidReadListener {
+                public native void adidRead(String adid);
+
+                public AdjustUeAdidGetterCallback() {}
+
+                @Override
+                public void onAdidRead(String adid) {
+                    adidRead(adid);
+                }
+            }
+
+            public class AdjustUeAttributionGetterCallback implements OnAttributionReadListener {
+                public native void attributionRead(AdjustAttribution attribution);
+
+                public AdjustUeAttributionGetterCallback() {}
+
+                @Override
+                public void onAttributionRead(AdjustAttribution attribution) {
+                    attributionRead(attribution);
+                }
+            }
+
+            public class AdjustUeGoogleAdIdGetterCallback implements OnGoogleAdIdReadListener {
+                public native void googleAdIdRead(String googleAdId);
+
+                public AdjustUeGoogleAdIdGetterCallback() {}
+
+                @Override
+                public void onGoogleAdIdRead(String googleAdId) {
+                    googleAdIdRead(googleAdId);
+                }
+            }
+
+            public class AdjustUeAmazonAdIdGetterCallback implements OnAmazonAdIdReadListener {
+                public native void amazonAdIdRead(String amazonAdId);
+
+                public AdjustUeAmazonAdIdGetterCallback() {}
+
+                @Override
+                public void onAmazonAdIdRead(String amazonAdId) {
+                    amazonAdIdRead(amazonAdId);
+                }
+            }
+
+            public class AdjustUeDeeplinkResolvedCallback implements OnDeeplinkResolvedListener {
+                public native void deeplinkResolved(String resolvedLink);
+
+                public AdjustUeDeeplinkResolvedCallback() {}
+
+                @Override
+                public void onDeeplinkResolved(String resolvedLink) {
+                    deeplinkResolved(resolvedLink);
+                }
+            }
+
+            public class AdjustUeLastDeeplinkGetterCallback implements OnLastDeeplinkReadListener {
+                public native void lastDeeplinkRead(String lastDeeplink);
+
+                public AdjustUeLastDeeplinkGetterCallback() {}
+
+                @Override
+                public void onLastDeeplinkRead(android.net.Uri lastDeeplink) {
+                    if (lastDeeplink != null) {
+                        lastDeeplinkRead(lastDeeplink.toString());
+                    } else {
+                        lastDeeplinkRead("");
+                    }
+                }
+            }
+
+            public class AdjustUeSdkVersionGetterCallback implements OnSdkVersionReadListener {
+                private String sdkPrefix;
+                public native void sdkVersionRead(String sdkVersion);
+
+                public AdjustUeSdkVersionGetterCallback(String sdkPrefix) {
+                    this.sdkPrefix = sdkPrefix;
+                }
+
+                @Override
+                public void onSdkVersionRead(String sdkVersion) {
+                    sdkVersionRead(this.sdkPrefix + "@" + sdkVersion);
+                }
+            }
+            // End Adjust gameActivityClassAdditions
+        </insert>
     </gameActivityClassAdditions>
-    
-    <!-- optional additions to GameActivity onCreate metadata reading in GameActivity.java -->
-    <gameActivityReadMetadataAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>
-// Adjust gameActivityReadMetadataAdditions
-                </insert>
-            </true>
-        </if>
-    </gameActivityReadMetadataAdditions>
-    
-    <!-- optional additions to GameActivity onCreate in GameActivity.java -->
-    <gameActivityOnCreateAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>
-// Begin Adjust onCreate
-// End Adjust onCreate
-                </insert>
-            </true>
-        </if>
-    </gameActivityOnCreateAdditions>
-
-    <!-- optional additions to GameActivity onDestroy in GameActivity.java-->
-    <gameActivityOnDestroyAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>                    
-// Begin Adjust onDestroy
-// End Adjust onDestroy
-                </insert>
-            </true>
-        </if>
-    </gameActivityOnDestroyAdditions>
-    
-    <!-- optional additions to GameActivity onStart in GameActivity.java -->
-    <gameActivityOnStartAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>
-// Begin Adjust onStart
-// End Adjust onStart
-                </insert>
-            </true>
-        </if>
-    </gameActivityOnStartAdditions>
-
-    <!-- optional additions to GameActivity onStop in GameActivity.java -->
-    <gameActivityOnStopAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>
-// Begin Adjust onStop
-// End Adjust onStop
-                </insert>
-            </true>
-        </if>
-    </gameActivityOnStopAdditions>
-
-    <!-- optional additions to GameActivity onPause in GameActivity.java -->
-    <gameActivityOnPauseAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>
-// Begin Adjust onPause
-Adjust.onPause();
-// End Adjust onPause
-                </insert>
-            </true>
-        </if>
-    </gameActivityOnPauseAdditions>
-
-    <!-- optional additions to GameActivity onResume in GameActivity.java -->
-    <gameActivityOnResumeAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>
-// Begin Adjust onResume
-Adjust.onResume();
-// End Adjust onResume
-                </insert>
-            </true>
-        </if>
-    </gameActivityOnResumeAdditions>
-
-    <!-- optional additions to GameActivity onActivityResult in GameActivity.java -->
-    <gameActivityOnActivityResultAdditions>
-        <if condition="bEnabled">
-            <true>
-                <insert>
-// Begin Adjust onActivityResult
-// End Adjust onActivityResult
-                </insert>
-            </true>
-        </if>
-    </gameActivityOnActivityResultAdditions>
-
-    <!-- optional libraries to load in GameActivity.java before libUE4.so -->
-    <soLoadLibrary>
-    </soLoadLibrary>
 </root>

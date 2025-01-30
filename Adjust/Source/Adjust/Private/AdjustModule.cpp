@@ -3,13 +3,15 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 27th September 2018.
-//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-Present Adjust GmbH. All rights reserved.
 //
 
 #include "AdjustModule.h"
 #include "Core.h"
 #include "Modules/ModuleManager.h"
+#if WITH_EDITOR
 #include "Interfaces/IPluginManager.h"
+#endif
 
 #define LOCTEXT_NAMESPACE "FAdjustModule"
 

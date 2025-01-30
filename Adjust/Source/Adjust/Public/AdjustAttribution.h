@@ -3,7 +3,7 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 27th September 2018.
-//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-Present Adjust GmbH. All rights reserved.
 //
 
 #pragma once
@@ -13,30 +13,39 @@
 USTRUCT(BlueprintType)
 struct FAdjustAttribution
 {
-    GENERATED_USTRUCT_BODY()
+    GENERATED_BODY()
 
 public:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString TrackerToken;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString TrackerName;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString Network;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString Campaign;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString Adgroup;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString Creative;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString ClickLabel;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString Adid;
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
+    FString CostType;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
+    double CostAmount;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
+    FString CostCurrency;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
+    FString FbInstallReferrer;
 };

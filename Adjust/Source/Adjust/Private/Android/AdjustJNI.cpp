@@ -9,591 +9,702 @@
 #import "AdjustJNI.h"
 
 #if PLATFORM_ANDROID
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeAttributionCallback_attributionChanged(JNIEnv *env, jobject obj, jobject attributionObject)
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttributionCallback_attributionChanged(
+    JNIEnv* env, jobject obj, jobject attributionObject)
 {
-    if (env->IsSameObject(attributionObject, NULL))
+    // Ensure the attributionObject is not null
+    if (attributionObject == nullptr)
     {
         return;
     }
 
-    FString trackerToken;
-    FString trackerName;
-    FString network;
-    FString campaign;
-    FString adgroup;
-    FString creative;
-    FString clickLabel;
-    FString adid;
-
-    jclass clsAdjustAttribution = env->FindClass("com/adjust/sdk/AdjustAttribution");
-    jfieldID jfidTrackerTokenID = env->GetFieldID(clsAdjustAttribution, "trackerToken", "Ljava/lang/String;");
-    jfieldID jfidTrackerNameID = env->GetFieldID(clsAdjustAttribution, "trackerName", "Ljava/lang/String;");
-    jfieldID jfidNetworkID = env->GetFieldID(clsAdjustAttribution, "network", "Ljava/lang/String;");
-    jfieldID jfidCampaignID = env->GetFieldID(clsAdjustAttribution, "campaign", "Ljava/lang/String;");
-    jfieldID jfidAdgroupID = env->GetFieldID(clsAdjustAttribution, "adgroup", "Ljava/lang/String;");
-    jfieldID jfidCreativeID = env->GetFieldID(clsAdjustAttribution, "creative", "Ljava/lang/String;");
-    jfieldID jfidClickLabelID = env->GetFieldID(clsAdjustAttribution, "clickLabel", "Ljava/lang/String;");
-    jfieldID jfidAdidID = env->GetFieldID(clsAdjustAttribution, "adid", "Ljava/lang/String;");
-    jstring jTrackerToken = (jstring)env->GetObjectField(attributionObject, jfidTrackerTokenID);
-    jstring jTrackerName = (jstring)env->GetObjectField(attributionObject, jfidTrackerNameID);
-    jstring jNetwork = (jstring)env->GetObjectField(attributionObject, jfidNetworkID);
-    jstring jCampaign = (jstring)env->GetObjectField(attributionObject, jfidCampaignID);
-    jstring jAdgroup = (jstring)env->GetObjectField(attributionObject, jfidAdgroupID);
-    jstring jCreative = (jstring)env->GetObjectField(attributionObject, jfidCreativeID);
-    jstring jClickLabel = (jstring)env->GetObjectField(attributionObject, jfidClickLabelID);
-    jstring jAdid = (jstring)env->GetObjectField(attributionObject, jfidAdidID);
-
-    if (!env->IsSameObject(jTrackerToken, NULL))
+    // Get the AdjustAttribution class
+    jclass attributionClass = env->GetObjectClass(attributionObject);
+    if (attributionClass == nullptr)
     {
-        const char *trackerTokenCStr = env->GetStringUTFChars(jTrackerToken, NULL);
-        trackerToken = FString(UTF8_TO_TCHAR(trackerTokenCStr));
-        env->ReleaseStringUTFChars(jTrackerToken, trackerTokenCStr);
-        env->DeleteLocalRef(jTrackerToken);
-    }
-    else
-    {
-        trackerToken = FString(UTF8_TO_TCHAR(""));
+        return;
     }
 
-    if (!env->IsSameObject(jTrackerName, NULL))
-    {
-        const char *trackerNameCStr = env->GetStringUTFChars(jTrackerName, NULL);
-        trackerName = FString(UTF8_TO_TCHAR(trackerNameCStr));
-        env->ReleaseStringUTFChars(jTrackerName, trackerNameCStr);
-        env->DeleteLocalRef(jTrackerName);
-    }
-    else
-    {
-        trackerName = FString(UTF8_TO_TCHAR(""));
-    }
+    // Helper function to get string fields
+    auto getStringField = [&](const char* fieldName) -> FString {
+        jfieldID fieldId = env->GetFieldID(attributionClass, fieldName, "Ljava/lang/String;");
+        if (fieldId == nullptr)
+        {
+            return FString();
+        }
+        jstring jStr = (jstring)env->GetObjectField(attributionObject, fieldId);
+        if (jStr == nullptr)
+        {
+            return FString();
+        }
+        const char* cStr = env->GetStringUTFChars(jStr, nullptr);
+        FString result = FString(UTF8_TO_TCHAR(cStr));
+        env->ReleaseStringUTFChars(jStr, cStr);
+        env->DeleteLocalRef(jStr);
+        return result;
+    };
 
-    if (!env->IsSameObject(jNetwork, NULL))
-    {
-        const char *networkCStr = env->GetStringUTFChars(jNetwork, NULL);
-        network = FString(UTF8_TO_TCHAR(networkCStr));
-        env->ReleaseStringUTFChars(jNetwork, networkCStr);
-        env->DeleteLocalRef(jNetwork);
-    }
-    else
-    {
-        network = FString(UTF8_TO_TCHAR(""));
-    }
+    // Helper function to get double fields
+    auto getDoubleField = [&](const char* fieldName) -> double {
+        jfieldID fieldId = env->GetFieldID(attributionClass, fieldName, "Ljava/lang/Double;");
+        if (fieldId == nullptr)
+        {
+            return 0.0;
+        }
+        jobject doubleObj = env->GetObjectField(attributionObject, fieldId);
+        if (doubleObj == nullptr)
+        {
+            return 0.0;
+        }
+        jclass doubleClass = env->GetObjectClass(doubleObj);
+        jmethodID doubleValueMethod = env->GetMethodID(doubleClass, "doubleValue", "()D");
+        double value = env->CallDoubleMethod(doubleObj, doubleValueMethod);
+        env->DeleteLocalRef(doubleObj);
+        env->DeleteLocalRef(doubleClass);
+        return value;
+    };
 
-    if (!env->IsSameObject(jCampaign, NULL))
-    {
-        const char *campaignCStr = env->GetStringUTFChars(jCampaign, NULL);
-        campaign = FString(UTF8_TO_TCHAR(campaignCStr));
-        env->ReleaseStringUTFChars(jCampaign, campaignCStr);
-        env->DeleteLocalRef(jCampaign);
-    }
-    else
-    {
-        campaign = FString(UTF8_TO_TCHAR(""));
-    }
+    // Extract all fields
+    FString trackerToken = getStringField("trackerToken");
+    FString trackerName = getStringField("trackerName");
+    FString network = getStringField("network");
+    FString campaign = getStringField("campaign");
+    FString adgroup = getStringField("adgroup");
+    FString creative = getStringField("creative");
+    FString clickLabel = getStringField("clickLabel");
+    FString costType = getStringField("costType");
+    double costAmount = getDoubleField("costAmount");
+    FString costCurrency = getStringField("costCurrency");
+    FString fbInstallReferrer = getStringField("fbInstallReferrer");
 
-    if (!env->IsSameObject(jAdgroup, NULL)) {
-        const char *adgroupCStr = env->GetStringUTFChars(jAdgroup, NULL);
-        adgroup = FString(UTF8_TO_TCHAR(adgroupCStr));
-        env->ReleaseStringUTFChars(jAdgroup, adgroupCStr);
-        env->DeleteLocalRef(jAdgroup);
-    }
-    else
+    AsyncTask(ENamedThreads::GameThread, [
+        trackerToken,
+        trackerName,
+        network,
+        campaign,
+        adgroup,
+        creative,
+        clickLabel,
+        costType,
+        costAmount,
+        costCurrency,
+        fbInstallReferrer]()
     {
-        adgroup = FString(UTF8_TO_TCHAR(""));
-    }
+        FAdjustAttribution ueAttribution;
+        ueAttribution.TrackerToken = trackerToken;
+        ueAttribution.TrackerName = trackerName;
+        ueAttribution.Network = network;
+        ueAttribution.Campaign = campaign;
+        ueAttribution.Adgroup = adgroup;
+        ueAttribution.Creative = creative;
+        ueAttribution.ClickLabel = clickLabel;
+        ueAttribution.CostType = costType;
+        ueAttribution.CostAmount = costAmount;
+        ueAttribution.CostCurrency = costCurrency;
+        ueAttribution.FbInstallReferrer = fbInstallReferrer;
+        attributionCallbackMethod(ueAttribution);
+    });
 
-    if (!env->IsSameObject(jCreative, NULL))
-    {
-        const char *creativeCStr = env->GetStringUTFChars(jCreative, NULL);
-        creative = FString(UTF8_TO_TCHAR(creativeCStr));
-        env->ReleaseStringUTFChars(jCreative, creativeCStr);
-        env->DeleteLocalRef(jCreative);
-    }
-    else
-    {
-        creative = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(jClickLabel, NULL))
-    {
-        const char *clickLabelCStr = env->GetStringUTFChars(jClickLabel, NULL);
-        clickLabel = FString(UTF8_TO_TCHAR(clickLabelCStr));
-        env->ReleaseStringUTFChars(jClickLabel, clickLabelCStr);
-        env->DeleteLocalRef(jClickLabel);
-    }
-    else
-    {
-        clickLabel = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(jAdid, NULL))
-    {
-        const char *adidCStr = env->GetStringUTFChars(jAdid, NULL);
-        adid = FString(UTF8_TO_TCHAR(adidCStr));
-        env->ReleaseStringUTFChars(jAdid, adidCStr);
-        env->DeleteLocalRef(jAdid);
-    }
-    else
-    {
-        adid = FString(UTF8_TO_TCHAR(""));
-    }
-
-    FAdjustAttribution ueAttribution;
-    ueAttribution.TrackerToken = trackerToken;
-    ueAttribution.TrackerName = trackerName;
-    ueAttribution.Network = network;
-    ueAttribution.Campaign = campaign;
-    ueAttribution.Adgroup = adgroup;
-    ueAttribution.Creative = creative;
-    ueAttribution.ClickLabel = clickLabel;
-    ueAttribution.Adid = adid;
-    attributionCallbackMethod(ueAttribution);
+    // Clean up local references
+    env->DeleteLocalRef(attributionClass);
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeSessionSuccessCallback_sessionSuccess(JNIEnv *env, jobject obj, jobject sessionSuccessObject)
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSessionSuccessCallback_sessionSuccess(
+    JNIEnv* env, jobject obj, jobject sessionSuccessObject)
 {
-    if (env->IsSameObject(sessionSuccessObject, NULL))
+    // Ensure the sessionSuccessObject is not null
+    if (sessionSuccessObject == nullptr)
     {
         return;
     }
 
-    FString message;
-    FString timestamp;
-    FString adid;
-    FString eventToken;
-    FString jsonResponse;
-
-    jclass clsAdjustSessionSuccess = env->FindClass("com/adjust/sdk/AdjustSessionSuccess");
-    jfieldID jfidMessageID = env->GetFieldID(clsAdjustSessionSuccess, "message", "Ljava/lang/String;");
-    jfieldID jfidTimestampID = env->GetFieldID(clsAdjustSessionSuccess, "timestamp", "Ljava/lang/String;");
-    jfieldID jfidAdidID = env->GetFieldID(clsAdjustSessionSuccess, "adid", "Ljava/lang/String;");
-    jfieldID jfidJsonResponseID = env->GetFieldID(clsAdjustSessionSuccess, "jsonResponse", "Lorg/json/JSONObject;");
-    jstring jMessage = (jstring)env->GetObjectField(sessionSuccessObject, jfidMessageID);
-    jstring jTimestamp = (jstring)env->GetObjectField(sessionSuccessObject, jfidTimestampID);
-    jstring jAdid = (jstring)env->GetObjectField(sessionSuccessObject, jfidAdidID);
-    jobject joJsonResponse = (jobject)env->GetObjectField(sessionSuccessObject, jfidJsonResponseID);
-    jstring jJsonResponse;
-
-    if (!env->IsSameObject(jMessage, NULL))
+    // Get the AdjustSessionSuccess class
+    jclass sessionSuccessClass = env->GetObjectClass(sessionSuccessObject);
+    if (sessionSuccessClass == nullptr)
     {
-        const char *messageCStr = env->GetStringUTFChars(jMessage, NULL);
-        message = FString(UTF8_TO_TCHAR(messageCStr));
-        env->ReleaseStringUTFChars(jMessage, messageCStr);
-        env->DeleteLocalRef(jMessage);
-    }
-    else
-    {
-        message = FString(UTF8_TO_TCHAR(""));
+        return;
     }
 
-    if (!env->IsSameObject(jTimestamp, NULL))
-    {
-        const char *timestampCStr = env->GetStringUTFChars(jTimestamp, NULL);
-        timestamp = FString(UTF8_TO_TCHAR(timestampCStr));
-        env->ReleaseStringUTFChars(jTimestamp, timestampCStr);
-        env->DeleteLocalRef(jTimestamp);
-    }
-    else
-    {
-        timestamp = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(jAdid, NULL))
-    {
-        const char *adidCStr = env->GetStringUTFChars(jAdid, NULL);
-        adid = FString(UTF8_TO_TCHAR(adidCStr));
-        env->ReleaseStringUTFChars(jAdid, adidCStr);
-        env->DeleteLocalRef(jAdid);
-    }
-    else
-    {
-        adid = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(joJsonResponse, NULL))
-    {
-        jclass jcJsonObject = env->FindClass("org/json/JSONObject");
-        jmethodID jToStringID = env->GetMethodID(jcJsonObject, "toString", "()Ljava/lang/String;");
-        jJsonResponse = (jstring)env->CallObjectMethod(joJsonResponse, jToStringID);
-
-        if (!env->IsSameObject(jJsonResponse, NULL))
+    // Helper function to get string fields
+    auto getStringField = [&](const char* fieldName) -> FString {
+        jfieldID fieldId = env->GetFieldID(sessionSuccessClass, fieldName, "Ljava/lang/String;");
+        if (fieldId == nullptr)
         {
-            const char *jsonResponseCStr = env->GetStringUTFChars(jJsonResponse, NULL);
-            jsonResponse = FString(UTF8_TO_TCHAR(jsonResponseCStr));
-            env->ReleaseStringUTFChars(jJsonResponse, jsonResponseCStr);
-            env->DeleteLocalRef(jJsonResponse);
+            return FString();
         }
-        else
+        jstring jStr = (jstring)env->GetObjectField(sessionSuccessObject, fieldId);
+        if (jStr == nullptr)
         {
-            jsonResponse = FString(UTF8_TO_TCHAR(""));
+            return FString();
+        }
+        const char* cStr = env->GetStringUTFChars(jStr, nullptr);
+        FString result = FString(UTF8_TO_TCHAR(cStr));
+        env->ReleaseStringUTFChars(jStr, cStr);
+        env->DeleteLocalRef(jStr);
+        return result;
+    };
+
+    // Extract fields
+    FString message = getStringField("message");
+    FString timestamp = getStringField("timestamp");
+    FString adid = getStringField("adid");
+
+    // Extract jsonResponse field
+    jfieldID jsonResponseFieldId = env->GetFieldID(sessionSuccessClass, "jsonResponse", "Lorg/json/JSONObject;");
+    FString jsonResponseString;
+    if (jsonResponseFieldId != nullptr)
+    {
+        jobject jsonResponseObject = env->GetObjectField(sessionSuccessObject, jsonResponseFieldId);
+        if (jsonResponseObject != nullptr)
+        {
+            jclass jsonObjectClass = env->GetObjectClass(jsonResponseObject);
+            jmethodID toStringMethodId = env->GetMethodID(jsonObjectClass, "toString", "()Ljava/lang/String;");
+            if (toStringMethodId != nullptr)
+            {
+                jstring jsonString = (jstring)env->CallObjectMethod(jsonResponseObject, toStringMethodId);
+                if (jsonString != nullptr)
+                {
+                    const char* cStr = env->GetStringUTFChars(jsonString, nullptr);
+                    jsonResponseString = FString(UTF8_TO_TCHAR(cStr));
+                    env->ReleaseStringUTFChars(jsonString, cStr);
+                    env->DeleteLocalRef(jsonString);
+                }
+            }
+            env->DeleteLocalRef(jsonObjectClass);
+            env->DeleteLocalRef(jsonResponseObject);
         }
     }
 
-    FAdjustSessionSuccess ueSessionSuccess;
-    ueSessionSuccess.Message = message;
-    ueSessionSuccess.Timestamp = timestamp;
-    ueSessionSuccess.Adid = adid;
-    ueSessionSuccess.JsonResponse = jsonResponse;
-    sessionSuccessCallbackMethod(ueSessionSuccess);
+    AsyncTask(ENamedThreads::GameThread, [message, timestamp, adid, jsonResponseString]()
+    {
+        FAdjustSessionSuccess ueSessionSuccess;
+        ueSessionSuccess.Message = message;
+        ueSessionSuccess.Timestamp = timestamp;
+        ueSessionSuccess.Adid = adid;
+        ueSessionSuccess.JsonResponse = jsonResponseString;
+        sessionSuccessCallbackMethod(ueSessionSuccess);
+    });
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeSessionFailureCallback_sessionFailure(JNIEnv *env, jobject obj, jobject sessionFailureObject)
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSessionFailureCallback_sessionFailure(
+    JNIEnv* env, jobject obj, jobject sessionFailureObject)
 {
-    if (env->IsSameObject(sessionFailureObject, NULL))
+    // Ensure the sessionFailureObject is not null
+    if (sessionFailureObject == nullptr)
     {
         return;
     }
 
-    FString message;
-    FString timestamp;
-    FString adid;
-    FString jsonResponse;
-    bool willRetry;
-
-    jclass clsAdjustSessionFailure = env->FindClass("com/adjust/sdk/AdjustSessionFailure");
-    jfieldID jfidMessageID = env->GetFieldID(clsAdjustSessionFailure, "message", "Ljava/lang/String;");
-    jfieldID jfidTimestampID = env->GetFieldID(clsAdjustSessionFailure, "timestamp", "Ljava/lang/String;");
-    jfieldID jfidAdidID = env->GetFieldID(clsAdjustSessionFailure, "adid", "Ljava/lang/String;");
-    jfieldID jfidWillRetryID = env->GetFieldID(clsAdjustSessionFailure, "willRetry", "Z");
-    jfieldID jfidJsonResponseID = env->GetFieldID(clsAdjustSessionFailure, "jsonResponse", "Lorg/json/JSONObject;");
-    jstring jMessage = (jstring)env->GetObjectField(sessionFailureObject, jfidMessageID);
-    jstring jTimestamp = (jstring)env->GetObjectField(sessionFailureObject, jfidTimestampID);
-    jstring jAdid = (jstring)env->GetObjectField(sessionFailureObject, jfidAdidID);
-    jboolean joWillRetry = env->GetBooleanField(sessionFailureObject, jfidWillRetryID);
-    jobject joJsonResponse = env->GetObjectField(sessionFailureObject, jfidJsonResponseID);
-    jstring jJsonResponse;
-
-    if (!env->IsSameObject(jMessage, NULL))
+    // Get the AdjustSessionFailure class
+    jclass sessionFailureClass = env->GetObjectClass(sessionFailureObject);
+    if (sessionFailureClass == nullptr)
     {
-        const char *messageCStr = env->GetStringUTFChars(jMessage, NULL);
-        message = FString(UTF8_TO_TCHAR(messageCStr));
-        env->ReleaseStringUTFChars(jMessage, messageCStr);
-        env->DeleteLocalRef(jMessage);
-    }
-    else
-    {
-        message = FString(UTF8_TO_TCHAR(""));
+        return;
     }
 
-    if (!env->IsSameObject(jTimestamp, NULL))
-    {
-        const char *timestampCStr = env->GetStringUTFChars(jTimestamp, NULL);
-        timestamp = FString(UTF8_TO_TCHAR(timestampCStr));
-        env->ReleaseStringUTFChars(jTimestamp, timestampCStr);
-        env->DeleteLocalRef(jTimestamp);
-    }
-    else
-    {
-        timestamp = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(jAdid, NULL))
-    {
-        const char *adidCStr = env->GetStringUTFChars(jAdid, NULL);
-        adid = FString(UTF8_TO_TCHAR(adidCStr));
-        env->ReleaseStringUTFChars(jAdid, adidCStr);
-        env->DeleteLocalRef(jAdid);
-    }
-    else
-    {
-        adid = FString(UTF8_TO_TCHAR(""));
-    }
-
-    willRetry = JNI_TRUE == joWillRetry;
-
-    if (!env->IsSameObject(joJsonResponse, NULL))
-    {
-        jclass jcJsonObject = env->FindClass("org/json/JSONObject");
-        jmethodID jToStringID = env->GetMethodID(jcJsonObject, "toString", "()Ljava/lang/String;");
-        jJsonResponse = (jstring)env->CallObjectMethod(joJsonResponse, jToStringID);
-
-        if (!env->IsSameObject(jJsonResponse, NULL))
+    // Helper function to get string fields
+    auto getStringField = [&](const char* fieldName) -> FString {
+        jfieldID fieldId = env->GetFieldID(sessionFailureClass, fieldName, "Ljava/lang/String;");
+        if (fieldId == nullptr)
         {
-            const char *jsonResponseCStr = env->GetStringUTFChars(jJsonResponse, NULL);
-            jsonResponse = FString(UTF8_TO_TCHAR(jsonResponseCStr));
-            env->ReleaseStringUTFChars(jJsonResponse, jsonResponseCStr);
-            env->DeleteLocalRef(jJsonResponse);
+            return FString();
         }
-        else
+        jstring jStr = (jstring)env->GetObjectField(sessionFailureObject, fieldId);
+        if (jStr == nullptr)
         {
-            jsonResponse = FString(UTF8_TO_TCHAR(""));
+            return FString();
+        }
+        const char* cStr = env->GetStringUTFChars(jStr, nullptr);
+        FString result = FString(UTF8_TO_TCHAR(cStr));
+        env->ReleaseStringUTFChars(jStr, cStr);
+        env->DeleteLocalRef(jStr);
+        return result;
+    };
+
+    // Extract fields
+    FString message = getStringField("message");
+    FString timestamp = getStringField("timestamp");
+    FString adid = getStringField("adid");
+
+    // Extract willRetry field
+    jfieldID willRetryFieldId = env->GetFieldID(sessionFailureClass, "willRetry", "Z");
+    bool willRetry = false;
+    if (willRetryFieldId != nullptr)
+    {
+        willRetry = env->GetBooleanField(sessionFailureObject, willRetryFieldId);
+    }
+
+    // Extract jsonResponse field
+    jfieldID jsonResponseFieldId = env->GetFieldID(sessionFailureClass, "jsonResponse", "Lorg/json/JSONObject;");
+    FString jsonResponseString;
+    if (jsonResponseFieldId != nullptr)
+    {
+        jobject jsonResponseObject = env->GetObjectField(sessionFailureObject, jsonResponseFieldId);
+        if (jsonResponseObject != nullptr)
+        {
+            jclass jsonObjectClass = env->GetObjectClass(jsonResponseObject);
+            jmethodID toStringMethodId = env->GetMethodID(jsonObjectClass, "toString", "()Ljava/lang/String;");
+            if (toStringMethodId != nullptr)
+            {
+                jstring jsonString = (jstring)env->CallObjectMethod(jsonResponseObject, toStringMethodId);
+                if (jsonString != nullptr)
+                {
+                    const char* cStr = env->GetStringUTFChars(jsonString, nullptr);
+                    jsonResponseString = FString(UTF8_TO_TCHAR(cStr));
+                    env->ReleaseStringUTFChars(jsonString, cStr);
+                    env->DeleteLocalRef(jsonString);
+                }
+            }
+            env->DeleteLocalRef(jsonObjectClass);
+            env->DeleteLocalRef(jsonResponseObject);
         }
     }
 
-    FAdjustSessionFailure ueSessionFailure;
-    ueSessionFailure.Message = message;
-    ueSessionFailure.Timestamp = timestamp;
-    ueSessionFailure.Adid = adid;
-    ueSessionFailure.WillRetry = willRetry;
-    ueSessionFailure.JsonResponse = jsonResponse;
-    sessionFailureCallbackMethod(ueSessionFailure);
+    AsyncTask(ENamedThreads::GameThread, [message, timestamp, adid, willRetry, jsonResponseString]()
+    {
+        FAdjustSessionFailure ueSessionFailure;
+        ueSessionFailure.Message = message;
+        ueSessionFailure.Timestamp = timestamp;
+        ueSessionFailure.Adid = adid;
+        ueSessionFailure.WillRetry = willRetry;
+        ueSessionFailure.JsonResponse = jsonResponseString;
+        sessionFailureCallbackMethod(ueSessionFailure);
+    });
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventSuccessCallback_eventSuccess(JNIEnv *env, jobject obj, jobject eventSuccessObject)
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEventSuccessCallback_eventSuccess(
+    JNIEnv* env, jobject obj, jobject eventSuccessObject)
 {
-    if (env->IsSameObject(eventSuccessObject, NULL))
+    // Ensure the eventSuccessObject is not null
+    if (eventSuccessObject == nullptr)
     {
         return;
     }
 
-    FString message;
-    FString timestamp;
-    FString adid;
-    FString eventToken;
-    FString callbackId;
-    FString jsonResponse;
-
-    jclass clsAdjustEventSuccess = env->FindClass("com/adjust/sdk/AdjustEventSuccess");
-    jfieldID jfidMessageID = env->GetFieldID(clsAdjustEventSuccess, "message", "Ljava/lang/String;");
-    jfieldID jfidTimestampID = env->GetFieldID(clsAdjustEventSuccess, "timestamp", "Ljava/lang/String;");
-    jfieldID jfidAdidID = env->GetFieldID(clsAdjustEventSuccess, "adid", "Ljava/lang/String;");
-    jfieldID jfidEventTokenID = env->GetFieldID(clsAdjustEventSuccess, "eventToken", "Ljava/lang/String;");
-    jfieldID jfidCallbackIdID = env->GetFieldID(clsAdjustEventSuccess, "callbackId", "Ljava/lang/String;");
-    jfieldID jfidJsonResponseID = env->GetFieldID(clsAdjustEventSuccess, "jsonResponse", "Lorg/json/JSONObject;");
-    jstring jMessage = (jstring)env->GetObjectField(eventSuccessObject, jfidMessageID);
-    jstring jTimestamp = (jstring)env->GetObjectField(eventSuccessObject, jfidTimestampID);
-    jstring jAdid = (jstring)env->GetObjectField(eventSuccessObject, jfidAdidID);
-    jstring jEventToken = (jstring)env->GetObjectField(eventSuccessObject, jfidEventTokenID);
-    jstring jCallbackId = (jstring)env->GetObjectField(eventSuccessObject, jfidCallbackIdID);
-    jobject joJsonResponse = (jobject)env->GetObjectField(eventSuccessObject, jfidJsonResponseID);
-    jstring jJsonResponse;
-
-    if (!env->IsSameObject(jMessage, NULL))
+    // Get the AdjustEventSuccess class
+    jclass eventSuccessClass = env->GetObjectClass(eventSuccessObject);
+    if (eventSuccessClass == nullptr)
     {
-        const char *messageCStr = env->GetStringUTFChars(jMessage, NULL);
-        message = FString(UTF8_TO_TCHAR(messageCStr));
-        env->ReleaseStringUTFChars(jMessage, messageCStr);
-        env->DeleteLocalRef(jMessage);
-    }
-    else
-    {
-        message = FString(UTF8_TO_TCHAR(""));
+        return;
     }
 
-    if (!env->IsSameObject(jTimestamp, NULL))
-    {
-        const char *timestampCStr = env->GetStringUTFChars(jTimestamp, NULL);
-        timestamp = FString(UTF8_TO_TCHAR(timestampCStr));
-        env->ReleaseStringUTFChars(jTimestamp, timestampCStr);
-        env->DeleteLocalRef(jTimestamp);
-    }
-    else
-    {
-        timestamp = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(jAdid, NULL))
-    {
-        const char *adidCStr = env->GetStringUTFChars(jAdid, NULL);
-        adid = FString(UTF8_TO_TCHAR(adidCStr));
-        env->ReleaseStringUTFChars(jAdid, adidCStr);
-        env->DeleteLocalRef(jAdid);
-    }
-    else
-    {
-        adid = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(jEventToken, NULL))
-    {
-        const char *eventTokenCStr = env->GetStringUTFChars(jEventToken, NULL);
-        eventToken = FString(UTF8_TO_TCHAR(eventTokenCStr));
-        env->ReleaseStringUTFChars(jEventToken, eventTokenCStr);
-        env->DeleteLocalRef(jEventToken);
-    }
-    else
-    {
-        eventToken = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(jCallbackId, NULL))
-    {
-        const char *callbackIdCStr = env->GetStringUTFChars(jCallbackId, NULL);
-        callbackId = FString(UTF8_TO_TCHAR(callbackIdCStr));
-        env->ReleaseStringUTFChars(jCallbackId, callbackIdCStr);
-        env->DeleteLocalRef(jCallbackId);
-    }
-    else
-    {
-        callbackId = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(joJsonResponse, NULL))
-    {
-        jclass jcJsonObject = env->FindClass("org/json/JSONObject");
-        jmethodID jToStringID = env->GetMethodID(jcJsonObject, "toString", "()Ljava/lang/String;");
-        jJsonResponse = (jstring)env->CallObjectMethod(joJsonResponse, jToStringID);
-
-        if (!env->IsSameObject(jJsonResponse, NULL))
+    // Helper function to get string fields
+    auto getStringField = [&](const char* fieldName) -> FString {
+        jfieldID fieldId = env->GetFieldID(eventSuccessClass, fieldName, "Ljava/lang/String;");
+        if (fieldId == nullptr)
         {
-            const char *jsonResponseCStr = env->GetStringUTFChars(jJsonResponse, NULL);
-            jsonResponse = FString(UTF8_TO_TCHAR(jsonResponseCStr));
-            env->ReleaseStringUTFChars(jJsonResponse, jsonResponseCStr);
-            env->DeleteLocalRef(jJsonResponse);
+            return FString();
         }
-        else
+        jstring jStr = (jstring)env->GetObjectField(eventSuccessObject, fieldId);
+        if (jStr == nullptr)
         {
-            jsonResponse = FString(UTF8_TO_TCHAR(""));
+            return FString();
+        }
+        const char* cStr = env->GetStringUTFChars(jStr, nullptr);
+        FString result = FString(UTF8_TO_TCHAR(cStr));
+        env->ReleaseStringUTFChars(jStr, cStr);
+        env->DeleteLocalRef(jStr);
+        return result;
+    };
+
+    // Extract fields
+    FString eventToken = getStringField("eventToken");
+    FString message = getStringField("message");
+    FString adid = getStringField("adid");
+    FString timestamp = getStringField("timestamp");
+    FString callbackId = getStringField("callbackId");
+
+    // Extract jsonResponse field
+    jfieldID jsonResponseFieldId = env->GetFieldID(eventSuccessClass, "jsonResponse", "Lorg/json/JSONObject;");
+    FString jsonResponseString;
+    if (jsonResponseFieldId != nullptr)
+    {
+        jobject jsonResponseObject = env->GetObjectField(eventSuccessObject, jsonResponseFieldId);
+        if (jsonResponseObject != nullptr)
+        {
+            jclass jsonObjectClass = env->GetObjectClass(jsonResponseObject);
+            jmethodID toStringMethodId = env->GetMethodID(jsonObjectClass, "toString", "()Ljava/lang/String;");
+            if (toStringMethodId != nullptr)
+            {
+                jstring jsonString = (jstring)env->CallObjectMethod(jsonResponseObject, toStringMethodId);
+                if (jsonString != nullptr)
+                {
+                    const char* cStr = env->GetStringUTFChars(jsonString, nullptr);
+                    jsonResponseString = FString(UTF8_TO_TCHAR(cStr));
+                    env->ReleaseStringUTFChars(jsonString, cStr);
+                    env->DeleteLocalRef(jsonString);
+                }
+            }
+            env->DeleteLocalRef(jsonObjectClass);
+            env->DeleteLocalRef(jsonResponseObject);
         }
     }
 
-    FAdjustEventSuccess ueEventSuccess;
-    ueEventSuccess.Message = message;
-    ueEventSuccess.Timestamp = timestamp;
-    ueEventSuccess.Adid = adid;
-    ueEventSuccess.EventToken = eventToken;
-    ueEventSuccess.CallbackId = callbackId;
-    ueEventSuccess.JsonResponse = jsonResponse;
-    eventSuccessCallbackMethod(ueEventSuccess);
+    AsyncTask(ENamedThreads::GameThread, [message, timestamp, adid, eventToken, callbackId, jsonResponseString]()
+    {
+        FAdjustEventSuccess ueEventSuccess;
+        ueEventSuccess.EventToken = eventToken;
+        ueEventSuccess.Message = message;
+        ueEventSuccess.Adid = adid;
+        ueEventSuccess.Timestamp = timestamp;
+        ueEventSuccess.CallbackId = callbackId;
+        ueEventSuccess.JsonResponse = jsonResponseString;
+        eventSuccessCallbackMethod(ueEventSuccess);
+    });
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeEventFailureCallback_eventFailure(JNIEnv *env, jobject obj, jobject eventFailureObject)
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEventFailureCallback_eventFailure(
+    JNIEnv* env, jobject obj, jobject eventFailureObject)
 {
-    if (env->IsSameObject(eventFailureObject, NULL))
+    // Ensure the eventFailureObject is not null
+    if (eventFailureObject == nullptr)
     {
         return;
     }
 
-    FString message;
-    FString timestamp;
-    FString adid;
-    FString eventToken;
-    FString callbackId;
-    FString jsonResponse;
-    bool willRetry;
-
-    jclass clsAdjustEventFailure = env->FindClass("com/adjust/sdk/AdjustEventFailure");
-    jfieldID jfidMessageID = env->GetFieldID(clsAdjustEventFailure, "message", "Ljava/lang/String;");
-    jfieldID jfidTimestampID = env->GetFieldID(clsAdjustEventFailure, "timestamp", "Ljava/lang/String;");
-    jfieldID jfidAdidID = env->GetFieldID(clsAdjustEventFailure, "adid", "Ljava/lang/String;");
-    jfieldID jfidEventTokenID = env->GetFieldID(clsAdjustEventFailure, "eventToken", "Ljava/lang/String;");
-    jfieldID jfidCallbackIdID = env->GetFieldID(clsAdjustEventFailure, "callbackId", "Ljava/lang/String;");
-    jfieldID jfidWillRetryID = env->GetFieldID(clsAdjustEventFailure, "willRetry", "Z");
-    jfieldID jfidJsonResponseID = env->GetFieldID(clsAdjustEventFailure, "jsonResponse", "Lorg/json/JSONObject;");
-    jstring jMessage = (jstring)env->GetObjectField(eventFailureObject, jfidMessageID);
-    jstring jTimestamp = (jstring)env->GetObjectField(eventFailureObject, jfidTimestampID);
-    jstring jAdid = (jstring)env->GetObjectField(eventFailureObject, jfidAdidID);
-    jstring jEventToken = (jstring)env->GetObjectField(eventFailureObject, jfidEventTokenID);
-    jstring jCallbackId = (jstring)env->GetObjectField(eventFailureObject, jfidCallbackIdID);
-    jboolean joWillRetry = env->GetBooleanField(eventFailureObject, jfidWillRetryID);
-    jobject joJsonResponse = env->GetObjectField(eventFailureObject, jfidJsonResponseID);
-    jstring jJsonResponse;
-
-    if (!env->IsSameObject(jMessage, NULL))
+    // Get the AdjustEventFailure class
+    jclass eventFailureClass = env->GetObjectClass(eventFailureObject);
+    if (eventFailureClass == nullptr)
     {
-        const char *messageCStr = env->GetStringUTFChars(jMessage, NULL);
-        message = FString(UTF8_TO_TCHAR(messageCStr));
-        env->ReleaseStringUTFChars(jMessage, messageCStr);
-        env->DeleteLocalRef(jMessage);
-    }
-    else
-    {
-        message = FString(UTF8_TO_TCHAR(""));
+        return;
     }
 
-    if (!env->IsSameObject(jTimestamp, NULL))
-    {
-        const char *timestampCStr = env->GetStringUTFChars(jTimestamp, NULL);
-        timestamp = FString(UTF8_TO_TCHAR(timestampCStr));
-        env->ReleaseStringUTFChars(jTimestamp, timestampCStr);
-        env->DeleteLocalRef(jTimestamp);
-    }
-    else
-    {
-        timestamp = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(jAdid, NULL))
-    {
-        const char *adidCStr = env->GetStringUTFChars(jAdid, NULL);
-        adid = FString(UTF8_TO_TCHAR(adidCStr));
-        env->ReleaseStringUTFChars(jAdid, adidCStr);
-        env->DeleteLocalRef(jAdid);
-    }
-    else
-    {
-        adid = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(jEventToken, NULL)) {
-        const char *eventTokenCStr = env->GetStringUTFChars(jEventToken, NULL);
-        eventToken = FString(UTF8_TO_TCHAR(eventTokenCStr));
-        env->ReleaseStringUTFChars(jEventToken, eventTokenCStr);
-        env->DeleteLocalRef(jEventToken);
-    }
-    else
-    {
-        eventToken = FString(UTF8_TO_TCHAR(""));
-    }
-
-    if (!env->IsSameObject(jCallbackId, NULL))
-    {
-        const char *callbackIdCStr = env->GetStringUTFChars(jCallbackId, NULL);
-        callbackId = FString(UTF8_TO_TCHAR(callbackIdCStr));
-        env->ReleaseStringUTFChars(jCallbackId, callbackIdCStr);
-        env->DeleteLocalRef(jCallbackId);
-    }
-    else
-    {
-        callbackId = FString(UTF8_TO_TCHAR(""));
-    }
-
-    willRetry = JNI_TRUE == joWillRetry;
-
-    if (!env->IsSameObject(joJsonResponse, NULL))
-    {
-        jclass jcJsonObject = env->FindClass("org/json/JSONObject");
-        jmethodID jToStringID = env->GetMethodID(jcJsonObject, "toString", "()Ljava/lang/String;");
-        jJsonResponse = (jstring)env->CallObjectMethod(joJsonResponse, jToStringID);
-
-        if (!env->IsSameObject(jJsonResponse, NULL))
+    // Helper function to get string fields
+    auto getStringField = [&](const char* fieldName) -> FString {
+        jfieldID fieldId = env->GetFieldID(eventFailureClass, fieldName, "Ljava/lang/String;");
+        if (fieldId == nullptr)
         {
-            const char *jsonResponseCStr = env->GetStringUTFChars(jJsonResponse, NULL);
-            jsonResponse = FString(UTF8_TO_TCHAR(jsonResponseCStr));
-            env->ReleaseStringUTFChars(jJsonResponse, jsonResponseCStr);
-            env->DeleteLocalRef(jJsonResponse);
+            return FString();
         }
-        else
+        jstring jStr = (jstring)env->GetObjectField(eventFailureObject, fieldId);
+        if (jStr == nullptr)
         {
-            jsonResponse = FString(UTF8_TO_TCHAR(""));
+            return FString();
+        }
+        const char* cStr = env->GetStringUTFChars(jStr, nullptr);
+        FString result = FString(UTF8_TO_TCHAR(cStr));
+        env->ReleaseStringUTFChars(jStr, cStr);
+        env->DeleteLocalRef(jStr);
+        return result;
+    };
+
+    // Extract fields
+    FString eventToken = getStringField("eventToken");
+    FString message = getStringField("message");
+    FString adid = getStringField("adid");
+    FString timestamp = getStringField("timestamp");
+    FString callbackId = getStringField("callbackId");
+
+    // Extract willRetry field
+    jfieldID willRetryFieldId = env->GetFieldID(eventFailureClass, "willRetry", "Z");
+    bool willRetry = false;
+    if (willRetryFieldId != nullptr)
+    {
+        willRetry = env->GetBooleanField(eventFailureObject, willRetryFieldId);
+    }
+
+    // Extract jsonResponse field
+    jfieldID jsonResponseFieldId = env->GetFieldID(eventFailureClass, "jsonResponse", "Lorg/json/JSONObject;");
+    FString jsonResponseString;
+    if (jsonResponseFieldId != nullptr)
+    {
+        jobject jsonResponseObject = env->GetObjectField(eventFailureObject, jsonResponseFieldId);
+        if (jsonResponseObject != nullptr)
+        {
+            jclass jsonObjectClass = env->GetObjectClass(jsonResponseObject);
+            jmethodID toStringMethodId = env->GetMethodID(jsonObjectClass, "toString", "()Ljava/lang/String;");
+            if (toStringMethodId != nullptr)
+            {
+                jstring jsonString = (jstring)env->CallObjectMethod(jsonResponseObject, toStringMethodId);
+                if (jsonString != nullptr)
+                {
+                    const char* cStr = env->GetStringUTFChars(jsonString, nullptr);
+                    jsonResponseString = FString(UTF8_TO_TCHAR(cStr));
+                    env->ReleaseStringUTFChars(jsonString, cStr);
+                    env->DeleteLocalRef(jsonString);
+                }
+            }
+            env->DeleteLocalRef(jsonObjectClass);
+            env->DeleteLocalRef(jsonResponseObject);
         }
     }
 
-    FAdjustEventFailure ueEventFailure;
-    ueEventFailure.Message = message;
-    ueEventFailure.Timestamp = timestamp;
-    ueEventFailure.Adid = adid;
-    ueEventFailure.EventToken = eventToken;
-    ueEventFailure.CallbackId = callbackId;
-    ueEventFailure.WillRetry = willRetry;
-    ueEventFailure.JsonResponse = jsonResponse;
-    eventFailureCallbackMethod(ueEventFailure);
+    AsyncTask(ENamedThreads::GameThread, [message, timestamp, adid, eventToken, callbackId, willRetry, jsonResponseString]()
+    {
+        FAdjustEventFailure ueEventFailure;
+        ueEventFailure.EventToken = eventToken;
+        ueEventFailure.Message = message;
+        ueEventFailure.Adid = adid;
+        ueEventFailure.Timestamp = timestamp;
+        ueEventFailure.CallbackId = callbackId;
+        ueEventFailure.JsonResponse = jsonResponseString;
+        ueEventFailure.WillRetry = willRetry;
+        eventFailureCallbackMethod(ueEventFailure);
+    });
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeDeferredDeeplinkCallback_deferredDeeplinkReceived(JNIEnv *env, jobject obj, jstring jDeeplink)
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeDeferredDeeplinkCallback_deferredDeeplinkReceived(
+    JNIEnv *env, jobject obj, jstring jDeeplink)
 {
-    if (env->IsSameObject(jDeeplink, NULL))
+    // Check if the jDeeplink is null
+    if (jDeeplink == nullptr)
     {
         return;
     }
 
-    const char *deeplinkCStr = env->GetStringUTFChars(jDeeplink, NULL);
-    FString deeplink = FString(UTF8_TO_TCHAR(deeplinkCStr));
-    deferredDeeplinkCallbackMethod(deeplink);
-    env->ReleaseStringUTFChars(jDeeplink, deeplinkCStr);
+    // Convert the jDeeplink to FString
+    const char* cDeeplink = env->GetStringUTFChars(jDeeplink, nullptr);
+    FString deferredDeeplink = FString(UTF8_TO_TCHAR(cDeeplink));
+    env->ReleaseStringUTFChars(jDeeplink, cDeeplink);
+
+    AsyncTask(ENamedThreads::GameThread, [deferredDeeplink]()
+    {
+        if (deferredDeeplinkCallbackMethod != nullptr)
+        {
+            deferredDeeplinkCallbackMethod(deferredDeeplink);
+        }
+    });
 }
 
-JNIEXPORT void JNICALL Java_com_epicgames_ue4_GameActivity_00024AdjustUeGoogleAdvertisingIdCallback_googleAdvertisingIdRead(JNIEnv *env, jobject obj, jstring jGoogleAdId)
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeIsEnabledCallback_isEnabledRead(
+    JNIEnv *env, jobject obj, jboolean jIsEnabled)
 {
-    if (env->IsSameObject(jGoogleAdId, NULL))
+    AsyncTask(ENamedThreads::GameThread, [jIsEnabled]()
+    {
+        if (isEnabledCallbackMethod != nullptr)
+        {
+            isEnabledCallbackMethod(jIsEnabled);
+        }
+    });
+}
+
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAdidGetterCallback_adidRead(
+    JNIEnv *env, jobject obj, jstring jAdid)
+{
+    if (jAdid == nullptr)
     {
         return;
     }
 
-    const char *googleAdIdCStr = env->GetStringUTFChars(jGoogleAdId, NULL);
-    FString googleAdId = FString(UTF8_TO_TCHAR(googleAdIdCStr));
-    googleAdvertisingIdCallbackMethod(googleAdId);
-    env->ReleaseStringUTFChars(jGoogleAdId, googleAdIdCStr);    
+    const char* cAdid = env->GetStringUTFChars(jAdid, nullptr);
+    FString adid = FString(UTF8_TO_TCHAR(cAdid));
+    env->ReleaseStringUTFChars(jAdid, cAdid);
+
+    AsyncTask(ENamedThreads::GameThread, [adid]()
+    {
+        if (adidGetterCallbackMethod != nullptr)
+        {
+            adidGetterCallbackMethod(adid);
+        }
+    });
+}
+
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSdkVersionGetterCallback_sdkVersionRead(
+    JNIEnv *env, jobject obj, jstring jSdkVersion)
+{
+    if (jSdkVersion == nullptr)
+    {
+        return;
+    }
+
+    const char* cSdkVersion = env->GetStringUTFChars(jSdkVersion, nullptr);
+    FString sdkVersion = FString(UTF8_TO_TCHAR(cSdkVersion));
+    env->ReleaseStringUTFChars(jSdkVersion, cSdkVersion);
+
+    AsyncTask(ENamedThreads::GameThread, [sdkVersion]()
+    {
+        if (sdkVersionGetterCallbackMethod != nullptr)
+        {
+            sdkVersionGetterCallbackMethod(sdkVersion);
+        }
+    });
+}
+
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttributionGetterCallback_attributionRead(
+    JNIEnv* env, jobject obj, jobject attributionObject)
+{
+    // Ensure the attributionObject is not null
+    if (attributionObject == nullptr)
+    {
+        return;
+    }
+
+    // Get the AdjustAttribution class
+    jclass attributionClass = env->GetObjectClass(attributionObject);
+    if (attributionClass == nullptr)
+    {
+        return;
+    }
+
+    // Helper function to get string fields
+    auto getStringField = [&](const char* fieldName) -> FString {
+        jfieldID fieldId = env->GetFieldID(attributionClass, fieldName, "Ljava/lang/String;");
+        if (fieldId == nullptr)
+        {
+            return FString();
+        }
+        jstring jStr = (jstring)env->GetObjectField(attributionObject, fieldId);
+        if (jStr == nullptr)
+        {
+            return FString();
+        }
+        const char* cStr = env->GetStringUTFChars(jStr, nullptr);
+        FString result = FString(UTF8_TO_TCHAR(cStr));
+        env->ReleaseStringUTFChars(jStr, cStr);
+        env->DeleteLocalRef(jStr);
+        return result;
+    };
+
+    // Helper function to get double fields
+    auto getDoubleField = [&](const char* fieldName) -> double {
+        jfieldID fieldId = env->GetFieldID(attributionClass, fieldName, "Ljava/lang/Double;");
+        if (fieldId == nullptr)
+        {
+            return 0.0;
+        }
+        jobject doubleObj = env->GetObjectField(attributionObject, fieldId);
+        if (doubleObj == nullptr)
+        {
+            return 0.0;
+        }
+        jclass doubleClass = env->GetObjectClass(doubleObj);
+        jmethodID doubleValueMethod = env->GetMethodID(doubleClass, "doubleValue", "()D");
+        double value = env->CallDoubleMethod(doubleObj, doubleValueMethod);
+        env->DeleteLocalRef(doubleObj);
+        env->DeleteLocalRef(doubleClass);
+        return value;
+    };
+
+    // Extract all fields
+    FString trackerToken = getStringField("trackerToken");
+    FString trackerName = getStringField("trackerName");
+    FString network = getStringField("network");
+    FString campaign = getStringField("campaign");
+    FString adgroup = getStringField("adgroup");
+    FString creative = getStringField("creative");
+    FString clickLabel = getStringField("clickLabel");
+    FString costType = getStringField("costType");
+    double costAmount = getDoubleField("costAmount");
+    FString costCurrency = getStringField("costCurrency");
+    FString fbInstallReferrer = getStringField("fbInstallReferrer");
+
+    AsyncTask(ENamedThreads::GameThread, [
+        trackerToken,
+        trackerName,
+        network,
+        campaign,
+        adgroup,
+        creative,
+        clickLabel,
+        costType,
+        costAmount,
+        costCurrency,
+        fbInstallReferrer]()
+    {
+        if (attributionGetterCallbackMethod != nullptr)
+        {
+            FAdjustAttribution ueAttribution;
+            ueAttribution.TrackerToken = trackerToken;
+            ueAttribution.TrackerName = trackerName;
+            ueAttribution.Network = network;
+            ueAttribution.Campaign = campaign;
+            ueAttribution.Adgroup = adgroup;
+            ueAttribution.Creative = creative;
+            ueAttribution.ClickLabel = clickLabel;
+            ueAttribution.CostType = costType;
+            ueAttribution.CostAmount = costAmount;
+            ueAttribution.CostCurrency = costCurrency;
+            ueAttribution.FbInstallReferrer = fbInstallReferrer;
+            attributionGetterCallbackMethod(ueAttribution);
+        }
+    });
+
+    // Clean up local references
+    env->DeleteLocalRef(attributionClass);
+}
+
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeDeeplinkResolvedCallback_deeplinkResolved(
+    JNIEnv *env, jobject obj, jstring jResolvedLink)
+{
+    if (jResolvedLink == nullptr)
+    {
+        return;
+    }
+
+    const char* cResolvedDeeplink = env->GetStringUTFChars(jResolvedLink, nullptr);
+    FString resolvedDeeplink = FString(UTF8_TO_TCHAR(cResolvedDeeplink));
+    env->ReleaseStringUTFChars(jResolvedLink, cResolvedDeeplink);
+
+    AsyncTask(ENamedThreads::GameThread, [resolvedDeeplink]()
+    {
+        if (deeplinkResolutionCallbackMethod != nullptr)
+        {
+            deeplinkResolutionCallbackMethod(resolvedDeeplink);
+        }
+    });
+}
+
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeLastDeeplinkGetterCallback_lastDeeplinkRead(
+    JNIEnv *env, jobject obj, jstring jLastDeeplink)
+{
+    if (jLastDeeplink == nullptr)
+    {
+        return;
+    }
+
+    const char* cLastDeeplink = env->GetStringUTFChars(jLastDeeplink, nullptr);
+    FString lastDeeplink = FString(UTF8_TO_TCHAR(cLastDeeplink));
+    env->ReleaseStringUTFChars(jLastDeeplink, cLastDeeplink);
+
+    AsyncTask(ENamedThreads::GameThread, [lastDeeplink]()
+    {
+        if (lastDeeplinkGetterCallbackMethod != nullptr)
+        {
+            lastDeeplinkGetterCallbackMethod(lastDeeplink);
+        }
+    });
+}
+
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeGoogleAdIdGetterCallback_googleAdIdRead(
+    JNIEnv *env, jobject obj, jstring jGoogleAdId)
+{
+    if (jGoogleAdId == nullptr)
+    {
+        return;
+    }
+
+    const char* cGoogleAdId = env->GetStringUTFChars(jGoogleAdId, nullptr);
+    FString googleAdId = FString(UTF8_TO_TCHAR(cGoogleAdId));
+    env->ReleaseStringUTFChars(jGoogleAdId, cGoogleAdId);
+
+    AsyncTask(ENamedThreads::GameThread, [googleAdId]()
+    {
+        if (googleAdIdGetterCallbackMethod != nullptr)
+        {
+            googleAdIdGetterCallbackMethod(googleAdId);
+        }
+    });
+}
+
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAmazonAdIdGetterCallback_amazonAdIdRead(
+    JNIEnv *env, jobject obj, jstring jAmazonAdId)
+{
+    if (jAmazonAdId == nullptr)
+    {
+        return;
+    }
+
+    const char* cAmazonAdId = env->GetStringUTFChars(jAmazonAdId, nullptr);
+    FString amazonAdId = FString(UTF8_TO_TCHAR(cAmazonAdId));
+    env->ReleaseStringUTFChars(jAmazonAdId, cAmazonAdId);
+
+    AsyncTask(ENamedThreads::GameThread, [amazonAdId]()
+    {
+        if (amazonAdIdGetterCallbackMethod != nullptr)
+        {
+            amazonAdIdGetterCallbackMethod(amazonAdId);
+        }
+    });
 }
 
 void setAttributionCallbackMethod(void (*callbackMethod)(FAdjustAttribution Attribution))
@@ -644,11 +755,44 @@ void setDeferredDeeplinkCallbackMethod(void (*callbackMethod)(FString Deeplink))
     }
 }
 
-void setGoogleAdvertisingIdCallbackMethod(void (*callbackMethod)(FString GoogleAdId))
+void setIsEnabledCallbackMethod(void (*callbackMethod)(bool IsEnabled))
 {
-    if (NULL == googleAdvertisingIdCallbackMethod)
-    {
-        googleAdvertisingIdCallbackMethod = callbackMethod;
-    }
+    isEnabledCallbackMethod = callbackMethod;
 }
+
+void setAdidGetterCallbackMethod(void (*callbackMethod)(FString Adid))
+{
+    adidGetterCallbackMethod = callbackMethod;
+}
+
+void setAttributionGetterCallbackMethod(void (*callbackMethod)(FAdjustAttribution Attribution))
+{
+    attributionGetterCallbackMethod = callbackMethod;
+}
+
+void setSdkVersionGetterCallbackMethod(void (*callbackMethod)(FString SdkVersion))
+{
+    sdkVersionGetterCallbackMethod = callbackMethod;
+}
+
+void setDeeplinkResolutionCallback(void (*callbackMethod)(FString ResolvedLink))
+{
+    deeplinkResolutionCallbackMethod = callbackMethod;
+}
+
+void setLastDeeplinkGetterCallbackMethod(void (*callbackMethod)(FString LastDeeplink))
+{
+    lastDeeplinkGetterCallbackMethod = callbackMethod;
+}
+
+void setGoogleAdIdGetterCallbackMethod(void (*callbackMethod)(FString GoogleAdId))
+{
+    googleAdIdGetterCallbackMethod = callbackMethod;
+}
+
+void setAmazonAdIdGetterCallbackMethod(void (*callbackMethod)(FString AmazonAdId))
+{
+    amazonAdIdGetterCallbackMethod = callbackMethod;
+}
+
 #endif

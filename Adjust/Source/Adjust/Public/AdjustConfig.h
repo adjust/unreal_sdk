@@ -3,22 +3,21 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 27th September 2018.
-//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-Present Adjust GmbH. All rights reserved.
 //
 
 #pragma once
 
-#include "AdjustDelegates.h"
 #include "AdjustConfig.generated.h"
 
-UENUM(Blueprintable)
+UENUM(BlueprintType)
 enum class EAdjustEnvironment : uint8
 {
     Sandbox = 0,
     Production = 1
 };
 
-UENUM(Blueprintable)
+UENUM(BlueprintType)
 enum class EAdjustLogLevel : uint8
 {
     Verbose = 0,
@@ -30,23 +29,20 @@ enum class EAdjustLogLevel : uint8
     Suppress = 6
 };
 
-USTRUCT(Blueprintable, BlueprintType)
+USTRUCT(BlueprintType)
 struct FAdjustConfig
 {
-    GENERATED_USTRUCT_BODY()
+    GENERATED_BODY()
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString AppToken;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    EAdjustEnvironment Environment;
+    EAdjustEnvironment Environment = EAdjustEnvironment::Sandbox;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    EAdjustLogLevel LogLevel;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString UserAgent;
+    EAdjustLogLevel LogLevel = EAdjustLogLevel::Verbose;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString DefaultTracker;
@@ -55,51 +51,45 @@ public:
     FString ExternalDeviceId;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString DelayStart;
+    bool IsSendingInBackgroundEnabled = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString SecretId;
+    bool IsDeferredDeeplinkOpeningEnabled = true;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString UrlStrategy;
+    bool IsCoppaComplianceEnabled = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString Info1;
+    bool IsDeviceIdsReadingOnceEnabled = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString Info2;
+    bool IsCostDataInAttributionEnabled = false;
+
+    // ios only
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString Info3;
+    bool IsIdfaReadingEnabled = true;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    FString Info4;
+    bool IsIdfvReadingEnabled = true;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool EventBuffering = false;
+    bool IsLinkMeEnabled = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool SendInBackground = false;
+    bool IsSkanAttributionEnabled = true;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool IsDeviceKnown = false;
+    bool IsAdServicesEnabled = true;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool OpenDeferredDeeplink = true;
+    int AttConsentWaitingInterval = 0;
 
-    // Android only
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool PreinstallTracking = false;
+    // android only
 
-    // iOS only
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool HandleSkAdNetwork = true;
+    bool IsPlayStoreKidsComplianceEnabled = false;
 
-    // iOS only
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool AllowiAdInfoReading = true;
-
-    // iOS only
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool AllowAdServicesInfoReading = true;
+    FString FbAppId;
 };

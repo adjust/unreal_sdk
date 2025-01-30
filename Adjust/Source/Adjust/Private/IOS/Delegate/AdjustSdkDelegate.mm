@@ -3,15 +3,23 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 27th September 2018.
-//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-Present Adjust GmbH. All rights reserved.
 //
 
 #import "AdjustSdkDelegate.h"
+#import "../Native/ADJAttribution.h"
+#import "../Native/ADJEventSuccess.h"
+#import "../Native/ADJEventFailure.h"
+#import "../Native/ADJSessionSuccess.h"
+#import "../Native/ADJSessionFailure.h"
 
 @implementation AdjustSdkDelegate
 
-- (void)adjustAttributionChanged:(ADJAttribution *)attribution
-{
+- (void)adjustAttributionChanged:(ADJAttribution *)attribution {
+    if (_attributionCallback == nil) {
+        return;
+    }
+
     FAdjustAttribution ueAttribution;
     ueAttribution.TrackerToken = *FString(attribution.trackerToken);
     ueAttribution.TrackerName = *FString(attribution.trackerName);
@@ -20,15 +28,17 @@
     ueAttribution.Adgroup = *FString(attribution.adgroup);
     ueAttribution.Creative = *FString(attribution.creative);
     ueAttribution.ClickLabel = *FString(attribution.clickLabel);
-    ueAttribution.Adid = *FString(attribution.adid);
     _attributionCallback(ueAttribution);
 }
 
-- (void)adjustEventTrackingSucceeded:(ADJEventSuccess *)eventSuccessResponseData
-{
+- (void)adjustEventTrackingSucceeded:(ADJEventSuccess *)eventSuccessResponseData {
+    if (_eventSuccessCallback == nil) {
+        return;
+    }
+
     FAdjustEventSuccess ueEventSuccess;
     ueEventSuccess.Message = *FString(eventSuccessResponseData.message);
-    ueEventSuccess.Timestamp = *FString(eventSuccessResponseData.timeStamp);
+    ueEventSuccess.Timestamp = *FString(eventSuccessResponseData.timestamp);
     ueEventSuccess.Adid = *FString(eventSuccessResponseData.adid);
     ueEventSuccess.EventToken = *FString(eventSuccessResponseData.eventToken);
     ueEventSuccess.CallbackId = *FString(eventSuccessResponseData.callbackId);
@@ -43,11 +53,14 @@
     _eventSuccessCallback(ueEventSuccess);
 }
 
-- (void)adjustEventTrackingFailed:(ADJEventFailure *)eventFailureResponseData
-{
+- (void)adjustEventTrackingFailed:(ADJEventFailure *)eventFailureResponseData {
+    if (_eventFailureCallback == nil) {
+        return;
+    }
+
     FAdjustEventFailure ueEventFailure;
     ueEventFailure.Message = *FString(eventFailureResponseData.message);
-    ueEventFailure.Timestamp = *FString(eventFailureResponseData.timeStamp);
+    ueEventFailure.Timestamp = *FString(eventFailureResponseData.timestamp);
     ueEventFailure.Adid = *FString(eventFailureResponseData.adid);
     ueEventFailure.EventToken = *FString(eventFailureResponseData.eventToken);
     ueEventFailure.CallbackId = *FString(eventFailureResponseData.callbackId);
@@ -63,11 +76,14 @@
     _eventFailureCallback(ueEventFailure);
 }
 
-- (void)adjustSessionTrackingSucceeded:(ADJSessionSuccess *)sessionSuccessResponseData
-{
+- (void)adjustSessionTrackingSucceeded:(ADJSessionSuccess *)sessionSuccessResponseData {
+    if (_sessionSuccessCallback == nil) {
+        return;
+    }
+
     FAdjustSessionSuccess ueSessionSuccess;
     ueSessionSuccess.Message = *FString(sessionSuccessResponseData.message);
-    ueSessionSuccess.Timestamp = *FString(sessionSuccessResponseData.timeStamp);
+    ueSessionSuccess.Timestamp = *FString(sessionSuccessResponseData.timestamp);
     ueSessionSuccess.Adid = *FString(sessionSuccessResponseData.adid);
     if (sessionSuccessResponseData.jsonResponse != nil)
     {
@@ -80,11 +96,14 @@
     _sessionSuccessCallback(ueSessionSuccess);
 }
 
-- (void)adjustSessionTrackingFailed:(ADJSessionFailure *)sessionFailureResponseData
-{
+- (void)adjustSessionTrackingFailed:(ADJSessionFailure *)sessionFailureResponseData {
+    if (_sessionFailureCallback == nil) {
+        return;
+    }
+
     FAdjustSessionFailure ueSessionFailure;
     ueSessionFailure.Message = *FString(sessionFailureResponseData.message);
-    ueSessionFailure.Timestamp = *FString(sessionFailureResponseData.timeStamp);
+    ueSessionFailure.Timestamp = *FString(sessionFailureResponseData.timestamp);
     ueSessionFailure.Adid = *FString(sessionFailureResponseData.adid);
     ueSessionFailure.WillRetry = sessionFailureResponseData.willRetry;
     if (sessionFailureResponseData.jsonResponse != nil)
@@ -98,8 +117,11 @@
     _sessionFailureCallback(ueSessionFailure);
 }
 
-- (BOOL)adjustDeeplinkResponse:(NSURL *)deeplink
-{
+- (BOOL)adjustDeferredDeeplinkReceived:(NSURL *)deeplink {
+    if (_deferredDeeplinkCallback == nil) {
+        return YES;
+    }
+
     NSString *url = [deeplink absoluteString];
     FString ueDeeplink = *FString(url);
     _deferredDeeplinkCallback(ueDeeplink);
