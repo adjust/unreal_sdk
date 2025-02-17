@@ -20,15 +20,29 @@
         return;
     }
 
-    FAdjustAttribution ueAttribution;
-    ueAttribution.TrackerToken = *FString(attribution.trackerToken);
-    ueAttribution.TrackerName = *FString(attribution.trackerName);
-    ueAttribution.Network = *FString(attribution.network);
-    ueAttribution.Campaign = *FString(attribution.campaign);
-    ueAttribution.Adgroup = *FString(attribution.adgroup);
-    ueAttribution.Creative = *FString(attribution.creative);
-    ueAttribution.ClickLabel = *FString(attribution.clickLabel);
-    _attributionCallback(ueAttribution);
+    FString trackerToken = *FString(attribution.trackerToken);
+    FString trackerName = *FString(attribution.trackerName);
+    FString network = *FString(attribution.network);
+    FString campaign = *FString(attribution.campaign);
+    FString adgroup = *FString(attribution.adgroup);
+    FString creative = *FString(attribution.creative);
+    FString clickLabel = *FString(attribution.clickLabel);
+
+    auto callback = _attributionCallback;
+    AsyncTask(ENamedThreads::GameThread, [trackerToken, trackerName, network, campaign, adgroup, creative, clickLabel, callback]() {
+        FAdjustAttribution ueAttribution;
+        ueAttribution.TrackerToken = trackerToken;
+        ueAttribution.TrackerName = trackerName;
+        ueAttribution.Network = network;
+        ueAttribution.Campaign = campaign;
+        ueAttribution.Adgroup = adgroup;
+        ueAttribution.Creative = creative;
+        ueAttribution.ClickLabel = clickLabel;
+
+        if (callback) {
+            callback(ueAttribution);
+        }
+    });
 }
 
 - (void)adjustEventTrackingSucceeded:(ADJEventSuccess *)eventSuccessResponseData {
@@ -36,21 +50,33 @@
         return;
     }
 
-    FAdjustEventSuccess ueEventSuccess;
-    ueEventSuccess.Message = *FString(eventSuccessResponseData.message);
-    ueEventSuccess.Timestamp = *FString(eventSuccessResponseData.timestamp);
-    ueEventSuccess.Adid = *FString(eventSuccessResponseData.adid);
-    ueEventSuccess.EventToken = *FString(eventSuccessResponseData.eventToken);
-    ueEventSuccess.CallbackId = *FString(eventSuccessResponseData.callbackId);
-    if (eventSuccessResponseData.jsonResponse != nil)
-    {
+    FString message = *FString(eventSuccessResponseData.message);
+    FString timestamp = *FString(eventSuccessResponseData.timestamp);
+    FString adid = *FString(eventSuccessResponseData.adid);
+    FString eventToken = *FString(eventSuccessResponseData.eventToken);
+    FString callbackId = *FString(eventSuccessResponseData.callbackId);
+
+    FString jsonResponseString;
+    if (eventSuccessResponseData.jsonResponse != nil) {
         NSData *dataJsonResponse = [NSJSONSerialization dataWithJSONObject:eventSuccessResponseData.jsonResponse options:0 error:nil];
-        NSString *stringJsonResponse = [[NSString alloc] initWithBytes:[dataJsonResponse bytes]
-                                                                length:[dataJsonResponse length]
-                                                              encoding:NSUTF8StringEncoding];
-        ueEventSuccess.JsonResponse = *FString(stringJsonResponse);
+        NSString *stringJsonResponse = [[NSString alloc] initWithData:dataJsonResponse encoding:NSUTF8StringEncoding];
+        jsonResponseString = *FString(stringJsonResponse);
     }
-    _eventSuccessCallback(ueEventSuccess);
+
+    auto callback = _eventSuccessCallback;
+    AsyncTask(ENamedThreads::GameThread, [message, timestamp, adid, eventToken, callbackId, jsonResponseString, callback]() {
+        FAdjustEventSuccess ueEventSuccess;
+        ueEventSuccess.Message = message;
+        ueEventSuccess.Timestamp = timestamp;
+        ueEventSuccess.Adid = adid;
+        ueEventSuccess.EventToken = eventToken;
+        ueEventSuccess.CallbackId = callbackId;
+        ueEventSuccess.JsonResponse = jsonResponseString;
+
+        if (callback) {
+            callback(ueEventSuccess);
+        }
+    });
 }
 
 - (void)adjustEventTrackingFailed:(ADJEventFailure *)eventFailureResponseData {
@@ -58,22 +84,35 @@
         return;
     }
 
-    FAdjustEventFailure ueEventFailure;
-    ueEventFailure.Message = *FString(eventFailureResponseData.message);
-    ueEventFailure.Timestamp = *FString(eventFailureResponseData.timestamp);
-    ueEventFailure.Adid = *FString(eventFailureResponseData.adid);
-    ueEventFailure.EventToken = *FString(eventFailureResponseData.eventToken);
-    ueEventFailure.CallbackId = *FString(eventFailureResponseData.callbackId);
-    ueEventFailure.WillRetry = eventFailureResponseData.willRetry;
-    if (eventFailureResponseData.jsonResponse != nil)
-    {
+    FString message = *FString(eventFailureResponseData.message);
+    FString timestamp = *FString(eventFailureResponseData.timestamp);
+    FString adid = *FString(eventFailureResponseData.adid);
+    FString eventToken = *FString(eventFailureResponseData.eventToken);
+    FString callbackId = *FString(eventFailureResponseData.callbackId);
+    bool willRetry = eventFailureResponseData.willRetry;
+
+    FString jsonResponseString;
+    if (eventFailureResponseData.jsonResponse != nil) {
         NSData *dataJsonResponse = [NSJSONSerialization dataWithJSONObject:eventFailureResponseData.jsonResponse options:0 error:nil];
-        NSString *stringJsonResponse = [[NSString alloc] initWithBytes:[dataJsonResponse bytes]
-                                                                length:[dataJsonResponse length]
-                                                              encoding:NSUTF8StringEncoding];
-        ueEventFailure.JsonResponse = *FString(stringJsonResponse);
+        NSString *stringJsonResponse = [[NSString alloc] initWithData:dataJsonResponse encoding:NSUTF8StringEncoding];
+        jsonResponseString = *FString(stringJsonResponse);
     }
-    _eventFailureCallback(ueEventFailure);
+
+    auto callback = _eventFailureCallback;
+    AsyncTask(ENamedThreads::GameThread, [message, timestamp, adid, eventToken, callbackId, willRetry, jsonResponseString, callback]() {
+        FAdjustEventFailure ueEventFailure;
+        ueEventFailure.Message = message;
+        ueEventFailure.Timestamp = timestamp;
+        ueEventFailure.Adid = adid;
+        ueEventFailure.EventToken = eventToken;
+        ueEventFailure.CallbackId = callbackId;
+        ueEventFailure.WillRetry = willRetry;
+        ueEventFailure.JsonResponse = jsonResponseString;
+
+        if (callback) {
+            callback(ueEventFailure);
+        }
+    });
 }
 
 - (void)adjustSessionTrackingSucceeded:(ADJSessionSuccess *)sessionSuccessResponseData {
@@ -81,19 +120,29 @@
         return;
     }
 
-    FAdjustSessionSuccess ueSessionSuccess;
-    ueSessionSuccess.Message = *FString(sessionSuccessResponseData.message);
-    ueSessionSuccess.Timestamp = *FString(sessionSuccessResponseData.timestamp);
-    ueSessionSuccess.Adid = *FString(sessionSuccessResponseData.adid);
-    if (sessionSuccessResponseData.jsonResponse != nil)
-    {
+    FString message = *FString(sessionSuccessResponseData.message);
+    FString timestamp = *FString(sessionSuccessResponseData.timestamp);
+    FString adid = *FString(sessionSuccessResponseData.adid);
+
+    FString jsonResponseString;
+    if (sessionSuccessResponseData.jsonResponse != nil) {
         NSData *dataJsonResponse = [NSJSONSerialization dataWithJSONObject:sessionSuccessResponseData.jsonResponse options:0 error:nil];
-        NSString *stringJsonResponse = [[NSString alloc] initWithBytes:[dataJsonResponse bytes]
-                                                                length:[dataJsonResponse length]
-                                                              encoding:NSUTF8StringEncoding];
-        ueSessionSuccess.JsonResponse = *FString(stringJsonResponse);
+        NSString *stringJsonResponse = [[NSString alloc] initWithData:dataJsonResponse encoding:NSUTF8StringEncoding];
+        jsonResponseString = *FString(stringJsonResponse);
     }
-    _sessionSuccessCallback(ueSessionSuccess);
+
+    auto callback = _sessionSuccessCallback;
+    AsyncTask(ENamedThreads::GameThread, [message, timestamp, adid, jsonResponseString, callback]() {
+        FAdjustSessionSuccess ueSessionSuccess;
+        ueSessionSuccess.Message = message;
+        ueSessionSuccess.Timestamp = timestamp;
+        ueSessionSuccess.Adid = adid;
+        ueSessionSuccess.JsonResponse = jsonResponseString;
+
+        if (callback) {
+            callback(ueSessionSuccess);
+        }
+    });
 }
 
 - (void)adjustSessionTrackingFailed:(ADJSessionFailure *)sessionFailureResponseData {
@@ -101,20 +150,31 @@
         return;
     }
 
-    FAdjustSessionFailure ueSessionFailure;
-    ueSessionFailure.Message = *FString(sessionFailureResponseData.message);
-    ueSessionFailure.Timestamp = *FString(sessionFailureResponseData.timestamp);
-    ueSessionFailure.Adid = *FString(sessionFailureResponseData.adid);
-    ueSessionFailure.WillRetry = sessionFailureResponseData.willRetry;
-    if (sessionFailureResponseData.jsonResponse != nil)
-    {
+    FString message = *FString(sessionFailureResponseData.message);
+    FString timestamp = *FString(sessionFailureResponseData.timestamp);
+    FString adid = *FString(sessionFailureResponseData.adid);
+    bool willRetry = sessionFailureResponseData.willRetry;
+
+    FString jsonResponseString;
+    if (sessionFailureResponseData.jsonResponse != nil) {
         NSData *dataJsonResponse = [NSJSONSerialization dataWithJSONObject:sessionFailureResponseData.jsonResponse options:0 error:nil];
-        NSString *stringJsonResponse = [[NSString alloc] initWithBytes:[dataJsonResponse bytes]
-                                                                length:[dataJsonResponse length]
-                                                              encoding:NSUTF8StringEncoding];
-        ueSessionFailure.JsonResponse = *FString(stringJsonResponse);
+        NSString *stringJsonResponse = [[NSString alloc] initWithData:dataJsonResponse encoding:NSUTF8StringEncoding];
+        jsonResponseString = *FString(stringJsonResponse);
     }
-    _sessionFailureCallback(ueSessionFailure);
+
+    auto callback = _sessionFailureCallback;
+    AsyncTask(ENamedThreads::GameThread, [message, timestamp, adid, willRetry, jsonResponseString, callback]() {
+        FAdjustSessionFailure ueSessionFailure;
+        ueSessionFailure.Message = message;
+        ueSessionFailure.Timestamp = timestamp;
+        ueSessionFailure.Adid = adid;
+        ueSessionFailure.WillRetry = willRetry;
+        ueSessionFailure.JsonResponse = jsonResponseString;
+
+        if (callback) {
+            callback(ueSessionFailure);
+        }
+    });
 }
 
 - (BOOL)adjustDeferredDeeplinkReceived:(NSURL *)deeplink {
@@ -122,9 +182,15 @@
         return YES;
     }
 
-    NSString *url = [deeplink absoluteString];
-    FString ueDeeplink = *FString(url);
-    _deferredDeeplinkCallback(ueDeeplink);
+    FString ueDeeplink = *FString([deeplink absoluteString]);
+
+    auto callback = _deferredDeeplinkCallback;    
+    AsyncTask(ENamedThreads::GameThread, [ueDeeplink, callback]() {
+        if (callback) {
+            callback(ueDeeplink);
+        }
+    });
+
     return _shouldOpenDeferredDeeplink;
 }
 
