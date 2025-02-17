@@ -1,7 +1,7 @@
 {
     "FileVersion": 3,
     "Version": 2,
-    "VersionName": "5.0.0",
+    "VersionName": "5.0.1",
     "FriendlyName": "Adjust",
     "Description": "Adjust SDK plugin for Unreal Engine 5",
     "Category": "Mobile Analytics",

@@ -1,3 +1,20 @@
+### Version 5.0.1 (17th February 2025)
+#### Added
+- Added sending of the additional parameter to improve troubleshooting of `SKAdNetwork` related issues.
+
+#### Fixed
+- Fixed occasional occurrences in which ATT waiting interval timer was not being started.
+- Fixed occasional NPE occurrences when app was entering background (https://github.com/adjust/android_sdk/issues/630).
+
+#### Changed
+- Updated logic so that Unreal C++ callbacks are getting triggered inside of the `ENamedThreads::GameThread` (as they are on the Android platform).
+
+#### Native SDKs
+- [Android@v5.1.0][android_sdk_v5.1.0]
+- [iOS@v5.1.0][ios_sdk_v5.1.0]
+
+---
+
 ### Version 5.0.0 (30th January 2025)
 
 We're excited to release our major new SDK version (v5). Among many internal improvements, our spoofing protection solution is now included out of the box, reinforcing our commitment to accurate, actionable, and fraud-free data.
@@ -65,8 +82,10 @@ If you are a current Adjust client and have questions about SDK v5, please email
 [android_sdk_v4.17.0]: https://github.com/adjust/android_sdk/tree/v4.17.0
 [android_sdk_v4.18.1]: https://github.com/adjust/android_sdk/tree/v4.18.1
 [android_sdk_v4.26.2]: https://github.com/adjust/android_sdk/tree/v4.26.2
+[android_sdk_v5.1.0]: https://github.com/adjust/android_sdk/tree/v5.1.0
 
 [ios_sdk_v4.17.1]: https://github.com/adjust/ios_sdk/tree/v4.17.1
 [ios_sdk_v4.18.3]: https://github.com/adjust/ios_sdk/tree/v4.18.3
 [ios_sdk_v4.26.1]: https://github.com/adjust/ios_sdk/tree/v4.26.1
 [ios_sdk_v4.28.0]: https://github.com/adjust/ios_sdk/tree/v4.28.0
+[ios_sdk_v5.0.1]: https://github.com/adjust/ios_sdk/tree/v5.0.1

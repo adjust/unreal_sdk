@@ -255,7 +255,7 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
                                                  suppressLogLevel:allowSuppressLevel];
 
     // SDK prefix
-    [adjustConfig setSdkPrefix:@"unreal5.0.0"];
+    [adjustConfig setSdkPrefix:@"unreal5.0.1"];
 
     // log level
     [adjustConfig setLogLevel:logLevel];
@@ -401,7 +401,7 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     Env->DeleteLocalRef(jEnvironment);
 
     // SDK prefix
-    const char* cstrSdkPrefix = "unreal5.0.0";
+    const char* cstrSdkPrefix = "unreal5.0.1";
     jstring jSdkPrefix = Env->NewStringUTF(cstrSdkPrefix);
     jmethodID jmidAdjustConfigSetSdkPrefix = Env->GetMethodID(jcslAdjustConfig, "setSdkPrefix", "(Ljava/lang/String;)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSdkPrefix, jSdkPrefix);
@@ -902,7 +902,7 @@ void UAdjust::GetSdkVersion()
 {
 #if PLATFORM_IOS
     FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal5.0.0"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal5.0.1"));
     [Adjust sdkVersionWithCompletionHandler:^(NSString * _Nullable sdkVersion) {
         FString FinalVersion = SdkPrefix + Separator + FString(UTF8_TO_TCHAR([sdkVersion UTF8String]));
         adjustSdkVersionGetterCallback(FinalVersion);
@@ -915,7 +915,7 @@ void UAdjust::GetSdkVersion()
     jclass jcslUeSdkVersionGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeSdkVersionGetterCallback");
     jmethodID jmidUeSdkVersionGetterCallbackInit = Env->GetMethodID(jcslUeSdkVersionGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;Ljava/lang/String;)V");
     // TODO: temp hack, parametrize this
-    jstring jSdkPrefix = Env->NewStringUTF("unreal5.0.0");
+    jstring jSdkPrefix = Env->NewStringUTF("unreal5.0.1");
     jobject joSdkVersionGetterCallbackProxy = Env->NewObject(jcslUeSdkVersionGetterCallback, jmidUeSdkVersionGetterCallbackInit, FJavaWrapper::GameActivityThis, jSdkPrefix);
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetSdkVersionId, joSdkVersionGetterCallbackProxy);
     Env->DeleteLocalRef(joSdkVersionGetterCallbackProxy);
