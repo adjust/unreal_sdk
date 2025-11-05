@@ -41,7 +41,7 @@ public:
     FString CostType;
 
     UPROPERTY(BlueprintReadOnly, Category = "Adjust")
-    double CostAmount;
+    double CostAmount = 0.0;
 
     UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString CostCurrency;
