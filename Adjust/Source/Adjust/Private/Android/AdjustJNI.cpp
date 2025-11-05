@@ -76,6 +76,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
     double costAmount = getDoubleField("costAmount");
     FString costCurrency = getStringField("costCurrency");
     FString fbInstallReferrer = getStringField("fbInstallReferrer");
+    FString fsJsonResponse = getStringField("jsonResponse");
 
     AsyncTask(ENamedThreads::GameThread, [
         trackerToken,
@@ -88,7 +89,8 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
         costType,
         costAmount,
         costCurrency,
-        fbInstallReferrer]()
+        fbInstallReferrer,
+        fsJsonResponse]()
     {
         FAdjustAttribution ueAttribution;
         ueAttribution.TrackerToken = trackerToken;
@@ -102,6 +104,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
         ueAttribution.CostAmount = costAmount;
         ueAttribution.CostCurrency = costCurrency;
         ueAttribution.FbInstallReferrer = fbInstallReferrer;
+        ueAttribution.JsonResponse = fsJsonResponse;
         attributionCallbackMethod(ueAttribution);
     });
 
@@ -587,6 +590,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
     double costAmount = getDoubleField("costAmount");
     FString costCurrency = getStringField("costCurrency");
     FString fbInstallReferrer = getStringField("fbInstallReferrer");
+    FString fsJsonResponse = getStringField("jsonResponse");
 
     AsyncTask(ENamedThreads::GameThread, [
         trackerToken,
@@ -599,7 +603,8 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
         costType,
         costAmount,
         costCurrency,
-        fbInstallReferrer]()
+        fbInstallReferrer,
+        fsJsonResponse]()
     {
         if (attributionGetterCallbackMethod != nullptr)
         {
@@ -615,6 +620,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
             ueAttribution.CostAmount = costAmount;
             ueAttribution.CostCurrency = costCurrency;
             ueAttribution.FbInstallReferrer = fbInstallReferrer;
+            ueAttribution.JsonResponse = fsJsonResponse;
             attributionGetterCallbackMethod(ueAttribution);
         }
     });

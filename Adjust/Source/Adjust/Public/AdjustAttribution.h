@@ -48,4 +48,7 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString FbInstallReferrer;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
+    FString JsonResponse;
 };

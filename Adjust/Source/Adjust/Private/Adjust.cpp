@@ -909,6 +909,19 @@ void UAdjust::GetAttribution()
         ueAttribution.Creative = *FString(attribution.creative);
         ueAttribution.ClickLabel = *FString(attribution.clickLabel);
         
+        FString fsJsonResponse;
+        if (attribution.jsonResponse != nil) {
+            NSError *error = nil;
+            NSData *dataJsonResponse = [NSJSONSerialization dataWithJSONObject:attribution.jsonResponse options:0 error:&error];
+            if (dataJsonResponse != nil && error == nil) {
+                NSString *stringJsonResponse = [[NSString alloc] initWithData:dataJsonResponse encoding:NSUTF8StringEncoding];
+                if (stringJsonResponse != nil) {
+                    fsJsonResponse = *FString(stringJsonResponse);
+                }
+            }
+        }
+        ueAttribution.JsonResponse = fsJsonResponse;
+        
         AsyncTask(ENamedThreads::GameThread, [ueAttribution]() {
             adjustAttributionGetterCallback(ueAttribution);
         });

@@ -28,8 +28,20 @@
     FString creative = *FString(attribution.creative);
     FString clickLabel = *FString(attribution.clickLabel);
 
+    FString fsJsonResponse;
+    if (attribution.jsonResponse != nil) {
+        NSError *error = nil;
+        NSData *dataJsonResponse = [NSJSONSerialization dataWithJSONObject:attribution.jsonResponse options:0 error:&error];
+        if (dataJsonResponse != nil && error == nil) {
+            NSString *stringJsonResponse = [[NSString alloc] initWithData:dataJsonResponse encoding:NSUTF8StringEncoding];
+            if (stringJsonResponse != nil) {
+                fsJsonResponse = *FString(stringJsonResponse);
+            }
+        }
+    }
+
     auto callback = _attributionCallback;
-    AsyncTask(ENamedThreads::GameThread, [trackerToken, trackerName, network, campaign, adgroup, creative, clickLabel, callback]() {
+    AsyncTask(ENamedThreads::GameThread, [trackerToken, trackerName, network, campaign, adgroup, creative, clickLabel, fsJsonResponse, callback]() {
         FAdjustAttribution ueAttribution;
         ueAttribution.TrackerToken = trackerToken;
         ueAttribution.TrackerName = trackerName;
@@ -38,6 +50,7 @@
         ueAttribution.Adgroup = adgroup;
         ueAttribution.Creative = creative;
         ueAttribution.ClickLabel = clickLabel;
+        ueAttribution.JsonResponse = fsJsonResponse;
 
         if (callback) {
             callback(ueAttribution);
