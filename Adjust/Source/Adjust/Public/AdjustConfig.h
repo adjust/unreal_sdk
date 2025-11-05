@@ -85,6 +85,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     int AttConsentWaitingInterval = 0;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool IsAppTrackingTransparencyUsageEnabled = true;
+
     // android only
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")

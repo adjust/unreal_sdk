@@ -339,6 +339,11 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         [adjustConfig setAttConsentWaitingInterval:Config.AttConsentWaitingInterval];
     }
 
+    // disable App Tracking Transparency usage
+    if (Config.IsAppTrackingTransparencyUsageEnabled == false) {
+        [adjustConfig disableAppTrackingTransparencyUsage];
+    }
+
     // start SDK
     [Adjust initSdk:adjustConfig];
 #elif PLATFORM_ANDROID
