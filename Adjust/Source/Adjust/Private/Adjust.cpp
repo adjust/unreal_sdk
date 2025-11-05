@@ -698,7 +698,10 @@ void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink)
     ADJDeeplink *deepLink = [[ADJDeeplink alloc] initWithDeeplink:url];
     [Adjust processAndResolveDeeplink:deepLink
                 withCompletionHandler:^(NSString * _Nullable resolvedLink) {
-        adjustDeeplinkResolutionCallback(FString(UTF8_TO_TCHAR([resolvedLink UTF8String])));
+        FString fsResolvedLink = FString(UTF8_TO_TCHAR([resolvedLink UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsResolvedLink]() {
+            adjustDeeplinkResolutionCallback(fsResolvedLink);
+        });
     }];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
@@ -785,7 +788,10 @@ void UAdjust::GetIdfa()
 {
 #if PLATFORM_IOS
     [Adjust idfaWithCompletionHandler:^(NSString * _Nullable idfa) {
-        adjustIdfaGetterCallback(FString(UTF8_TO_TCHAR([idfa UTF8String])));
+        FString fsIdfa = FString(UTF8_TO_TCHAR([idfa UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsIdfa]() {
+            adjustIdfaGetterCallback(fsIdfa);
+        });
     }];
 #endif
 }
@@ -794,7 +800,10 @@ void UAdjust::GetIdfv()
 {
 #if PLATFORM_IOS
     [Adjust idfvWithCompletionHandler:^(NSString * _Nullable idfv) {
-        adjustIdfvGetterCallback(FString(UTF8_TO_TCHAR([idfv UTF8String])));
+        FString fsIdfv = FString(UTF8_TO_TCHAR([idfv UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsIdfv]() {
+            adjustIdfvGetterCallback(fsIdfv);
+        });
     }];
 #endif
 }
@@ -843,7 +852,10 @@ void UAdjust::GetAdid()
     Env->DeleteLocalRef(joAdidGetterCallbackProxy);
 #elif PLATFORM_IOS
     [Adjust adidWithCompletionHandler:^(NSString * _Nullable adid) {
-        adjustAdidGetterCallback(FString(UTF8_TO_TCHAR([adid UTF8String])));
+        FString fsAdid = FString(UTF8_TO_TCHAR([adid UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsAdid]() {
+            adjustAdidGetterCallback(fsAdid);
+        });
     }];
 #endif
 }
@@ -862,7 +874,10 @@ void UAdjust::IsEnabled()
     Env->DeleteLocalRef(joIsEnabledCallbackProxy);
 #elif PLATFORM_IOS
     [Adjust isEnabledWithCompletionHandler:^(BOOL isEnabled) {
-        adjustIsEnabledCallback(isEnabled);
+        bool bIsEnabled = (bool)isEnabled;
+        AsyncTask(ENamedThreads::GameThread, [bIsEnabled]() {
+            adjustIsEnabledCallback(bIsEnabled);
+        });
     }];
 #endif
 }
@@ -893,7 +908,10 @@ void UAdjust::GetAttribution()
         ueAttribution.Adgroup = *FString(attribution.adgroup);
         ueAttribution.Creative = *FString(attribution.creative);
         ueAttribution.ClickLabel = *FString(attribution.clickLabel);
-        adjustAttributionGetterCallback(ueAttribution);
+        
+        AsyncTask(ENamedThreads::GameThread, [ueAttribution]() {
+            adjustAttributionGetterCallback(ueAttribution);
+        });
     }];
 #endif
 }
@@ -904,8 +922,10 @@ void UAdjust::GetSdkVersion()
     FString Separator = FString(UTF8_TO_TCHAR("@"));
     FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal5.0.1"));
     [Adjust sdkVersionWithCompletionHandler:^(NSString * _Nullable sdkVersion) {
-        FString FinalVersion = SdkPrefix + Separator + FString(UTF8_TO_TCHAR([sdkVersion UTF8String]));
-        adjustSdkVersionGetterCallback(FinalVersion);
+        FString fsSdkVersion = SdkPrefix + Separator + FString(UTF8_TO_TCHAR([sdkVersion UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsSdkVersion]() {
+            adjustSdkVersionGetterCallback(fsSdkVersion);
+        });
     }];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
@@ -1310,7 +1330,10 @@ void UAdjust::RequestAppTrackingAuthorization()
 {
 #if PLATFORM_IOS
     [Adjust requestAppTrackingAuthorizationWithCompletionHandler:^(NSUInteger status) {
-        adjustRequestAppAuthorizationStatusCallback((int)status);
+        int nStatus = (int)status;
+        AsyncTask(ENamedThreads::GameThread, [nStatus]() {
+            adjustRequestAppAuthorizationStatusCallback(nStatus);
+        });
     }];
 #endif
 }
@@ -1332,7 +1355,10 @@ void UAdjust::UpdateSkanConversionValue(int ConversionValue, const FString& Coar
                           coarseValue:strCoarseValue
                            lockWindow:[NSNumber numberWithBool:lockWindow]
                 withCompletionHandler:^(NSError * _Nullable error) {
-        adjustUpdateSkanConversionValueCallback(FString(UTF8_TO_TCHAR([[error localizedDescription] UTF8String])));
+        FString fsError = FString(UTF8_TO_TCHAR([[error localizedDescription] UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsError]() {
+            adjustUpdateSkanConversionValueCallback(fsError);
+        });
     }];
 #endif
 }
