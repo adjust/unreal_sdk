@@ -17,6 +17,8 @@
 #include "AdjustThirdPartySharing.h"
 #include "AdjustAppStorePurchase.h"
 #include "AdjustPlayStorePurchase.h"
+#include "AdjustAppStoreSubscription.h"
+#include "AdjustPlayStoreSubscription.h"
 #include "Adjust.generated.h"
 
 UCLASS()
@@ -131,6 +133,9 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void VerifyAndTrackAppStorePurchase(const FAdjustEvent& Event);
 
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void TrackAppStoreSubscription(const FAdjustAppStoreSubscription& Subscription);
+
     // android only
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
@@ -150,4 +155,7 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event);
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void TrackPlayStoreSubscription(const FAdjustPlayStoreSubscription& Subscription);
 };

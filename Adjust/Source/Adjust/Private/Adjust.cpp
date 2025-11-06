@@ -1915,3 +1915,127 @@ void UAdjust::VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event)
     Env->DeleteLocalRef(joPurchaseVerificationCallbackProxy);
 #endif
 }
+
+void UAdjust::TrackAppStoreSubscription(const FAdjustAppStoreSubscription& Subscription)
+{
+#if PLATFORM_IOS
+    // price
+    NSString *strPrice = [NSString stringWithFormat:@"%f", Subscription.Price];
+    NSDecimalNumber *price = [NSDecimalNumber decimalNumberWithString:strPrice];
+    
+    // currency
+    CFStringRef cfstrCurrency = FPlatformString::TCHARToCFString(*Subscription.Currency);
+    NSString *strCurrency = (NSString *)cfstrCurrency;
+    
+    // transaction ID
+    CFStringRef cfstrTransactionId = FPlatformString::TCHARToCFString(*Subscription.TransactionId);
+    NSString *strTransactionId = (NSString *)cfstrTransactionId;
+    
+    // create subscription object
+    ADJAppStoreSubscription *subscription = [[ADJAppStoreSubscription alloc] initWithPrice:price
+                                                                                   currency:strCurrency
+                                                                              transactionId:strTransactionId];
+    
+    // transaction date
+    if (!Subscription.TransactionDate.IsEmpty())
+    {
+        NSString *strTransactionDate = [NSString stringWithUTF8String:TCHAR_TO_UTF8(*Subscription.TransactionDate)];
+        NSTimeInterval transactionDateInterval = [strTransactionDate doubleValue];
+        NSDate *transactionDate = [NSDate dateWithTimeIntervalSince1970:transactionDateInterval];
+        [subscription setTransactionDate:transactionDate];
+    }
+    
+    // sales region
+    if (!Subscription.SalesRegion.IsEmpty())
+    {
+        CFStringRef cfstrSalesRegion = FPlatformString::TCHARToCFString(*Subscription.SalesRegion);
+        NSString *strSalesRegion = (NSString *)cfstrSalesRegion;
+        [subscription setSalesRegion:strSalesRegion];
+    }
+    
+    // callback parameters
+    TMap<FString, FString> callbackParams = Subscription.CallbackParameters;
+    for (TPair<FString, FString> pair : callbackParams)
+    {
+        CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*pair.Key);
+        NSString *strKey = (NSString *)cfstrKey;
+        CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*pair.Value);
+        NSString *strValue = (NSString *)cfstrValue;
+        [subscription addCallbackParameter:strKey value:strValue];
+    }
+    
+    // partner parameters
+    TMap<FString, FString> partnerParams = Subscription.PartnerParameters;
+    for (TPair<FString, FString> pair : partnerParams)
+    {
+        CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*pair.Key);
+        NSString *strKey = (NSString *)cfstrKey;
+        CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*pair.Value);
+        NSString *strValue = (NSString *)cfstrValue;
+        [subscription addPartnerParameter:strKey value:strValue];
+    }
+    
+    // track subscription
+    [Adjust trackAppStoreSubscription:subscription];
+#endif
+}
+
+void UAdjust::TrackPlayStoreSubscription(const FAdjustPlayStoreSubscription& Subscription)
+{
+#if PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    
+    // create subscription object
+    jclass jcslAdjustPlayStoreSubscription = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustPlayStoreSubscription");
+    jmethodID jmidAdjustPlayStoreSubscriptionInit = Env->GetMethodID(jcslAdjustPlayStoreSubscription, "<init>", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+    jlong jPrice = (jlong)Subscription.Price; // Price is already in micros
+    jstring jCurrency = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.Currency));
+    jstring jSku = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.Sku));
+    jstring jOrderId = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.OrderId));
+    jstring jSignature = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.Signature));
+    jstring jPurchaseToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.PurchaseToken));
+    jobject joSubscription = Env->NewObject(jcslAdjustPlayStoreSubscription, jmidAdjustPlayStoreSubscriptionInit, jPrice, jCurrency, jSku, jOrderId, jSignature, jPurchaseToken);
+    Env->DeleteLocalRef(jCurrency);
+    Env->DeleteLocalRef(jSku);
+    Env->DeleteLocalRef(jOrderId);
+    Env->DeleteLocalRef(jSignature);
+    Env->DeleteLocalRef(jPurchaseToken);
+    
+    // purchase time
+    if (Subscription.PurchaseTime > 0)
+    {
+        jmethodID jmidAdjustPlayStoreSubscriptionSetPurchaseTime = Env->GetMethodID(jcslAdjustPlayStoreSubscription, "setPurchaseTime", "(J)V");
+        Env->CallVoidMethod(joSubscription, jmidAdjustPlayStoreSubscriptionSetPurchaseTime, (jlong)Subscription.PurchaseTime);
+    }
+    
+    // callback parameters
+    jmethodID jmidAdjustPlayStoreSubscriptionAddCallbackParameter = Env->GetMethodID(jcslAdjustPlayStoreSubscription, "addCallbackParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    TMap<FString, FString> callbackParams = Subscription.CallbackParameters;
+    for (TPair<FString, FString> pair : callbackParams)
+    {
+        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Key));
+        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Value));
+        Env->CallVoidMethod(joSubscription, jmidAdjustPlayStoreSubscriptionAddCallbackParameter, jKey, jValue);
+        Env->DeleteLocalRef(jKey);
+        Env->DeleteLocalRef(jValue);
+    }
+    
+    // partner parameters
+    jmethodID jmidAdjustPlayStoreSubscriptionAddPartnerParameter = Env->GetMethodID(jcslAdjustPlayStoreSubscription, "addPartnerParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    TMap<FString, FString> partnerParams = Subscription.PartnerParameters;
+    for (TPair<FString, FString> pair : partnerParams)
+    {
+        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Key));
+        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Value));
+        Env->CallVoidMethod(joSubscription, jmidAdjustPlayStoreSubscriptionAddPartnerParameter, jKey, jValue);
+        Env->DeleteLocalRef(jKey);
+        Env->DeleteLocalRef(jValue);
+    }
+    
+    // track subscription
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustTrackPlayStoreSubscription = Env->GetStaticMethodID(jcslAdjust, "trackPlayStoreSubscription", "(Lcom/adjust/sdk/AdjustPlayStoreSubscription;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustTrackPlayStoreSubscription, joSubscription);
+    Env->DeleteLocalRef(joSubscription);
+#endif
+}
