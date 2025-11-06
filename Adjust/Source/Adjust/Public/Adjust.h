@@ -128,6 +128,9 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void VerifyAppStorePurchase(const FAdjustAppStorePurchase& Purchase);
 
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void VerifyAndTrackAppStorePurchase(const FAdjustEvent& Event);
+
     // android only
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
@@ -144,4 +147,7 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase);
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event);
 };

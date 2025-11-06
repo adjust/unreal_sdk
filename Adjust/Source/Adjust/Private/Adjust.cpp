@@ -1723,3 +1723,195 @@ void UAdjust::VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase)
     Env->DeleteLocalRef(jPurchaseToken);
 #endif
 }
+
+void UAdjust::VerifyAndTrackAppStorePurchase(const FAdjustEvent& Event)
+{
+#if PLATFORM_IOS
+    // event token
+    CFStringRef cfstrEventToken = FPlatformString::TCHARToCFString(*Event.EventToken);
+    NSString *strEventToken = (NSString *)cfstrEventToken;
+
+    ADJEvent *adjustEvent = [[ADJEvent alloc] initWithEventToken:strEventToken];
+
+    // revenue & currency
+    if (Event.Revenue > 0.0 || !Event.Currency.IsEmpty())
+    {
+        NSString *strCurrency = nil;
+        if (!Event.Currency.IsEmpty())
+        {
+            CFStringRef cfstrCurrency = FPlatformString::TCHARToCFString(*Event.Currency);
+            strCurrency = (NSString *)cfstrCurrency;
+        }
+        [adjustEvent setRevenue:(double)Event.Revenue currency:strCurrency];
+    }
+
+    // callback parameters
+    TMap<FString, FString> callbackParams = Event.CallbackParameters;
+    for (TPair<FString, FString> pair : callbackParams)
+    {
+        CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*pair.Key);
+        NSString *strKey = (NSString *)cfstrKey;
+        CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*pair.Value);
+        NSString *strValue = (NSString *)cfstrValue;
+        [adjustEvent addCallbackParameter:strKey value:strValue];
+    }
+
+    // partner parameters
+    TMap<FString, FString> partnerParams = Event.PartnerParameters;
+    for (TPair<FString, FString> pair : partnerParams)
+    {
+        CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*pair.Key);
+        NSString *strKey = (NSString *)cfstrKey;
+        CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*pair.Value);
+        NSString *strValue = (NSString *)cfstrValue;
+        [adjustEvent addPartnerParameter:strKey value:strValue];
+    }
+
+    // deduplication ID
+    if (!Event.DeduplicationId.IsEmpty())
+    {
+        CFStringRef cfstrDeduplicationId = FPlatformString::TCHARToCFString(*Event.DeduplicationId);
+        NSString *strDeduplicationId = (NSString *)cfstrDeduplicationId;
+        [adjustEvent setDeduplicationId:strDeduplicationId];
+    }
+
+    // callback ID
+    if (!Event.CallbackId.IsEmpty())
+    {
+        CFStringRef cfstrCallbackId = FPlatformString::TCHARToCFString(*Event.CallbackId);
+        NSString *strCallbackId = (NSString *)cfstrCallbackId;
+        [adjustEvent setCallbackId:strCallbackId];
+    }
+
+    // transaction ID
+    if (!Event.TransactionId.IsEmpty())
+    {
+        CFStringRef cfstrTransactionId = FPlatformString::TCHARToCFString(*Event.TransactionId);
+        NSString *strTransactionId = (NSString *)cfstrTransactionId;
+        [adjustEvent setTransactionId:strTransactionId];
+    }
+
+    // product ID
+    if (!Event.ProductId.IsEmpty())
+    {
+        CFStringRef cfstrProductId = FPlatformString::TCHARToCFString(*Event.ProductId);
+        NSString *strProductId = (NSString *)cfstrProductId;
+        [adjustEvent setProductId:strProductId];
+    }
+
+    // verify and track event
+    [Adjust verifyAndTrackAppStorePurchase:adjustEvent
+                    withCompletionHandler:^(ADJPurchaseVerificationResult * _Nonnull result) {
+        FAdjustPurchaseVerificationResult ueResult;
+        ueResult.VerificationStatus = FString(UTF8_TO_TCHAR([result.verificationStatus UTF8String]));
+        ueResult.Code = result.code;
+        ueResult.Message = FString(UTF8_TO_TCHAR([result.message UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [ueResult]() {
+            adjustPurchaseVerificationCallback(ueResult);
+        });
+    }];
+#endif
+}
+
+void UAdjust::VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event)
+{
+#if PLATFORM_ANDROID
+    setPurchaseVerificationCallbackMethod(adjustPurchaseVerificationCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+
+    // event token
+    jstring jEventToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.EventToken));
+
+    // create event object
+    jclass jcslAdjustEvent = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustEvent");
+    jmethodID jmidAdjustEventInit = Env->GetMethodID(jcslAdjustEvent, "<init>", "(Ljava/lang/String;)V");
+    jobject joAdjustEvent = Env->NewObject(jcslAdjustEvent, jmidAdjustEventInit, jEventToken);
+    Env->DeleteLocalRef(jEventToken);
+
+    // revenue & currency
+    if (Event.Revenue > 0.0 || !Event.Currency.IsEmpty())
+    {
+        jstring jCurrency = nullptr;
+        if (!Event.Currency.IsEmpty())
+        {
+            jCurrency = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.Currency));
+        }
+        jmethodID jmidAdjustEventSetRevenue = Env->GetMethodID(jcslAdjustEvent, "setRevenue", "(DLjava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetRevenue, (double)Event.Revenue, jCurrency);
+        if (jCurrency != nullptr)
+        {
+            Env->DeleteLocalRef(jCurrency);
+        }
+    }
+
+    // deduplication ID
+    if (!Event.DeduplicationId.IsEmpty())
+    {
+        jstring jDeduplicationId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.DeduplicationId));
+        jmethodID jmidAdjustEventSetDeduplicationId = Env->GetMethodID(jcslAdjustEvent, "setDeduplicationId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetDeduplicationId, jDeduplicationId);
+        Env->DeleteLocalRef(jDeduplicationId);
+    }
+
+    // callback ID
+    if (!Event.CallbackId.IsEmpty())
+    {
+        jstring jCallbackId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.CallbackId));
+        jmethodID jmidAdjustEventSetCallbackId = Env->GetMethodID(jcslAdjustEvent, "setCallbackId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetCallbackId, jCallbackId);
+        Env->DeleteLocalRef(jCallbackId);
+    }
+
+    // product ID
+    if (!Event.ProductId.IsEmpty())
+    {
+        jstring jProductId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.ProductId));
+        jmethodID jmidAdjustEventSetProductId = Env->GetMethodID(jcslAdjustEvent, "setProductId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetProductId, jProductId);
+        Env->DeleteLocalRef(jProductId);
+    }
+
+    // purchase token (Android only)
+    if (!Event.PurchaseToken.IsEmpty())
+    {
+        jstring jPurchaseToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.PurchaseToken));
+        jmethodID jmidAdjustEventSetPurchaseToken = Env->GetMethodID(jcslAdjustEvent, "setPurchaseToken", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetPurchaseToken, jPurchaseToken);
+        Env->DeleteLocalRef(jPurchaseToken);
+    }
+
+    // callback parameters
+    jmethodID jmidAdjustEventAddCallbackParameter = Env->GetMethodID(jcslAdjustEvent, "addCallbackParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    TMap<FString, FString> callbackParams = Event.CallbackParameters;
+    for (TPair<FString, FString> pair : callbackParams)
+    {
+        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Key));
+        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Value));
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventAddCallbackParameter, jKey, jValue);
+        Env->DeleteLocalRef(jKey);
+        Env->DeleteLocalRef(jValue);
+    }
+
+    // partner parameters
+    jmethodID jmidAdjustEventAddPartnerParameter = Env->GetMethodID(jcslAdjustEvent, "addPartnerParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    TMap<FString, FString> partnerParams = Event.PartnerParameters;
+    for (TPair<FString, FString> pair : partnerParams)
+    {
+        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Key));
+        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Value));
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventAddPartnerParameter, jKey, jValue);
+        Env->DeleteLocalRef(jKey);
+        Env->DeleteLocalRef(jValue);
+    }
+
+    // verify and track event
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jclass jcslUePurchaseVerificationCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUePurchaseVerificationCallback");
+    jmethodID jmidUePurchaseVerificationCallbackInit = Env->GetMethodID(jcslUePurchaseVerificationCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joPurchaseVerificationCallbackProxy = Env->NewObject(jcslUePurchaseVerificationCallback, jmidUePurchaseVerificationCallbackInit, FJavaWrapper::GameActivityThis);
+    jmethodID jmidAdjustVerifyAndTrackPlayStorePurchase = Env->GetStaticMethodID(jcslAdjust, "verifyAndTrackPlayStorePurchase", "(Lcom/adjust/sdk/AdjustEvent;Lcom/adjust/sdk/OnPurchaseVerificationFinishedListener;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustVerifyAndTrackPlayStorePurchase, joAdjustEvent, joPurchaseVerificationCallbackProxy);
+    Env->DeleteLocalRef(joAdjustEvent);
+    Env->DeleteLocalRef(joPurchaseVerificationCallbackProxy);
+#endif
+}
