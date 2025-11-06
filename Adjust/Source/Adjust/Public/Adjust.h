@@ -15,6 +15,8 @@
 #include "AdjustDeeplink.h"
 #include "AdjustAdRevenue.h"
 #include "AdjustThirdPartySharing.h"
+#include "AdjustAppStorePurchase.h"
+#include "AdjustPlayStorePurchase.h"
 #include "Adjust.generated.h"
 
 UCLASS()
@@ -123,6 +125,9 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void UpdateSkanConversionValue(int ConversionValue, const FString& CoarseValue, bool lockWindow);
 
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void VerifyAppStorePurchase(const FAdjustAppStorePurchase& Purchase);
+
     // android only
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
@@ -136,4 +141,7 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void DisablePlayStoreKidsComplianceInDelay();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase);
 };

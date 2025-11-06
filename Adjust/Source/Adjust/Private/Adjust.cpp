@@ -198,6 +198,14 @@ static void adjustAmazonAdIdGetterCallback(FString AmazonAdId)
     }
 }
 
+static void adjustPurchaseVerificationCallback(FAdjustPurchaseVerificationResult VerificationResult)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnPurchaseVerificationFinishedDelegate.Broadcast(VerificationResult);
+    }
+}
+
 void UAdjust::InitSdk(const FAdjustConfig& Config)
 {
 #if PLATFORM_IOS
@@ -1669,5 +1677,49 @@ void UAdjust::UpdateSkanConversionValue(int ConversionValue, const FString& Coar
             adjustUpdateSkanConversionValueCallback(fsError);
         });
     }];
+#endif
+}
+
+void UAdjust::VerifyAppStorePurchase(const FAdjustAppStorePurchase& Purchase)
+{
+#if PLATFORM_IOS
+    CFStringRef cfstrTransactionId = FPlatformString::TCHARToCFString(*Purchase.TransactionId);
+    NSString *strTransactionId = (NSString *)cfstrTransactionId;
+    CFStringRef cfstrProductId = FPlatformString::TCHARToCFString(*Purchase.ProductId);
+    NSString *strProductId = (NSString *)cfstrProductId;
+    
+    ADJAppStorePurchase *purchase = [[ADJAppStorePurchase alloc] initWithTransactionId:strTransactionId productId:strProductId];
+    [Adjust verifyAppStorePurchase:purchase withCompletionHandler:^(ADJPurchaseVerificationResult * _Nonnull result) {
+        FAdjustPurchaseVerificationResult ueResult;
+        ueResult.VerificationStatus = FString(UTF8_TO_TCHAR([result.verificationStatus UTF8String]));
+        ueResult.Code = result.code;
+        ueResult.Message = FString(UTF8_TO_TCHAR([result.message UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [ueResult]() {
+            adjustPurchaseVerificationCallback(ueResult);
+        });
+    }];
+#endif
+}
+
+void UAdjust::VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase)
+{
+#if PLATFORM_ANDROID
+    setPurchaseVerificationCallbackMethod(adjustPurchaseVerificationCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jclass jcslAdjustPlayStorePurchase = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustPlayStorePurchase");
+    jmethodID jmidAdjustPlayStorePurchaseInit = Env->GetMethodID(jcslAdjustPlayStorePurchase, "<init>", "(Ljava/lang/String;Ljava/lang/String;)V");
+    jstring jProductId = Env->NewStringUTF(TCHAR_TO_UTF8(*Purchase.ProductId));
+    jstring jPurchaseToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Purchase.PurchaseToken));
+    jobject joPurchase = Env->NewObject(jcslAdjustPlayStorePurchase, jmidAdjustPlayStorePurchaseInit, jProductId, jPurchaseToken);
+    jclass jcslUePurchaseVerificationCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUePurchaseVerificationCallback");
+    jmethodID jmidUePurchaseVerificationCallbackInit = Env->GetMethodID(jcslUePurchaseVerificationCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joPurchaseVerificationCallbackProxy = Env->NewObject(jcslUePurchaseVerificationCallback, jmidUePurchaseVerificationCallbackInit, FJavaWrapper::GameActivityThis);
+    jmethodID jmidAdjustVerifyPlayStorePurchase = Env->GetStaticMethodID(jcslAdjust, "verifyPlayStorePurchase", "(Lcom/adjust/sdk/AdjustPlayStorePurchase;Lcom/adjust/sdk/OnPurchaseVerificationFinishedListener;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustVerifyPlayStorePurchase, joPurchase, joPurchaseVerificationCallbackProxy);
+    Env->DeleteLocalRef(joPurchase);
+    Env->DeleteLocalRef(joPurchaseVerificationCallbackProxy);
+    Env->DeleteLocalRef(jProductId);
+    Env->DeleteLocalRef(jPurchaseToken);
 #endif
 }

@@ -15,6 +15,7 @@
 #include "AdjustSessionFailure.h"
 #include "AdjustEventSuccess.h"
 #include "AdjustEventFailure.h"
+#include "AdjustPurchaseVerificationResult.h"
 #include "AdjustDelegates.generated.h"
 
 // subscription multiplatform delegates
@@ -42,6 +43,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUpdateSkanConversionValueDelegate
 // one-time android delegates
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoogleAdIdGetterDelegate, const FString&, GoogleAdId);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAmazonAdIdGetterDelegate, const FString&, AmazonAdId);
+// purchase verification delegates
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPurchaseVerificationFinishedDelegate, const FAdjustPurchaseVerificationResult&, VerificationResult);
 
 
 UCLASS(Blueprintable)
@@ -116,4 +119,9 @@ public:
 
     UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnAmazonAdIdGetterDelegate OnAmazonAdIdGetterDelegate;
+
+    // purchase verification delegates
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnPurchaseVerificationFinishedDelegate OnPurchaseVerificationFinishedDelegate;
 };

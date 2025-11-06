@@ -17,6 +17,7 @@
 #include "../Public/AdjustEventFailure.h"
 #include "../Public/AdjustSessionSuccess.h"
 #include "../Public/AdjustSessionFailure.h"
+#include "../Public/AdjustPurchaseVerificationResult.h"
 
 extern "C"
 {
@@ -34,6 +35,7 @@ extern "C"
     static void (*attributionGetterCallbackMethod)(FAdjustAttribution Attribution);
     static void (*googleAdIdGetterCallbackMethod)(FString GoogleAdId);
     static void (*amazonAdIdGetterCallbackMethod)(FString AmazonAdId);
+    static void (*purchaseVerificationCallbackMethod)(FAdjustPurchaseVerificationResult VerificationResult);
 
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttributionCallback_attributionChanged(JNIEnv*, jobject, jobject);
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSessionSuccessCallback_sessionSuccess(JNIEnv*, jobject, jobject);
@@ -49,6 +51,7 @@ extern "C"
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeLastDeeplinkGetterCallback_lastDeeplinkRead(JNIEnv*, jobject, jstring);
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeGoogleAdIdGetterCallback_googleAdIdRead(JNIEnv*, jobject, jstring);
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAmazonAdIdGetterCallback_amazonAdIdRead(JNIEnv*, jobject, jstring);
+    JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUePurchaseVerificationCallback_verificationFinished(JNIEnv*, jobject, jobject);
 
     void setAttributionCallbackMethod(void (*callbackMethod)(FAdjustAttribution Attribution));
     void setSessionSuccessCallbackMethod(void (*callbackMethod)(FAdjustSessionSuccess SessionSuccess));
@@ -64,6 +67,7 @@ extern "C"
     void setLastDeeplinkGetterCallbackMethod(void (*callbackMethod)(FString LastDeeplink));
     void setGoogleAdIdGetterCallbackMethod(void (*callbackMethod)(FString GoogleAdId));
     void setAmazonAdIdGetterCallbackMethod(void (*callbackMethod)(FString AmazonAdId));
+    void setPurchaseVerificationCallbackMethod(void (*callbackMethod)(FAdjustPurchaseVerificationResult VerificationResult));
 }
 
 #endif
