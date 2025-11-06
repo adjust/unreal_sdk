@@ -273,10 +273,10 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     adjustConfig.delegate = delegate;
 
     // default tracker
-    CFStringRef cfstrDefaultTracker = FPlatformString::TCHARToCFString(*Config.DefaultTracker);
-    NSString *strDefaultTracker = (NSString *)cfstrDefaultTracker;
-    if ([strDefaultTracker length] > 0)
+    if (!Config.DefaultTracker.IsEmpty())
     {
+        CFStringRef cfstrDefaultTracker = FPlatformString::TCHARToCFString(*Config.DefaultTracker);
+        NSString *strDefaultTracker = (NSString *)cfstrDefaultTracker;
         [adjustConfig setDefaultTracker:strDefaultTracker];
     }
 
@@ -499,10 +499,13 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     Env->DeleteLocalRef(joDeferredDeeplinkCallbackProxy);
 
     // default tracker
-    jstring jDefaultTracker = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.DefaultTracker));
-    jmethodID jmidAdjustConfigSetDefaultTracker = Env->GetMethodID(jcslAdjustConfig, "setDefaultTracker", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetDefaultTracker, jDefaultTracker);
-    Env->DeleteLocalRef(jDefaultTracker);
+    if (!Config.DefaultTracker.IsEmpty())
+    {
+        jstring jDefaultTracker = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.DefaultTracker));
+        jmethodID jmidAdjustConfigSetDefaultTracker = Env->GetMethodID(jcslAdjustConfig, "setDefaultTracker", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetDefaultTracker, jDefaultTracker);
+        Env->DeleteLocalRef(jDefaultTracker);
+    }
 
     // external device ID
     jstring jExternalDeviceId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.ExternalDeviceId));
