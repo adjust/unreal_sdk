@@ -660,6 +660,22 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
         [adjustEvent setCallbackId:strCallbackId];
     }
 
+    // transaction ID
+    if (!Event.TransactionId.IsEmpty())
+    {
+        CFStringRef cfstrTransactionId = FPlatformString::TCHARToCFString(*Event.TransactionId);
+        NSString *strTransactionId = (NSString *)cfstrTransactionId;
+        [adjustEvent setTransactionId:strTransactionId];
+    }
+
+    // product ID
+    if (!Event.ProductId.IsEmpty())
+    {
+        CFStringRef cfstrProductId = FPlatformString::TCHARToCFString(*Event.ProductId);
+        NSString *strProductId = (NSString *)cfstrProductId;
+        [adjustEvent setProductId:strProductId];
+    }
+
     // track event
     [Adjust trackEvent:adjustEvent];
 #elif PLATFORM_ANDROID
@@ -706,6 +722,24 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
         jmethodID jmidAdjustEventSetCallbackId = Env->GetMethodID(jcslAdjustEvent, "setCallbackId", "(Ljava/lang/String;)V");
         Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetCallbackId, jCallbackId);
         Env->DeleteLocalRef(jCallbackId);
+    }
+
+    // product ID
+    if (!Event.ProductId.IsEmpty())
+    {
+        jstring jProductId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.ProductId));
+        jmethodID jmidAdjustEventSetProductId = Env->GetMethodID(jcslAdjustEvent, "setProductId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetProductId, jProductId);
+        Env->DeleteLocalRef(jProductId);
+    }
+
+    // purchase token (Android only)
+    if (!Event.PurchaseToken.IsEmpty())
+    {
+        jstring jPurchaseToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.PurchaseToken));
+        jmethodID jmidAdjustEventSetPurchaseToken = Env->GetMethodID(jcslAdjustEvent, "setPurchaseToken", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetPurchaseToken, jPurchaseToken);
+        Env->DeleteLocalRef(jPurchaseToken);
     }
 
     // callback parameters

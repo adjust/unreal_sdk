@@ -32,8 +32,21 @@ public:
     FString CallbackId;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString ProductId;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     TMap<FString, FString> CallbackParameters;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     TMap<FString, FString> PartnerParameters;
+
+    // ios only
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString TransactionId;
+
+    // android only
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString PurchaseToken;
 };
