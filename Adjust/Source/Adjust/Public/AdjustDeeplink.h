@@ -18,4 +18,7 @@ struct FAdjustDeeplink
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString Deeplink;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString Referrer;
 };

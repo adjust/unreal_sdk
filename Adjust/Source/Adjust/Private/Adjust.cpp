@@ -681,7 +681,21 @@ void UAdjust::ProcessDeeplink(const FAdjustDeeplink& Deeplink)
     CFStringRef cfstrUrl = FPlatformString::TCHARToCFString(*(Deeplink.Deeplink));
     NSString *strUrl = (NSString *)cfstrUrl;
     NSURL *url = [NSURL URLWithString:strUrl];
-    [Adjust processDeeplink:[[ADJDeeplink alloc] initWithDeeplink:url]];
+    ADJDeeplink *deepLink = [[ADJDeeplink alloc] initWithDeeplink:url];
+    
+    // set referrer if provided
+    if (!Deeplink.Referrer.IsEmpty())
+    {
+        CFStringRef cfstrReferrer = FPlatformString::TCHARToCFString(*(Deeplink.Referrer));
+        NSString *strReferrer = (NSString *)cfstrReferrer;
+        NSURL *referrerUrl = [NSURL URLWithString:strReferrer];
+        if (referrerUrl != nil)
+        {
+            [deepLink setReferrer:referrerUrl];
+        }
+    }
+    
+    [Adjust processDeeplink:deepLink];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
 
@@ -696,6 +710,20 @@ void UAdjust::ProcessDeeplink(const FAdjustDeeplink& Deeplink)
     jmethodID jmidAdjustDeeplinkInit = Env->GetMethodID(jcslAdjustDeeplink, "<init>", "(Landroid/net/Uri;)V");
     jobject joAdjustDeeplink = Env->NewObject(jcslAdjustDeeplink, jmidAdjustDeeplinkInit, joUri);
     Env->DeleteLocalRef(joUri);
+
+    // set referrer if provided
+    if (!Deeplink.Referrer.IsEmpty())
+    {
+        jstring jstrReferrer = Env->NewStringUTF(TCHAR_TO_UTF8(*(Deeplink.Referrer)));
+        jobject joReferrerUri = Env->CallStaticObjectMethod(jcslUri, jmidUriParse, jstrReferrer);
+        if (joReferrerUri != nullptr)
+        {
+            jmethodID jmidAdjustDeeplinkSetReferrer = Env->GetMethodID(jcslAdjustDeeplink, "setReferrer", "(Landroid/net/Uri;)V");
+            Env->CallVoidMethod(joAdjustDeeplink, jmidAdjustDeeplinkSetReferrer, joReferrerUri);
+            Env->DeleteLocalRef(joReferrerUri);
+        }
+        Env->DeleteLocalRef(jstrReferrer);
+    }
 
     // process deep link
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
@@ -712,6 +740,19 @@ void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink)
     NSString *strUrl = (NSString *)cfstrUrl;
     NSURL *url = [NSURL URLWithString:strUrl];
     ADJDeeplink *deepLink = [[ADJDeeplink alloc] initWithDeeplink:url];
+    
+    // set referrer if provided
+    if (!Deeplink.Referrer.IsEmpty())
+    {
+        CFStringRef cfstrReferrer = FPlatformString::TCHARToCFString(*(Deeplink.Referrer));
+        NSString *strReferrer = (NSString *)cfstrReferrer;
+        NSURL *referrerUrl = [NSURL URLWithString:strReferrer];
+        if (referrerUrl != nil)
+        {
+            [deepLink setReferrer:referrerUrl];
+        }
+    }
+    
     [Adjust processAndResolveDeeplink:deepLink
                 withCompletionHandler:^(NSString * _Nullable resolvedLink) {
         FString fsResolvedLink = FString(UTF8_TO_TCHAR([resolvedLink UTF8String]));
@@ -733,6 +774,20 @@ void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink)
     jmethodID jmidAdjustDeeplinkInit = Env->GetMethodID(jcslAdjustDeeplink, "<init>", "(Landroid/net/Uri;)V");
     jobject joAdjustDeeplink = Env->NewObject(jcslAdjustDeeplink, jmidAdjustDeeplinkInit, joUri);
     Env->DeleteLocalRef(joUri);
+
+    // set referrer if provided
+    if (!Deeplink.Referrer.IsEmpty())
+    {
+        jstring jstrReferrer = Env->NewStringUTF(TCHAR_TO_UTF8(*(Deeplink.Referrer)));
+        jobject joReferrerUri = Env->CallStaticObjectMethod(jcslUri, jmidUriParse, jstrReferrer);
+        if (joReferrerUri != nullptr)
+        {
+            jmethodID jmidAdjustDeeplinkSetReferrer = Env->GetMethodID(jcslAdjustDeeplink, "setReferrer", "(Landroid/net/Uri;)V");
+            Env->CallVoidMethod(joAdjustDeeplink, jmidAdjustDeeplinkSetReferrer, joReferrerUri);
+            Env->DeleteLocalRef(joReferrerUri);
+        }
+        Env->DeleteLocalRef(jstrReferrer);
+    }
 
     setDeeplinkResolutionCallback(adjustDeeplinkResolutionCallback);
     jclass jcslUeDeeplinkResolvedCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeDeeplinkResolvedCallback");
