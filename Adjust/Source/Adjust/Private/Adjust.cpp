@@ -755,7 +755,11 @@ void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink)
     
     [Adjust processAndResolveDeeplink:deepLink
                 withCompletionHandler:^(NSString * _Nullable resolvedLink) {
-        FString fsResolvedLink = FString(UTF8_TO_TCHAR([resolvedLink UTF8String]));
+        FString fsResolvedLink;
+        if (resolvedLink != nil)
+        {
+            fsResolvedLink = FString(UTF8_TO_TCHAR([resolvedLink UTF8String]));
+        }
         AsyncTask(ENamedThreads::GameThread, [fsResolvedLink]() {
             adjustDeeplinkResolutionCallback(fsResolvedLink);
         });
