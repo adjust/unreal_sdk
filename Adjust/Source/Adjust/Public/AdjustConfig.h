@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "AdjustStoreInfo.h"
 #include "AdjustConfig.generated.h"
 
 UENUM(BlueprintType)
@@ -67,6 +68,9 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool IsFirstSessionDelayEnabled = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FAdjustStoreInfo StoreInfo;
 
     // ios only
 

@@ -28,6 +28,7 @@
 #import "IOS/Native/ADJAdRevenue.h"
 #import "IOS/Native/ADJLinkResolution.h"
 #import "IOS/Native/ADJAppStorePurchase.h"
+#import "IOS/Native/ADJStoreInfo.h"
 #import "IOS/Native/ADJPurchaseVerificationResult.h"
 #import "IOS/Native/ADJDeeplink.h"
 #import "IOS/Delegate/AdjustSdkDelegate.h"
@@ -349,6 +350,19 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         [adjustConfig enableFirstSessionDelay];
     }
 
+    // store info
+    if (!Config.StoreInfo.StoreName.IsEmpty()) {
+        CFStringRef cfstrStoreName = FPlatformString::TCHARToCFString(*(Config.StoreInfo.StoreName));
+        NSString *strStoreName = (NSString *)cfstrStoreName;
+        ADJStoreInfo *storeInfo = [[ADJStoreInfo alloc] initWithStoreName:strStoreName];
+        if (storeInfo != nil && !Config.StoreInfo.StoreAppId.IsEmpty()) {
+            CFStringRef cfstrStoreAppId = FPlatformString::TCHARToCFString(*(Config.StoreInfo.StoreAppId));
+            NSString *strStoreAppId = (NSString *)cfstrStoreAppId;
+            storeInfo.storeAppId = strStoreAppId;
+        }
+        [adjustConfig setStoreInfo:storeInfo];
+    }
+
     // start SDK
     [Adjust initSdk:adjustConfig];
 #elif PLATFORM_ANDROID
@@ -531,6 +545,28 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     if (Config.IsFirstSessionDelayEnabled == true) {
         jmethodID jmidAdjustConfigEnableFirstSessionDelay = Env->GetMethodID(jcslAdjustConfig, "enableFirstSessionDelay", "()V");
         Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigEnableFirstSessionDelay);
+    }
+
+    // store info
+    if (!Config.StoreInfo.StoreName.IsEmpty()) {
+        jclass jcslAdjustStoreInfo = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustStoreInfo");
+        jmethodID jmidAdjustStoreInfoInit = Env->GetMethodID(jcslAdjustStoreInfo, "<init>", "(Ljava/lang/String;)V");
+        jstring jstrStoreName = Env->NewStringUTF(TCHAR_TO_UTF8(*(Config.StoreInfo.StoreName)));
+        jobject joAdjustStoreInfo = Env->NewObject(jcslAdjustStoreInfo, jmidAdjustStoreInfoInit, jstrStoreName);
+        Env->DeleteLocalRef(jstrStoreName);
+        
+        if (joAdjustStoreInfo != nullptr && !Config.StoreInfo.StoreAppId.IsEmpty()) {
+            jstring jstrStoreAppId = Env->NewStringUTF(TCHAR_TO_UTF8(*(Config.StoreInfo.StoreAppId)));
+            jmethodID jmidAdjustStoreInfoSetStoreAppId = Env->GetMethodID(jcslAdjustStoreInfo, "setStoreAppId", "(Ljava/lang/String;)V");
+            Env->CallVoidMethod(joAdjustStoreInfo, jmidAdjustStoreInfoSetStoreAppId, jstrStoreAppId);
+            Env->DeleteLocalRef(jstrStoreAppId);
+        }
+        
+        if (joAdjustStoreInfo != nullptr) {
+            jmethodID jmidAdjustConfigSetStoreInfo = Env->GetMethodID(jcslAdjustConfig, "setStoreInfo", "(Lcom/adjust/sdk/AdjustStoreInfo;)V");
+            Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetStoreInfo, joAdjustStoreInfo);
+            Env->DeleteLocalRef(joAdjustStoreInfo);
+        }
     }
 
     // start SDK
