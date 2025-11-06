@@ -601,6 +601,20 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         Env->DeleteLocalRef(jEventDeduplicationIdsMaxSize);
     }
 
+    // preinstall tracking
+    if (Config.IsPreinstallTrackingEnabled == true) {
+        jmethodID jmidAdjustConfigEnablePreinstallTracking = Env->GetMethodID(jcslAdjustConfig, "enablePreinstallTracking", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigEnablePreinstallTracking);
+    }
+
+    // preinstall file path
+    if (!Config.PreinstallFilePath.IsEmpty()) {
+        jstring jPreinstallFilePath = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.PreinstallFilePath));
+        jmethodID jmidAdjustConfigSetPreinstallFilePath = Env->GetMethodID(jcslAdjustConfig, "setPreinstallFilePath", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetPreinstallFilePath, jPreinstallFilePath);
+        Env->DeleteLocalRef(jPreinstallFilePath);
+    }
+
     // start SDK
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustInitSdk = Env->GetStaticMethodID(jcslAdjust, "initSdk", "(Lcom/adjust/sdk/AdjustConfig;)V");
