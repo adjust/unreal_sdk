@@ -60,6 +60,9 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     static void ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink);
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray);
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void SetPushToken(const FString& PushToken);
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")

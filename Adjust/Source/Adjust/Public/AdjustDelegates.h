@@ -33,6 +33,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAdidGetterDelegate, const FString
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributionGetterDelegate, const FAdjustAttribution&, Attribution);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLastDeeplinkGetterDelegate, const FString&, LastDeeplink);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeeplinkResolutionDelegate, const FString&, ResolvedLink);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLinkResolutionDelegate, const FString&, ResolvedLink);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSdkVersionGetterDelegate, const FString&, SdkVersion);
 // one-time ios delegates
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIdfaGetterDelegate, const FString&, Idfa);
@@ -91,6 +92,9 @@ public:
 
     UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnDeeplinkResolutionDelegate OnDeeplinkResolutionDelegate;
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnLinkResolutionDelegate OnLinkResolutionDelegate;
 
     UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnSdkVersionGetterDelegate OnSdkVersionGetterDelegate;

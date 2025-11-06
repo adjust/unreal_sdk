@@ -134,6 +134,14 @@ static void adjustDeeplinkResolutionCallback(FString ResolvedLink)
     }
 }
 
+static void adjustLinkResolutionCallback(FString ResolvedLink)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnLinkResolutionDelegate.Broadcast(ResolvedLink);
+    }
+}
+
 static void adjustSdkVersionGetterCallback(FString SdkVersion)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
@@ -978,6 +986,74 @@ void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink)
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustProcessAndResolveDeeplink, joAdjustDeeplink, FJavaWrapper::GameActivityThis, joDeeplinkResolvedCallbackProxy);
     Env->DeleteLocalRef(joAdjustDeeplink);
     Env->DeleteLocalRef(joDeeplinkResolvedCallbackProxy);
+#endif
+}
+
+void UAdjust::ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray)
+{
+#if PLATFORM_IOS
+    CFStringRef cfstrUrl = FPlatformString::TCHARToCFString(*Url);
+    NSString *strUrl = (NSString *)cfstrUrl;
+    NSURL *url = [NSURL URLWithString:strUrl];
+    
+    NSMutableArray *resolveUrlSuffixArray = nil;
+    if (ResolveUrlSuffixArray.Num() > 0)
+    {
+        resolveUrlSuffixArray = [[NSMutableArray alloc] init];
+        for (const FString& suffix : ResolveUrlSuffixArray)
+        {
+            CFStringRef cfstrSuffix = FPlatformString::TCHARToCFString(*suffix);
+            NSString *strSuffix = (NSString *)cfstrSuffix;
+            [resolveUrlSuffixArray addObject:strSuffix];
+        }
+    }
+    
+    [ADJLinkResolution resolveLinkWithUrl:url
+                    resolveUrlSuffixArray:resolveUrlSuffixArray
+                                 callback:^(NSURL * _Nullable resolvedLink) {
+        FString fsResolvedLink;
+        if (resolvedLink != nil)
+        {
+            fsResolvedLink = FString(UTF8_TO_TCHAR([[resolvedLink absoluteString] UTF8String]));
+        }
+        AsyncTask(ENamedThreads::GameThread, [fsResolvedLink]() {
+            adjustLinkResolutionCallback(fsResolvedLink);
+        });
+    }];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    
+    jstring jUrl = Env->NewStringUTF(TCHAR_TO_UTF8(*Url));
+    
+    jobjectArray jResolveUrlSuffixArray = nullptr;
+    if (ResolveUrlSuffixArray.Num() > 0)
+    {
+        jclass jcslString = Env->FindClass("java/lang/String");
+        jResolveUrlSuffixArray = Env->NewObjectArray(ResolveUrlSuffixArray.Num(), jcslString, nullptr);
+        for (int32 i = 0; i < ResolveUrlSuffixArray.Num(); i++)
+        {
+            jstring jSuffix = Env->NewStringUTF(TCHAR_TO_UTF8(*ResolveUrlSuffixArray[i]));
+            Env->SetObjectArrayElement(jResolveUrlSuffixArray, i, jSuffix);
+            Env->DeleteLocalRef(jSuffix);
+        }
+    }
+    
+    setLinkResolutionCallback(adjustLinkResolutionCallback);
+    jclass jcslUeLinkResolutionCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeLinkResolutionCallback");
+    jmethodID jmidUeLinkResolutionCallbackInit = Env->GetMethodID(jcslUeLinkResolutionCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joLinkResolutionCallbackProxy = Env->NewObject(jcslUeLinkResolutionCallback, jmidUeLinkResolutionCallbackInit, FJavaWrapper::GameActivityThis);
+    
+    jclass jcslAdjustLinkResolution = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustLinkResolution");
+    jmethodID jmidAdjustLinkResolutionResolveLink = Env->GetStaticMethodID(jcslAdjustLinkResolution, "resolveLink", "(Ljava/lang/String;[Ljava/lang/String;Lcom/adjust/sdk/AdjustLinkResolution$AdjustLinkResolutionCallback;)V");
+    
+    Env->CallStaticVoidMethod(jcslAdjustLinkResolution, jmidAdjustLinkResolutionResolveLink, jUrl, jResolveUrlSuffixArray, joLinkResolutionCallbackProxy);
+    
+    Env->DeleteLocalRef(jUrl);
+    if (jResolveUrlSuffixArray != nullptr)
+    {
+        Env->DeleteLocalRef(jResolveUrlSuffixArray);
+    }
+    Env->DeleteLocalRef(joLinkResolutionCallbackProxy);
 #endif
 }
 

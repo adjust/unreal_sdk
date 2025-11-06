@@ -848,6 +848,11 @@ void setDeeplinkResolutionCallback(void (*callbackMethod)(FString ResolvedLink))
     deeplinkResolutionCallbackMethod = callbackMethod;
 }
 
+void setLinkResolutionCallback(void (*callbackMethod)(FString ResolvedLink))
+{
+    linkResolutionCallbackMethod = callbackMethod;
+}
+
 void setLastDeeplinkGetterCallbackMethod(void (*callbackMethod)(FString LastDeeplink))
 {
     lastDeeplinkGetterCallbackMethod = callbackMethod;
@@ -866,6 +871,29 @@ void setAmazonAdIdGetterCallbackMethod(void (*callbackMethod)(FString AmazonAdId
 void setPurchaseVerificationCallbackMethod(void (*callbackMethod)(FAdjustPurchaseVerificationResult VerificationResult))
 {
     purchaseVerificationCallbackMethod = callbackMethod;
+}
+
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeLinkResolutionCallback_resolvedLinkCallback(
+    JNIEnv *env, jobject obj, jstring resolvedLink)
+{
+    FString fsResolvedLink;
+    if (resolvedLink != nullptr)
+    {
+        const char *utfString = env->GetStringUTFChars(resolvedLink, nullptr);
+        if (utfString != nullptr)
+        {
+            fsResolvedLink = FString(UTF8_TO_TCHAR(utfString));
+            env->ReleaseStringUTFChars(resolvedLink, utfString);
+        }
+    }
+
+    AsyncTask(ENamedThreads::GameThread, [fsResolvedLink]()
+    {
+        if (linkResolutionCallbackMethod != nullptr)
+        {
+            linkResolutionCallbackMethod(fsResolvedLink);
+        }
+    });
 }
 
 #endif

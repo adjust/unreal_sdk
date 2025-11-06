@@ -41,6 +41,7 @@
             -keep public class com.epicgames.unreal.GameActivity$AdjustUeGoogleAdIdGetterCallback { *; }
             -keep public class com.epicgames.unreal.GameActivity$AdjustUeAmazonAdIdGetterCallback { *; }
             -keep public class com.epicgames.unreal.GameActivity$AdjustUePurchaseVerificationCallback { *; }
+            -keep public class com.epicgames.unreal.GameActivity$AdjustUeLinkResolutionCallback { *; }
         </insert>
     </proguardAdditions>
 
@@ -231,6 +232,21 @@
                 @Override
                 public void onVerificationFinished(com.adjust.sdk.AdjustPurchaseVerificationResult result) {
                     verificationFinished(result);
+                }
+            }
+
+            public class AdjustUeLinkResolutionCallback implements AdjustLinkResolution.AdjustLinkResolutionCallback {
+                public native void resolvedLinkCallback(String resolvedLink);
+
+                public AdjustUeLinkResolutionCallback() {}
+
+                @Override
+                public void resolvedLinkCallback(android.net.Uri resolvedLink) {
+                    if (resolvedLink != null) {
+                        resolvedLinkCallback(resolvedLink.toString());
+                    } else {
+                        resolvedLinkCallback("");
+                    }
                 }
             }
             // End Adjust gameActivityClassAdditions

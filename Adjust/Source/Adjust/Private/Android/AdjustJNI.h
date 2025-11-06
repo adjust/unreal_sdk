@@ -31,6 +31,7 @@ extern "C"
     static void (*adidGetterCallbackMethod)(FString Adid);
     static void (*sdkVersionGetterCallbackMethod)(FString Adid);
     static void (*deeplinkResolutionCallbackMethod)(FString ResolvedLink);
+    static void (*linkResolutionCallbackMethod)(FString ResolvedLink);
     static void (*lastDeeplinkGetterCallbackMethod)(FString LastDeeplink);
     static void (*attributionGetterCallbackMethod)(FAdjustAttribution Attribution);
     static void (*googleAdIdGetterCallbackMethod)(FString GoogleAdId);
@@ -52,6 +53,7 @@ extern "C"
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeGoogleAdIdGetterCallback_googleAdIdRead(JNIEnv*, jobject, jstring);
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAmazonAdIdGetterCallback_amazonAdIdRead(JNIEnv*, jobject, jstring);
     JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUePurchaseVerificationCallback_verificationFinished(JNIEnv*, jobject, jobject);
+    JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeLinkResolutionCallback_resolvedLinkCallback(JNIEnv*, jobject, jstring);
 
     void setAttributionCallbackMethod(void (*callbackMethod)(FAdjustAttribution Attribution));
     void setSessionSuccessCallbackMethod(void (*callbackMethod)(FAdjustSessionSuccess SessionSuccess));
@@ -64,6 +66,7 @@ extern "C"
     void setAttributionGetterCallbackMethod(void (*callbackMethod)(FAdjustAttribution Attribution));
     void setSdkVersionGetterCallbackMethod(void (*callbackMethod)(FString SdkVersion));
     void setDeeplinkResolutionCallback(void (*callbackMethod)(FString ResolvedLink));
+    void setLinkResolutionCallback(void (*callbackMethod)(FString ResolvedLink));
     void setLastDeeplinkGetterCallbackMethod(void (*callbackMethod)(FString LastDeeplink));
     void setGoogleAdIdGetterCallbackMethod(void (*callbackMethod)(FString GoogleAdId));
     void setAmazonAdIdGetterCallbackMethod(void (*callbackMethod)(FString AmazonAdId));
