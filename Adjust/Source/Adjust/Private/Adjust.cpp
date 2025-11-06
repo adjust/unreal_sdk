@@ -602,9 +602,16 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
     ADJEvent *adjustEvent = [[ADJEvent alloc] initWithEventToken:strEventToken];
 
     // revenue & currency
-    CFStringRef cfstrCurrency = FPlatformString::TCHARToCFString(*Event.Currency);
-    NSString *strCurrency = (NSString *)cfstrCurrency;
-    [adjustEvent setRevenue:(double)Event.Revenue currency:strCurrency];
+    if (Event.Revenue > 0.0 || !Event.Currency.IsEmpty())
+    {
+        NSString *strCurrency = nil;
+        if (!Event.Currency.IsEmpty())
+        {
+            CFStringRef cfstrCurrency = FPlatformString::TCHARToCFString(*Event.Currency);
+            strCurrency = (NSString *)cfstrCurrency;
+        }
+        [adjustEvent setRevenue:(double)Event.Revenue currency:strCurrency];
+    }
 
     // callback parameters
     TMap<FString, FString> callbackParams = Event.CallbackParameters;
@@ -653,10 +660,20 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
     Env->DeleteLocalRef(jEventToken);
 
     // revenue & currency
-    jstring jCurrency = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.Currency));
-    jmethodID jmidAdjustEventSetRevenue = Env->GetMethodID(jcslAdjustEvent, "setRevenue", "(DLjava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetRevenue, (double)Event.Revenue, jCurrency);
-    Env->DeleteLocalRef(jCurrency);
+    if (Event.Revenue > 0.0 || !Event.Currency.IsEmpty())
+    {
+        jstring jCurrency = nullptr;
+        if (!Event.Currency.IsEmpty())
+        {
+            jCurrency = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.Currency));
+        }
+        jmethodID jmidAdjustEventSetRevenue = Env->GetMethodID(jcslAdjustEvent, "setRevenue", "(DLjava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetRevenue, (double)Event.Revenue, jCurrency);
+        if (jCurrency != nullptr)
+        {
+            Env->DeleteLocalRef(jCurrency);
+        }
+    }
 
     // deduplication ID
     jstring jDeduplicationId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.DeduplicationId));
