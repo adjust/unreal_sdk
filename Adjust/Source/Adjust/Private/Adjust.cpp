@@ -376,6 +376,19 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         adjustConfig.eventDeduplicationIdsMaxSize = Config.EventDeduplicationIdsMaxSize;
     }
 
+    // URL strategy
+    if (Config.UrlStrategyDomains.Num() > 0) {
+        NSMutableArray *urlStrategyDomains = [[NSMutableArray alloc] init];
+        for (const FString& domain : Config.UrlStrategyDomains) {
+            CFStringRef cfstrDomain = FPlatformString::TCHARToCFString(*domain);
+            NSString *strDomain = (NSString *)cfstrDomain;
+            [urlStrategyDomains addObject:strDomain];
+        }
+        [adjustConfig setUrlStrategy:urlStrategyDomains
+                      useSubdomains:Config.ShouldUseSubdomains
+                    isDataResidency:Config.IsDataResidency];
+    }
+
     // start SDK
     [Adjust initSdk:adjustConfig];
 #elif PLATFORM_ANDROID
@@ -613,6 +626,22 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         jmethodID jmidAdjustConfigSetPreinstallFilePath = Env->GetMethodID(jcslAdjustConfig, "setPreinstallFilePath", "(Ljava/lang/String;)V");
         Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetPreinstallFilePath, jPreinstallFilePath);
         Env->DeleteLocalRef(jPreinstallFilePath);
+    }
+
+    // URL strategy
+    if (Config.UrlStrategyDomains.Num() > 0) {
+        jclass jcslArrayList = Env->FindClass("java/util/ArrayList");
+        jmethodID jmidArrayListInit = Env->GetMethodID(jcslArrayList, "<init>", "()V");
+        jmethodID jmidArrayListAdd = Env->GetMethodID(jcslArrayList, "add", "(Ljava/lang/Object;)Z");
+        jobject joUrlStrategyDomains = Env->NewObject(jcslArrayList, jmidArrayListInit);
+        for (const FString& domain : Config.UrlStrategyDomains) {
+            jstring jDomain = Env->NewStringUTF(TCHAR_TO_UTF8(*domain));
+            Env->CallBooleanMethod(joUrlStrategyDomains, jmidArrayListAdd, jDomain);
+            Env->DeleteLocalRef(jDomain);
+        }
+        jmethodID jmidAdjustConfigSetUrlStrategy = Env->GetMethodID(jcslAdjustConfig, "setUrlStrategy", "(Ljava/util/List;ZZ)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetUrlStrategy, joUrlStrategyDomains, Config.ShouldUseSubdomains, Config.IsDataResidency);
+        Env->DeleteLocalRef(joUrlStrategyDomains);
     }
 
     // start SDK

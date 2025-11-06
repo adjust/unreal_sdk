@@ -111,4 +111,13 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString PreinstallFilePath;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    TArray<FString> UrlStrategyDomains;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool ShouldUseSubdomains = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool IsDataResidency = false;
 };
