@@ -89,6 +89,9 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     static void GetAttribution();
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void GetLastDeeplink();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void GetSdkVersion();
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")

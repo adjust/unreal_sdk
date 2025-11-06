@@ -1113,6 +1113,32 @@ void UAdjust::GetAttribution()
 #endif
 }
 
+void UAdjust::GetLastDeeplink()
+{
+#if PLATFORM_IOS
+    [Adjust lastDeeplinkWithCompletionHandler:^(NSURL * _Nullable lastDeeplink) {
+        FString fsLastDeeplink;
+        if (lastDeeplink != nil)
+        {
+            fsLastDeeplink = FString(UTF8_TO_TCHAR([[lastDeeplink absoluteString] UTF8String]));
+        }
+        AsyncTask(ENamedThreads::GameThread, [fsLastDeeplink]() {
+            adjustLastDeeplinkGetterCallback(fsLastDeeplink);
+        });
+    }];
+#elif PLATFORM_ANDROID
+    setLastDeeplinkGetterCallbackMethod(adjustLastDeeplinkGetterCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustGetLastDeeplink = Env->GetStaticMethodID(jcslAdjust, "getLastDeeplink", "(Landroid/content/Context;Lcom/adjust/sdk/OnLastDeeplinkReadListener;)V");
+    jclass jcslUeLastDeeplinkGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeLastDeeplinkGetterCallback");
+    jmethodID jmidUeLastDeeplinkGetterCallbackInit = Env->GetMethodID(jcslUeLastDeeplinkGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joLastDeeplinkGetterCallbackProxy = Env->NewObject(jcslUeLastDeeplinkGetterCallback, jmidUeLastDeeplinkGetterCallbackInit, FJavaWrapper::GameActivityThis);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetLastDeeplink, FJavaWrapper::GameActivityThis, joLastDeeplinkGetterCallbackProxy);
+    Env->DeleteLocalRef(joLastDeeplinkGetterCallbackProxy);
+#endif
+}
+
 void UAdjust::GetSdkVersion()
 {
 #if PLATFORM_IOS
