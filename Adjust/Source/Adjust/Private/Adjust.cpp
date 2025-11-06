@@ -363,6 +363,11 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         [adjustConfig setStoreInfo:storeInfo];
     }
 
+    // event deduplication IDs max size
+    if (Config.EventDeduplicationIdsMaxSize >= 0) {
+        adjustConfig.eventDeduplicationIdsMaxSize = Config.EventDeduplicationIdsMaxSize;
+    }
+
     // start SDK
     [Adjust initSdk:adjustConfig];
 #elif PLATFORM_ANDROID
@@ -567,6 +572,16 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
             Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetStoreInfo, joAdjustStoreInfo);
             Env->DeleteLocalRef(joAdjustStoreInfo);
         }
+    }
+
+    // event deduplication IDs max size
+    if (Config.EventDeduplicationIdsMaxSize >= 0) {
+        jclass clsInteger = Env->FindClass("java/lang/Integer");
+        jmethodID midInit = Env->GetMethodID(clsInteger, "<init>", "(I)V");
+        jobject jEventDeduplicationIdsMaxSize = Env->NewObject(clsInteger, midInit, Config.EventDeduplicationIdsMaxSize);
+        jmethodID jmidAdjustConfigSetEventDeduplicationIdsMaxSize = Env->GetMethodID(jcslAdjustConfig, "setEventDeduplicationIdsMaxSize", "(Ljava/lang/Integer;)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetEventDeduplicationIdsMaxSize, jEventDeduplicationIdsMaxSize);
+        Env->DeleteLocalRef(jEventDeduplicationIdsMaxSize);
     }
 
     // start SDK

@@ -72,6 +72,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FAdjustStoreInfo StoreInfo;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    int EventDeduplicationIdsMaxSize = -1;
+
     // ios only
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
