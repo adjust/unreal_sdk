@@ -65,6 +65,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool IsCostDataInAttributionEnabled = false;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool IsFirstSessionDelayEnabled = false;
+
     // ios only
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")

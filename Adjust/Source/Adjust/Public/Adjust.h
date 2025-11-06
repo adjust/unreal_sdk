@@ -91,6 +91,18 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void GetSdkVersion();
 
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void EndFirstSessionDelay();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void EnableCoppaComplianceInDelay();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void DisableCoppaComplianceInDelay();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void SetExternalDeviceIdInDelay(const FString& ExternalDeviceId);
+
     // ios only
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
@@ -115,4 +127,10 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void GetAmazonAdId();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void EnablePlayStoreKidsComplianceInDelay();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void DisablePlayStoreKidsComplianceInDelay();
 };

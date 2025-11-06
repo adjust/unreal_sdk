@@ -344,6 +344,11 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         [adjustConfig disableAppTrackingTransparencyUsage];
     }
 
+    // first session delay
+    if (Config.IsFirstSessionDelayEnabled == true) {
+        [adjustConfig enableFirstSessionDelay];
+    }
+
     // start SDK
     [Adjust initSdk:adjustConfig];
 #elif PLATFORM_ANDROID
@@ -520,6 +525,12 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     if (Config.IsCostDataInAttributionEnabled == true) {
         jmethodID jmidAdjustConfigCostDataInAttribution = Env->GetMethodID(jcslAdjustConfig, "enableCostDataInAttribution", "()V");
         Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigCostDataInAttribution);
+    }
+
+    // first session delay
+    if (Config.IsFirstSessionDelayEnabled == true) {
+        jmethodID jmidAdjustConfigEnableFirstSessionDelay = Env->GetMethodID(jcslAdjustConfig, "enableFirstSessionDelay", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigEnableFirstSessionDelay);
     }
 
     // start SDK
@@ -843,6 +854,26 @@ void UAdjust::GetAmazonAdId()
 #endif
 }
 
+void UAdjust::EnablePlayStoreKidsComplianceInDelay()
+{
+#if PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustEnablePlayStoreKidsComplianceInDelay = Env->GetStaticMethodID(jcslAdjust, "enablePlayStoreKidsComplianceInDelay", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustEnablePlayStoreKidsComplianceInDelay);
+#endif
+}
+
+void UAdjust::DisablePlayStoreKidsComplianceInDelay()
+{
+#if PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustDisablePlayStoreKidsComplianceInDelay = Env->GetStaticMethodID(jcslAdjust, "disablePlayStoreKidsComplianceInDelay", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustDisablePlayStoreKidsComplianceInDelay);
+#endif
+}
+
 void UAdjust::GetAdid()
 {
 #if PLATFORM_ANDROID
@@ -958,6 +989,58 @@ void UAdjust::GetSdkVersion()
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetSdkVersionId, joSdkVersionGetterCallbackProxy);
     Env->DeleteLocalRef(joSdkVersionGetterCallbackProxy);
     Env->DeleteLocalRef(jSdkPrefix);
+#endif
+}
+
+void UAdjust::EndFirstSessionDelay()
+{
+#if PLATFORM_IOS
+    [Adjust endFirstSessionDelay];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustEndFirstSessionDelay = Env->GetStaticMethodID(jcslAdjust, "endFirstSessionDelay", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustEndFirstSessionDelay);
+#endif
+}
+
+void UAdjust::EnableCoppaComplianceInDelay()
+{
+#if PLATFORM_IOS
+    [Adjust enableCoppaComplianceInDelay];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustEnableCoppaComplianceInDelay = Env->GetStaticMethodID(jcslAdjust, "enableCoppaComplianceInDelay", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustEnableCoppaComplianceInDelay);
+#endif
+}
+
+void UAdjust::DisableCoppaComplianceInDelay()
+{
+#if PLATFORM_IOS
+    [Adjust disableCoppaComplianceInDelay];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustDisableCoppaComplianceInDelay = Env->GetStaticMethodID(jcslAdjust, "disableCoppaComplianceInDelay", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustDisableCoppaComplianceInDelay);
+#endif
+}
+
+void UAdjust::SetExternalDeviceIdInDelay(const FString& ExternalDeviceId)
+{
+#if PLATFORM_IOS
+    CFStringRef cfstrExternalDeviceId = FPlatformString::TCHARToCFString(*ExternalDeviceId);
+    NSString *strExternalDeviceId = (NSString *)cfstrExternalDeviceId;
+    [Adjust setExternalDeviceIdInDelay:strExternalDeviceId];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustSetExternalDeviceIdInDelay = Env->GetStaticMethodID(jcslAdjust, "setExternalDeviceIdInDelay", "(Ljava/lang/String;)V");
+    jstring jExternalDeviceId = Env->NewStringUTF(TCHAR_TO_UTF8(*ExternalDeviceId));
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustSetExternalDeviceIdInDelay, jExternalDeviceId);
+    Env->DeleteLocalRef(jExternalDeviceId);
 #endif
 }
 
