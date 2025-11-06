@@ -1,3 +1,34 @@
+### Version 5.4.0 (6th November 2025)
+#### Added
+- Added `JsonResponse` field (`FString`) to `FAdjustAttribution` where every key-value pair sent by the backend as part of the attribution response can be found.
+- Added ability to disable SDK's interaction with `AppTrackingTransparency.framework` API. You can disable it by setting the `IsAppTrackingTransparencyUsageEnabled` property to `false` on your `FAdjustConfig` instance.
+- Added ability to send organic search referrer together with deep link. You can pass it by setting the `Referrer` property of your `FAdjustDeeplink` instance.
+- Added ability to initialize the SDK for the first session in delayed mode. You can start the SDK in the delayed mode by setting the `IsFirstSessionDelayEnabled` property to `true` on your `FAdjustConfig` instance. To end the delay, make sure to call `EndFirstSessionDelay` method of `UAdjust` instance. Additionally, you can use `EnableCoppaComplianceInDelay`, `DisableCoppaComplianceInDelay`, `SetExternalDeviceIdInDelay` methods, and on Android `EnablePlayStoreKidsComplianceInDelay`, `DisablePlayStoreKidsComplianceInDelay` methods.
+- Added support for configuring store information via the `FAdjustStoreInfo` object. You can now specify the store name and store app ID using `StoreInfo` property on your `FAdjustConfig` instance. This enables the SDK to record the intended app store source during initialization.
+- Added ability to set the maximum number of event deduplication IDs the SDK remembers. You can set this by setting the `EventDeduplicationIdsMaxSize` property on your `FAdjustConfig` instance.
+- Added support for URL strategy and data residency. You can configure this by setting the `UrlStrategyDomains`, `ShouldUseSubdomains`, and `IsDataResidency` properties on your `FAdjustConfig` instance. This allows you to set either the country in which Adjust stores your data (data residency) or the endpoint to which the Adjust SDK sends traffic (URL strategy).
+- Added support for preinstall tracking on Android. You can enable this by setting the `IsPreinstallTrackingEnabled` property to `true` and optionally setting the `PreinstallFilePath` property on your `FAdjustConfig` instance.
+- Added support for subscription tracking. You can track App Store subscriptions on iOS using `TrackAppStoreSubscription` method and Play Store subscriptions on Android using `TrackPlayStoreSubscription` method of `UAdjust` instance.
+- Added support for purchase verification. You can verify App Store purchases on iOS using `VerifyAppStorePurchase` method and Play Store purchases on Android using `VerifyPlayStorePurchase` method of `UAdjust` instance. Additionally, you can verify and track purchases in a single call using `VerifyAndTrackAppStorePurchase` and `VerifyAndTrackPlayStorePurchase` methods.
+- Added ability to resolve adjust links behind other links. You can use the `ResolveLink` method of `UAdjust` instance to resolve shortened links and get the final destination URL.
+- Added `GetLastDeeplink` method to `UAdjust` instance to retrieve the last processed deeplink.
+- Added `TransactionId` and `ProductId` fields to `FAdjustEvent` for iOS, and `ProductId` and `PurchaseToken` fields for Android to support in-app purchase event tracking.
+- Added `FbAppId` property to `FAdjustConfig` for Android to set Facebook App ID.
+
+#### Fixed
+- Fixed iOS getter callbacks not running on Unreal game thread, which caused ensure failures when using `TObjectIterator` in callbacks. All iOS completion handlers now properly marshal execution to the Unreal game thread using `AsyncTask`.
+- Fixed `CostAmount` field in `FAdjustAttribution` not being initialized properly by adding default value.
+
+#### Changed
+- Updated logic to validate empty string parameters before passing them to native SDKs to prevent unnecessary native calls.
+- Updated revenue and currency handling in `TrackEvent` method to properly handle cases where revenue is set but currency is empty, or both are empty.
+
+#### Native SDKs
+- [Android@v5.4.5][android_sdk_v5.4.5]
+- [iOS@v5.4.6][ios_sdk_v5.4.6]
+
+---
+
 ### Version 5.0.1 (17th February 2025)
 #### Added
 - Added sending of the additional parameter to improve troubleshooting of `SKAdNetwork` related issues.
@@ -83,9 +114,12 @@ If you are a current Adjust client and have questions about SDK v5, please email
 [android_sdk_v4.18.1]: https://github.com/adjust/android_sdk/tree/v4.18.1
 [android_sdk_v4.26.2]: https://github.com/adjust/android_sdk/tree/v4.26.2
 [android_sdk_v5.1.0]: https://github.com/adjust/android_sdk/tree/v5.1.0
+[android_sdk_v5.4.5]: https://github.com/adjust/android_sdk/tree/v5.4.5
 
 [ios_sdk_v4.17.1]: https://github.com/adjust/ios_sdk/tree/v4.17.1
 [ios_sdk_v4.18.3]: https://github.com/adjust/ios_sdk/tree/v4.18.3
 [ios_sdk_v4.26.1]: https://github.com/adjust/ios_sdk/tree/v4.26.1
 [ios_sdk_v4.28.0]: https://github.com/adjust/ios_sdk/tree/v4.28.0
 [ios_sdk_v5.0.1]: https://github.com/adjust/ios_sdk/tree/v5.0.1
+[ios_sdk_v5.1.0]: https://github.com/adjust/ios_sdk/tree/v5.1.0
+[ios_sdk_v5.4.6]: https://github.com/adjust/ios_sdk/tree/v5.4.6
