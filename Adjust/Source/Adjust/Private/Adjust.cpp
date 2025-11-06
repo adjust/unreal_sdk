@@ -281,10 +281,10 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     }
 
     // external device ID
-    CFStringRef cfstrExternalDeviceId = FPlatformString::TCHARToCFString(*Config.ExternalDeviceId);
-    NSString *strExternalDeviceId = (NSString *)cfstrExternalDeviceId;
-    if ([strExternalDeviceId length] > 0)
+    if (!Config.ExternalDeviceId.IsEmpty())
     {
+        CFStringRef cfstrExternalDeviceId = FPlatformString::TCHARToCFString(*Config.ExternalDeviceId);
+        NSString *strExternalDeviceId = (NSString *)cfstrExternalDeviceId;
         [adjustConfig setExternalDeviceId:strExternalDeviceId];
     }
 
@@ -508,16 +508,22 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     }
 
     // external device ID
-    jstring jExternalDeviceId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.ExternalDeviceId));
-    jmethodID jmidAdjustConfigSetExternalDeviceId = Env->GetMethodID(jcslAdjustConfig, "setExternalDeviceId", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetExternalDeviceId, jExternalDeviceId);
-    Env->DeleteLocalRef(jExternalDeviceId);
+    if (!Config.ExternalDeviceId.IsEmpty())
+    {
+        jstring jExternalDeviceId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.ExternalDeviceId));
+        jmethodID jmidAdjustConfigSetExternalDeviceId = Env->GetMethodID(jcslAdjustConfig, "setExternalDeviceId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetExternalDeviceId, jExternalDeviceId);
+        Env->DeleteLocalRef(jExternalDeviceId);
+    }
 
     // FB app ID
-    jstring jFbAppId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.FbAppId));
-    jmethodID jmidAdjustConfigSetFbAppId = Env->GetMethodID(jcslAdjustConfig, "setFbAppId", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetFbAppId, jFbAppId);
-    Env->DeleteLocalRef(jFbAppId);
+    if (!Config.FbAppId.IsEmpty())
+    {
+        jstring jFbAppId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.FbAppId));
+        jmethodID jmidAdjustConfigSetFbAppId = Env->GetMethodID(jcslAdjustConfig, "setFbAppId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetFbAppId, jFbAppId);
+        Env->DeleteLocalRef(jFbAppId);
+    }
 
     // COPPA compliance
     if (Config.IsCoppaComplianceEnabled == true) {
@@ -639,14 +645,20 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
     }
 
     // deduplication ID
-    CFStringRef cfstrDeduplicationId = FPlatformString::TCHARToCFString(*Event.DeduplicationId);
-    NSString *strDeduplicationId = (NSString *)cfstrDeduplicationId;
-    [adjustEvent setDeduplicationId:strDeduplicationId];
+    if (!Event.DeduplicationId.IsEmpty())
+    {
+        CFStringRef cfstrDeduplicationId = FPlatformString::TCHARToCFString(*Event.DeduplicationId);
+        NSString *strDeduplicationId = (NSString *)cfstrDeduplicationId;
+        [adjustEvent setDeduplicationId:strDeduplicationId];
+    }
 
     // callback ID
-    CFStringRef cfstrCallbackId = FPlatformString::TCHARToCFString(*Event.CallbackId);
-    NSString *strCallbackId = (NSString *)cfstrCallbackId;
-    [adjustEvent setCallbackId:strCallbackId];
+    if (!Event.CallbackId.IsEmpty())
+    {
+        CFStringRef cfstrCallbackId = FPlatformString::TCHARToCFString(*Event.CallbackId);
+        NSString *strCallbackId = (NSString *)cfstrCallbackId;
+        [adjustEvent setCallbackId:strCallbackId];
+    }
 
     // track event
     [Adjust trackEvent:adjustEvent];
@@ -679,16 +691,22 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
     }
 
     // deduplication ID
-    jstring jDeduplicationId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.DeduplicationId));
-    jmethodID jmidAdjustEventSetDeduplicationId = Env->GetMethodID(jcslAdjustEvent, "setDeduplicationId", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetDeduplicationId, jDeduplicationId);
-    Env->DeleteLocalRef(jDeduplicationId);
+    if (!Event.DeduplicationId.IsEmpty())
+    {
+        jstring jDeduplicationId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.DeduplicationId));
+        jmethodID jmidAdjustEventSetDeduplicationId = Env->GetMethodID(jcslAdjustEvent, "setDeduplicationId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetDeduplicationId, jDeduplicationId);
+        Env->DeleteLocalRef(jDeduplicationId);
+    }
 
     // callback ID
-    jstring jCallbackId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.CallbackId));
-    jmethodID jmidAdjustEventSetCallbackId = Env->GetMethodID(jcslAdjustEvent, "setCallbackId", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetCallbackId, jCallbackId);
-    Env->DeleteLocalRef(jCallbackId);
+    if (!Event.CallbackId.IsEmpty())
+    {
+        jstring jCallbackId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.CallbackId));
+        jmethodID jmidAdjustEventSetCallbackId = Env->GetMethodID(jcslAdjustEvent, "setCallbackId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetCallbackId, jCallbackId);
+        Env->DeleteLocalRef(jCallbackId);
+    }
 
     // callback parameters
     jmethodID jmidAdjustEventAddCallbackParameter = Env->GetMethodID(jcslAdjustEvent, "addCallbackParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
