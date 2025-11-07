@@ -190,6 +190,14 @@ static void adjustUpdateSkanConversionValueCallback(FString Error)
     }
 }
 
+static void adjustSkanConversionValueUpdatedCallback(FAdjustSkanConversionDataMap ConversionData)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnSkanConversionValueUpdatedDelegate.Broadcast(ConversionData);
+    }
+}
+
 static void adjustGoogleAdIdGetterCallback(FString GoogleAdId)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
@@ -285,6 +293,7 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     [delegate setEventSuccessCallback:adjustEventSuccessCallback];
     [delegate setEventFailureCallback:adjustEventFailureCallback];
     [delegate setDeferredDeeplinkCallback:adjustDeferredDeeplinkCallback];
+    [delegate setSkanConversionValueUpdatedCallback:adjustSkanConversionValueUpdatedCallback];
     [delegate setShouldOpenDeferredDeeplink:Config.IsDeferredDeeplinkOpeningEnabled];
     adjustConfig.delegate = delegate;
 

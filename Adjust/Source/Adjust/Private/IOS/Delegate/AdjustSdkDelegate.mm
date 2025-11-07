@@ -207,4 +207,30 @@
     return _shouldOpenDeferredDeeplink;
 }
 
+- (void)adjustSkanUpdatedWithConversionData:(nonnull NSDictionary<NSString *, NSString *> *)data {
+    if (_skanConversionValueUpdatedCallback == nil) {
+        return;
+    }
+
+    FAdjustSkanConversionDataMap conversionDataMap;
+
+    if (data != nil) {
+        for (NSString *key in data) {
+            NSString *value = [data objectForKey:key];
+            if (key != nil && value != nil) {
+                FString fsKey = FString(UTF8_TO_TCHAR([key UTF8String]));
+                FString fsValue = FString(UTF8_TO_TCHAR([value UTF8String]));
+                conversionDataMap.Data.Add(fsKey, fsValue);
+            }
+        }
+    }
+
+    auto callback = _skanConversionValueUpdatedCallback;
+    AsyncTask(ENamedThreads::GameThread, [conversionDataMap, callback]() {
+        if (callback) {
+            callback(conversionDataMap);
+        }
+    });
+}
+
 @end

@@ -14,6 +14,7 @@
 #import "../../../Public/AdjustSessionFailure.h"
 #import "../../../Public/AdjustEventSuccess.h"
 #import "../../../Public/AdjustEventFailure.h"
+#import "../../../Public/AdjustSkanConversionDataMap.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) void (*eventSuccessCallback)(FAdjustEventSuccess eventSuccess);
 @property (nonatomic) void (*eventFailureCallback)(FAdjustEventFailure eventFailure);
 @property (nonatomic) void (*deferredDeeplinkCallback)(FString deeplink);
+@property (nonatomic) void (*skanConversionValueUpdatedCallback)(FAdjustSkanConversionDataMap conversionData);
 @property (assign) BOOL shouldOpenDeferredDeeplink;
 
 @end

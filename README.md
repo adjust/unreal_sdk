@@ -53,6 +53,7 @@ This is the Unreal Engine SDK of Adjust™. You can read more about Adjust™ at
    * [SKAdNetwork and conversion values](#skan-framework)
       * [Disable SKAdNetwork communication](#skan-disable)
       * [Set up direct install postbacks](#skan-postbacks)
+      * [SKAdNetwork conversion value updated callback](#skan-conversion-value-updated)
    * [Record ad revenue information](#adrevenue-recording)
       * [Ad revenue amount](#adrevenue-amount)
       * [Ad revenue network](#adrevenue-network)
@@ -1001,7 +1002,7 @@ bool IsSkanAttributionEnabled = true;
 
 ### <a id="skan-postbacks"></a>Set up direct install postbacks
 
-> Note: Direct install postbacks contain only SKAdNetwork information. Information such as campaign data isn’t included in these postbacks.
+> Note: Direct install postbacks contain only SKAdNetwork information. Information such as campaign data isn't included in these postbacks.
 
 You can configure your app to send a copy of winning SKAdNetwork callbacks to Adjust. This enables you to use SKAdNetwork information in your analytics.
 
@@ -1012,7 +1013,49 @@ To set up direct install postbacks, you need to add the Adjust callback URL to y
 <string>https://adjust-skadnetwork.com</string>
 ```
 
-> See also: See Apple’s guide on [Configuring an Advertised App](https://developer.apple.com/documentation/storekit/skadnetwork/configuring_an_advertised_app) for more information.
+> See also: See Apple's guide on [Configuring an Advertised App](https://developer.apple.com/documentation/storekit/skadnetwork/configuring_an_advertised_app) for more information.
+
+### <a id="skan-conversion-value-updated"></a>SKAdNetwork conversion value updated callback
+
+> Note: This feature is iOS only.
+
+You can register a callback to be notified whenever the Adjust SDK updates the SKAdNetwork conversion value. This callback provides a dictionary containing the conversion value data set by the SDK and any possible API invocation errors.
+
+The dictionary may contain the following keys:
+- `conversion_value`: The conversion value that was set by the Adjust SDK
+- `coarse_value`: The coarse value that was set by the Adjust SDK
+- `lock_window`: Whether the postback will be sent before the conversion window ends
+- `error`: Any error that occurred during the conversion value update
+
+You can use this callback even while using pre 4.0 SKAdNetwork. In that case, the dictionary will contain only the `conversion_value` key.
+
+To implement the callback, bind to the `OnSkanConversionValueUpdatedDelegate` on your `UAdjustDelegates` instance:
+
+```cpp
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSkanConversionValueUpdatedDelegate, const FAdjustSkanConversionDataMap&, ConversionData);
+
+// ...
+
+UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+FOnSkanConversionValueUpdatedDelegate OnSkanConversionValueUpdatedDelegate;
+```
+
+The `FAdjustSkanConversionDataMap` struct contains a `Data` property of type `TMap<FString, FString>` which holds the conversion value data dictionary.
+
+Example implementation:
+
+```cpp
+void AMyGameMode::OnSkanConversionValueUpdated(const FAdjustSkanConversionDataMap& ConversionData)
+{
+    for (const auto& Pair : ConversionData.Data)
+    {
+        UE_LOG(LogTemp, Log, TEXT("SKAN Conversion Data - %s: %s"), *Pair.Key, *Pair.Value);
+    }
+}
+
+// In BeginPlay or similar:
+AdjustDelegatesInstance->OnSkanConversionValueUpdatedDelegate.AddDynamic(this, &AMyGameMode::OnSkanConversionValueUpdated);
+```
 
 ### <a id="adrevenue-recording"></a>Record ad revenue information
 

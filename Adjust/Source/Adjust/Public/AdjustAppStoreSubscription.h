@@ -17,7 +17,7 @@ struct FAdjustAppStoreSubscription
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    int64 Price;
+    double Price;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString Currency;
