@@ -3,29 +3,29 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 4th October 2018.
-//  Copyright © 2018-2021 Adjust GmbH. All rights reserved.
+//  Copyright © 2018-Present Adjust GmbH. All rights reserved.
 //
 
-#import "AdjustJNI.h"
+#include "AdjustJNI.h"
 
 #if PLATFORM_ANDROID
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttributionCallback_attributionChanged(
     JNIEnv* env, jobject obj, jobject attributionObject)
 {
-    // Ensure the attributionObject is not null
+    // ensure the attributionObject is not null
     if (attributionObject == nullptr)
     {
         return;
     }
 
-    // Get the AdjustAttribution class
+    // get the AdjustAttribution class
     jclass attributionClass = env->GetObjectClass(attributionObject);
     if (attributionClass == nullptr)
     {
         return;
     }
 
-    // Helper function to get string fields
+    // helper function to get string fields
     auto getStringField = [&](const char* fieldName) -> FString {
         jfieldID fieldId = env->GetFieldID(attributionClass, fieldName, "Ljava/lang/String;");
         if (fieldId == nullptr)
@@ -44,7 +44,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
         return result;
     };
 
-    // Helper function to get double fields
+    // helper function to get double fields
     auto getDoubleField = [&](const char* fieldName) -> double {
         jfieldID fieldId = env->GetFieldID(attributionClass, fieldName, "Ljava/lang/Double;");
         if (fieldId == nullptr)
@@ -64,7 +64,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
         return value;
     };
 
-    // Extract all fields
+    // extract all fields
     FString trackerToken = getStringField("trackerToken");
     FString trackerName = getStringField("trackerName");
     FString network = getStringField("network");
@@ -76,6 +76,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
     double costAmount = getDoubleField("costAmount");
     FString costCurrency = getStringField("costCurrency");
     FString fbInstallReferrer = getStringField("fbInstallReferrer");
+    FString fsJsonResponse = getStringField("jsonResponse");
 
     AsyncTask(ENamedThreads::GameThread, [
         trackerToken,
@@ -88,7 +89,8 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
         costType,
         costAmount,
         costCurrency,
-        fbInstallReferrer]()
+        fbInstallReferrer,
+        fsJsonResponse]()
     {
         FAdjustAttribution ueAttribution;
         ueAttribution.TrackerToken = trackerToken;
@@ -102,30 +104,31 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
         ueAttribution.CostAmount = costAmount;
         ueAttribution.CostCurrency = costCurrency;
         ueAttribution.FbInstallReferrer = fbInstallReferrer;
+        ueAttribution.JsonResponse = fsJsonResponse;
         attributionCallbackMethod(ueAttribution);
     });
 
-    // Clean up local references
+    // clean up local references
     env->DeleteLocalRef(attributionClass);
 }
 
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSessionSuccessCallback_sessionSuccess(
     JNIEnv* env, jobject obj, jobject sessionSuccessObject)
 {
-    // Ensure the sessionSuccessObject is not null
+    // ensure the sessionSuccessObject is not null
     if (sessionSuccessObject == nullptr)
     {
         return;
     }
 
-    // Get the AdjustSessionSuccess class
+    // get the AdjustSessionSuccess class
     jclass sessionSuccessClass = env->GetObjectClass(sessionSuccessObject);
     if (sessionSuccessClass == nullptr)
     {
         return;
     }
 
-    // Helper function to get string fields
+    // helper function to get string fields
     auto getStringField = [&](const char* fieldName) -> FString {
         jfieldID fieldId = env->GetFieldID(sessionSuccessClass, fieldName, "Ljava/lang/String;");
         if (fieldId == nullptr)
@@ -144,12 +147,12 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSessi
         return result;
     };
 
-    // Extract fields
+    // extract fields
     FString message = getStringField("message");
     FString timestamp = getStringField("timestamp");
     FString adid = getStringField("adid");
 
-    // Extract jsonResponse field
+    // extract jsonResponse field
     jfieldID jsonResponseFieldId = env->GetFieldID(sessionSuccessClass, "jsonResponse", "Lorg/json/JSONObject;");
     FString jsonResponseString;
     if (jsonResponseFieldId != nullptr)
@@ -189,20 +192,20 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSessi
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSessionFailureCallback_sessionFailure(
     JNIEnv* env, jobject obj, jobject sessionFailureObject)
 {
-    // Ensure the sessionFailureObject is not null
+    // ensure the sessionFailureObject is not null
     if (sessionFailureObject == nullptr)
     {
         return;
     }
 
-    // Get the AdjustSessionFailure class
+    // get the AdjustSessionFailure class
     jclass sessionFailureClass = env->GetObjectClass(sessionFailureObject);
     if (sessionFailureClass == nullptr)
     {
         return;
     }
 
-    // Helper function to get string fields
+    // helper function to get string fields
     auto getStringField = [&](const char* fieldName) -> FString {
         jfieldID fieldId = env->GetFieldID(sessionFailureClass, fieldName, "Ljava/lang/String;");
         if (fieldId == nullptr)
@@ -221,12 +224,12 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSessi
         return result;
     };
 
-    // Extract fields
+    // extract fields
     FString message = getStringField("message");
     FString timestamp = getStringField("timestamp");
     FString adid = getStringField("adid");
 
-    // Extract willRetry field
+    // extract willRetry field
     jfieldID willRetryFieldId = env->GetFieldID(sessionFailureClass, "willRetry", "Z");
     bool willRetry = false;
     if (willRetryFieldId != nullptr)
@@ -234,7 +237,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSessi
         willRetry = env->GetBooleanField(sessionFailureObject, willRetryFieldId);
     }
 
-    // Extract jsonResponse field
+    // extract jsonResponse field
     jfieldID jsonResponseFieldId = env->GetFieldID(sessionFailureClass, "jsonResponse", "Lorg/json/JSONObject;");
     FString jsonResponseString;
     if (jsonResponseFieldId != nullptr)
@@ -275,20 +278,20 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSessi
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEventSuccessCallback_eventSuccess(
     JNIEnv* env, jobject obj, jobject eventSuccessObject)
 {
-    // Ensure the eventSuccessObject is not null
+    // ensure the eventSuccessObject is not null
     if (eventSuccessObject == nullptr)
     {
         return;
     }
 
-    // Get the AdjustEventSuccess class
+    // get the AdjustEventSuccess class
     jclass eventSuccessClass = env->GetObjectClass(eventSuccessObject);
     if (eventSuccessClass == nullptr)
     {
         return;
     }
 
-    // Helper function to get string fields
+    // helper function to get string fields
     auto getStringField = [&](const char* fieldName) -> FString {
         jfieldID fieldId = env->GetFieldID(eventSuccessClass, fieldName, "Ljava/lang/String;");
         if (fieldId == nullptr)
@@ -307,14 +310,14 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEvent
         return result;
     };
 
-    // Extract fields
+    // extract fields
     FString eventToken = getStringField("eventToken");
     FString message = getStringField("message");
     FString adid = getStringField("adid");
     FString timestamp = getStringField("timestamp");
     FString callbackId = getStringField("callbackId");
 
-    // Extract jsonResponse field
+    // extract jsonResponse field
     jfieldID jsonResponseFieldId = env->GetFieldID(eventSuccessClass, "jsonResponse", "Lorg/json/JSONObject;");
     FString jsonResponseString;
     if (jsonResponseFieldId != nullptr)
@@ -356,20 +359,20 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEvent
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEventFailureCallback_eventFailure(
     JNIEnv* env, jobject obj, jobject eventFailureObject)
 {
-    // Ensure the eventFailureObject is not null
+    // ensure the eventFailureObject is not null
     if (eventFailureObject == nullptr)
     {
         return;
     }
 
-    // Get the AdjustEventFailure class
+    // get the AdjustEventFailure class
     jclass eventFailureClass = env->GetObjectClass(eventFailureObject);
     if (eventFailureClass == nullptr)
     {
         return;
     }
 
-    // Helper function to get string fields
+    // helper function to get string fields
     auto getStringField = [&](const char* fieldName) -> FString {
         jfieldID fieldId = env->GetFieldID(eventFailureClass, fieldName, "Ljava/lang/String;");
         if (fieldId == nullptr)
@@ -388,14 +391,14 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEvent
         return result;
     };
 
-    // Extract fields
+    // extract fields
     FString eventToken = getStringField("eventToken");
     FString message = getStringField("message");
     FString adid = getStringField("adid");
     FString timestamp = getStringField("timestamp");
     FString callbackId = getStringField("callbackId");
 
-    // Extract willRetry field
+    // extract willRetry field
     jfieldID willRetryFieldId = env->GetFieldID(eventFailureClass, "willRetry", "Z");
     bool willRetry = false;
     if (willRetryFieldId != nullptr)
@@ -403,7 +406,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEvent
         willRetry = env->GetBooleanField(eventFailureObject, willRetryFieldId);
     }
 
-    // Extract jsonResponse field
+    // extract jsonResponse field
     jfieldID jsonResponseFieldId = env->GetFieldID(eventFailureClass, "jsonResponse", "Lorg/json/JSONObject;");
     FString jsonResponseString;
     if (jsonResponseFieldId != nullptr)
@@ -446,13 +449,13 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeEvent
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeDeferredDeeplinkCallback_deferredDeeplinkReceived(
     JNIEnv *env, jobject obj, jstring jDeeplink)
 {
-    // Check if the jDeeplink is null
+    // check if the jDeeplink is null
     if (jDeeplink == nullptr)
     {
         return;
     }
 
-    // Convert the jDeeplink to FString
+    // convert the jDeeplink to FString
     const char* cDeeplink = env->GetStringUTFChars(jDeeplink, nullptr);
     FString deferredDeeplink = FString(UTF8_TO_TCHAR(cDeeplink));
     env->ReleaseStringUTFChars(jDeeplink, cDeeplink);
@@ -523,20 +526,20 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSdkVe
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttributionGetterCallback_attributionRead(
     JNIEnv* env, jobject obj, jobject attributionObject)
 {
-    // Ensure the attributionObject is not null
+    // ensure the attributionObject is not null
     if (attributionObject == nullptr)
     {
         return;
     }
 
-    // Get the AdjustAttribution class
+    // get the AdjustAttribution class
     jclass attributionClass = env->GetObjectClass(attributionObject);
     if (attributionClass == nullptr)
     {
         return;
     }
 
-    // Helper function to get string fields
+    // helper function to get string fields
     auto getStringField = [&](const char* fieldName) -> FString {
         jfieldID fieldId = env->GetFieldID(attributionClass, fieldName, "Ljava/lang/String;");
         if (fieldId == nullptr)
@@ -555,7 +558,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
         return result;
     };
 
-    // Helper function to get double fields
+    // helper function to get double fields
     auto getDoubleField = [&](const char* fieldName) -> double {
         jfieldID fieldId = env->GetFieldID(attributionClass, fieldName, "Ljava/lang/Double;");
         if (fieldId == nullptr)
@@ -575,7 +578,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
         return value;
     };
 
-    // Extract all fields
+    // extract all fields
     FString trackerToken = getStringField("trackerToken");
     FString trackerName = getStringField("trackerName");
     FString network = getStringField("network");
@@ -587,6 +590,7 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
     double costAmount = getDoubleField("costAmount");
     FString costCurrency = getStringField("costCurrency");
     FString fbInstallReferrer = getStringField("fbInstallReferrer");
+    FString fsJsonResponse = getStringField("jsonResponse");
 
     AsyncTask(ENamedThreads::GameThread, [
         trackerToken,
@@ -599,7 +603,8 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
         costType,
         costAmount,
         costCurrency,
-        fbInstallReferrer]()
+        fbInstallReferrer,
+        fsJsonResponse]()
     {
         if (attributionGetterCallbackMethod != nullptr)
         {
@@ -615,11 +620,12 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
             ueAttribution.CostAmount = costAmount;
             ueAttribution.CostCurrency = costCurrency;
             ueAttribution.FbInstallReferrer = fbInstallReferrer;
+            ueAttribution.JsonResponse = fsJsonResponse;
             attributionGetterCallbackMethod(ueAttribution);
         }
     });
 
-    // Clean up local references
+    // clean up local references
     env->DeleteLocalRef(attributionClass);
 }
 
@@ -707,6 +713,91 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAmazo
     });
 }
 
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUePurchaseVerificationCallback_verificationFinished(
+    JNIEnv *env, jobject obj, jobject verificationResultObject)
+{
+    if (verificationResultObject == nullptr)
+    {
+        return;
+    }
+
+    jclass verificationResultClass = env->GetObjectClass(verificationResultObject);
+    if (verificationResultClass == nullptr)
+    {
+        return;
+    }
+
+    // helper function to get string fields
+    auto getStringField = [&](const char* fieldName) -> FString {
+        jmethodID methodId = env->GetMethodID(verificationResultClass, fieldName, "()Ljava/lang/String;");
+        if (methodId == nullptr)
+        {
+            return FString();
+        }
+        jstring jStr = (jstring)env->CallObjectMethod(verificationResultObject, methodId);
+        if (jStr == nullptr)
+        {
+            return FString();
+        }
+        const char* cStr = env->GetStringUTFChars(jStr, nullptr);
+        FString result = FString(UTF8_TO_TCHAR(cStr));
+        env->ReleaseStringUTFChars(jStr, cStr);
+        env->DeleteLocalRef(jStr);
+        return result;
+    };
+
+    // helper function to get int fields
+    auto getIntField = [&](const char* fieldName) -> int {
+        jmethodID methodId = env->GetMethodID(verificationResultClass, fieldName, "()I");
+        if (methodId == nullptr)
+        {
+            return 0;
+        }
+        return env->CallIntMethod(verificationResultObject, methodId);
+    };
+
+    FString verificationStatus = getStringField("getVerificationStatus");
+    int code = getIntField("getCode");
+    FString message = getStringField("getMessage");
+
+    env->DeleteLocalRef(verificationResultClass);
+
+    AsyncTask(ENamedThreads::GameThread, [verificationStatus, code, message]()
+    {
+        if (purchaseVerificationCallbackMethod != nullptr)
+        {
+            FAdjustPurchaseVerificationResult ueResult;
+            ueResult.VerificationStatus = verificationStatus;
+            ueResult.Code = code;
+            ueResult.Message = message;
+            purchaseVerificationCallbackMethod(ueResult);
+        }
+    });
+}
+
+JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeLinkResolutionCallback_resolvedLinkCallback(
+    JNIEnv *env, jobject obj, jstring resolvedLink)
+{
+    FString fsResolvedLink;
+    if (resolvedLink != nullptr)
+    {
+        const char *utfString = env->GetStringUTFChars(resolvedLink, nullptr);
+        if (utfString != nullptr)
+        {
+            fsResolvedLink = FString(UTF8_TO_TCHAR(utfString));
+            env->ReleaseStringUTFChars(resolvedLink, utfString);
+        }
+    }
+
+    AsyncTask(ENamedThreads::GameThread, [fsResolvedLink]()
+    {
+        if (linkResolutionCallbackMethod != nullptr)
+        {
+            linkResolutionCallbackMethod(fsResolvedLink);
+        }
+    });
+}
+
 void setAttributionCallbackMethod(void (*callbackMethod)(FAdjustAttribution Attribution))
 {
     if (NULL == attributionCallbackMethod)
@@ -780,6 +871,11 @@ void setDeeplinkResolutionCallback(void (*callbackMethod)(FString ResolvedLink))
     deeplinkResolutionCallbackMethod = callbackMethod;
 }
 
+void setLinkResolutionCallback(void (*callbackMethod)(FString ResolvedLink))
+{
+    linkResolutionCallbackMethod = callbackMethod;
+}
+
 void setLastDeeplinkGetterCallbackMethod(void (*callbackMethod)(FString LastDeeplink))
 {
     lastDeeplinkGetterCallbackMethod = callbackMethod;
@@ -793,6 +889,11 @@ void setGoogleAdIdGetterCallbackMethod(void (*callbackMethod)(FString GoogleAdId
 void setAmazonAdIdGetterCallbackMethod(void (*callbackMethod)(FString AmazonAdId))
 {
     amazonAdIdGetterCallbackMethod = callbackMethod;
+}
+
+void setPurchaseVerificationCallbackMethod(void (*callbackMethod)(FAdjustPurchaseVerificationResult VerificationResult))
+{
+    purchaseVerificationCallbackMethod = callbackMethod;
 }
 
 #endif

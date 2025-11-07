@@ -15,6 +15,8 @@
 #include "AdjustSessionFailure.h"
 #include "AdjustEventSuccess.h"
 #include "AdjustEventFailure.h"
+#include "AdjustPurchaseVerificationResult.h"
+#include "AdjustSkanConversionDataMap.h"
 #include "AdjustDelegates.generated.h"
 
 // subscription multiplatform delegates
@@ -25,6 +27,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEventSuccessDelegate, const FAdju
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEventFailureDelegate, const FAdjustEventFailure&, EventFailure);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeferredDeeplinkDelegate, const FString&, Deeplink);
 // subscription ios delegates
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSkanConversionValueUpdatedDelegate, const FAdjustSkanConversionDataMap&, ConversionData);
 
 // one-time multiplatform delegates
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIsEnabledDelegate, const bool, IsEnabled);
@@ -32,7 +35,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAdidGetterDelegate, const FString
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributionGetterDelegate, const FAdjustAttribution&, Attribution);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLastDeeplinkGetterDelegate, const FString&, LastDeeplink);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeeplinkResolutionDelegate, const FString&, ResolvedLink);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLinkResolutionDelegate, const FString&, ResolvedLink);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSdkVersionGetterDelegate, const FString&, SdkVersion);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPurchaseVerificationFinishedDelegate, const FAdjustPurchaseVerificationResult&, VerificationResult);
 // one-time ios delegates
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIdfaGetterDelegate, const FString&, Idfa);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIdfvGetterDelegate, const FString&, Idfv);
@@ -72,6 +77,11 @@ public:
     UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnDeferredDeeplinkDelegate OnDeferredDeeplinkDelegate;
 
+    // subscription ios delegates
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnSkanConversionValueUpdatedDelegate OnSkanConversionValueUpdatedDelegate;
+
     // one-time multiplatform delegates
 
     UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
@@ -90,7 +100,13 @@ public:
     FOnDeeplinkResolutionDelegate OnDeeplinkResolutionDelegate;
 
     UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnLinkResolutionDelegate OnLinkResolutionDelegate;
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
     FOnSdkVersionGetterDelegate OnSdkVersionGetterDelegate;
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+    FOnPurchaseVerificationFinishedDelegate OnPurchaseVerificationFinishedDelegate;
 
     // one-time ios delegates
 

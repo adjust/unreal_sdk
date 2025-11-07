@@ -14,6 +14,7 @@
 @class ADJEventFailure;
 @class ADJSessionSuccess;
 @class ADJSessionFailure;
+@class ADJStoreInfo;
 typedef NS_ENUM(NSUInteger, ADJLogLevel);
 
 #pragma mark - AdjustDelegate methods
@@ -187,7 +188,17 @@ typedef NS_ENUM(NSUInteger, ADJLogLevel);
 /**
  * @brief Indicator of whether SDK should start in COPPA compliant mode or not.
  */
-@property (nonatomic, readonly) BOOL isCoppaComplianceEnabled;
+@property (nonatomic) BOOL isCoppaComplianceEnabled;
+
+/**
+ * @brief Indicator of whether SDK should use AppTrackingTransparency framework or not.
+ */
+@property (nonatomic, readonly) BOOL isAppTrackingTransparencyUsageEnabled;
+
+/**
+ * @brief Indicator of whether SDK is in first session delay mode or not.
+ */
+@property (nonatomic, readonly) BOOL isFirstSessionDelayEnabled;
 
 #pragma mark - AdjustConfig assignable properties
 
@@ -245,6 +256,11 @@ typedef NS_ENUM(NSUInteger, ADJLogLevel);
  * @note If not set, maximum is 10.
  */
 @property (nonatomic, assign) NSInteger eventDeduplicationIdsMaxSize;
+
+/**
+ * @brief The store information associated with this object.
+ */
+@property (nonatomic, copy, nonnull) ADJStoreInfo *storeInfo;
 
 # pragma mark - AdjustConfig construtors
 
@@ -337,6 +353,15 @@ typedef NS_ENUM(NSUInteger, ADJLogLevel);
  * @brief A method to configure SDK to start in COPPA compliant mode.
  */
 - (void)enableCoppaCompliance;
+
+/**
+ * @brief A method to enable SDK delay during the first session.
+ */
+- (void)enableFirstSessionDelay;
+/**
+ * @brief A method to configure SDK avoid any call to AppTrackingTransparency framework.
+ */
+- (void)disableAppTrackingTransparencyUsage;
 
 /**
  * @brief A method to set custom URL strategy.

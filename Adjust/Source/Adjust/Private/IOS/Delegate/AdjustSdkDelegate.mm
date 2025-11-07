@@ -28,8 +28,20 @@
     FString creative = *FString(attribution.creative);
     FString clickLabel = *FString(attribution.clickLabel);
 
+    FString fsJsonResponse;
+    if (attribution.jsonResponse != nil) {
+        NSError *error = nil;
+        NSData *dataJsonResponse = [NSJSONSerialization dataWithJSONObject:attribution.jsonResponse options:0 error:&error];
+        if (dataJsonResponse != nil && error == nil) {
+            NSString *stringJsonResponse = [[NSString alloc] initWithData:dataJsonResponse encoding:NSUTF8StringEncoding];
+            if (stringJsonResponse != nil) {
+                fsJsonResponse = *FString(stringJsonResponse);
+            }
+        }
+    }
+
     auto callback = _attributionCallback;
-    AsyncTask(ENamedThreads::GameThread, [trackerToken, trackerName, network, campaign, adgroup, creative, clickLabel, callback]() {
+    AsyncTask(ENamedThreads::GameThread, [trackerToken, trackerName, network, campaign, adgroup, creative, clickLabel, fsJsonResponse, callback]() {
         FAdjustAttribution ueAttribution;
         ueAttribution.TrackerToken = trackerToken;
         ueAttribution.TrackerName = trackerName;
@@ -38,6 +50,7 @@
         ueAttribution.Adgroup = adgroup;
         ueAttribution.Creative = creative;
         ueAttribution.ClickLabel = clickLabel;
+        ueAttribution.JsonResponse = fsJsonResponse;
 
         if (callback) {
             callback(ueAttribution);
@@ -192,6 +205,32 @@
     });
 
     return _shouldOpenDeferredDeeplink;
+}
+
+- (void)adjustSkanUpdatedWithConversionData:(nonnull NSDictionary<NSString *, NSString *> *)data {
+    if (_skanConversionValueUpdatedCallback == nil) {
+        return;
+    }
+
+    FAdjustSkanConversionDataMap conversionDataMap;
+
+    if (data != nil) {
+        for (NSString *key in data) {
+            NSString *value = [data objectForKey:key];
+            if (key != nil && value != nil) {
+                FString fsKey = FString(UTF8_TO_TCHAR([key UTF8String]));
+                FString fsValue = FString(UTF8_TO_TCHAR([value UTF8String]));
+                conversionDataMap.Data.Add(fsKey, fsValue);
+            }
+        }
+    }
+
+    auto callback = _skanConversionValueUpdatedCallback;
+    AsyncTask(ENamedThreads::GameThread, [conversionDataMap, callback]() {
+        if (callback) {
+            callback(conversionDataMap);
+        }
+    });
 }
 
 @end

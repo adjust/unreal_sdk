@@ -15,6 +15,10 @@
 #include "AdjustDeeplink.h"
 #include "AdjustAdRevenue.h"
 #include "AdjustThirdPartySharing.h"
+#include "AdjustAppStorePurchase.h"
+#include "AdjustPlayStorePurchase.h"
+#include "AdjustAppStoreSubscription.h"
+#include "AdjustPlayStoreSubscription.h"
 #include "Adjust.generated.h"
 
 UCLASS()
@@ -56,6 +60,9 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     static void ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink);
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray);
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void SetPushToken(const FString& PushToken);
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
@@ -89,7 +96,22 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     static void GetAttribution();
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void GetLastDeeplink();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void GetSdkVersion();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void EndFirstSessionDelay();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void EnableCoppaComplianceInDelay();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void DisableCoppaComplianceInDelay();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void SetExternalDeviceIdInDelay(const FString& ExternalDeviceId);
 
     // ios only
 
@@ -108,6 +130,15 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void UpdateSkanConversionValue(int ConversionValue, const FString& CoarseValue, bool lockWindow);
 
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void VerifyAppStorePurchase(const FAdjustAppStorePurchase& Purchase);
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void VerifyAndTrackAppStorePurchase(const FAdjustEvent& Event);
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void TrackAppStoreSubscription(const FAdjustAppStoreSubscription& Subscription);
+
     // android only
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
@@ -115,4 +146,19 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void GetAmazonAdId();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void EnablePlayStoreKidsComplianceInDelay();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void DisablePlayStoreKidsComplianceInDelay();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase);
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event);
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void TrackPlayStoreSubscription(const FAdjustPlayStoreSubscription& Subscription);
 };

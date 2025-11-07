@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "AdjustStoreInfo.h"
 #include "AdjustConfig.generated.h"
 
 UENUM(BlueprintType)
@@ -65,6 +66,15 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     bool IsCostDataInAttributionEnabled = false;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool IsFirstSessionDelayEnabled = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FAdjustStoreInfo StoreInfo;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    int EventDeduplicationIdsMaxSize = -1;
+
     // ios only
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
@@ -85,6 +95,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     int AttConsentWaitingInterval = 0;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool IsAppTrackingTransparencyUsageEnabled = true;
+
     // android only
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
@@ -92,4 +105,19 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString FbAppId;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool IsPreinstallTrackingEnabled = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    FString PreinstallFilePath;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    TArray<FString> UrlStrategyDomains;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool ShouldUseSubdomains = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool IsDataResidency = false;
 };

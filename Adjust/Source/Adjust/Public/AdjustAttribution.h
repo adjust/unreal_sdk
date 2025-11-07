@@ -41,11 +41,14 @@ public:
     FString CostType;
 
     UPROPERTY(BlueprintReadOnly, Category = "Adjust")
-    double CostAmount;
+    double CostAmount = 0.0;
 
     UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString CostCurrency;
 
     UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString FbInstallReferrer;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Adjust")
+    FString JsonResponse;
 };

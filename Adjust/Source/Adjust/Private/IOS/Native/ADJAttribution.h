@@ -11,7 +11,7 @@
 /**
  * @brief Adjust attribution object.
  */
-@interface ADJAttribution : NSObject <NSCoding, NSCopying>
+@interface ADJAttribution : NSObject <NSSecureCoding, NSCopying>
 
 /**
  * @brief Tracker token.
@@ -62,6 +62,11 @@
  * @brief Cost currency.
  */
 @property (nonatomic, copy, nullable) NSString *costCurrency;
+
+/**
+ * @brief All attribution fields from backend's attribution JSON response.
+ */
+@property (nonatomic, strong, nullable) NSDictionary *jsonResponse;
 
 /**
  * @brief Make attribution object.

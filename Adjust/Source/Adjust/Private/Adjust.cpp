@@ -28,6 +28,7 @@
 #import "IOS/Native/ADJAdRevenue.h"
 #import "IOS/Native/ADJLinkResolution.h"
 #import "IOS/Native/ADJAppStorePurchase.h"
+#import "IOS/Native/ADJStoreInfo.h"
 #import "IOS/Native/ADJPurchaseVerificationResult.h"
 #import "IOS/Native/ADJDeeplink.h"
 #import "IOS/Delegate/AdjustSdkDelegate.h"
@@ -133,6 +134,14 @@ static void adjustDeeplinkResolutionCallback(FString ResolvedLink)
     }
 }
 
+static void adjustLinkResolutionCallback(FString ResolvedLink)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnLinkResolutionDelegate.Broadcast(ResolvedLink);
+    }
+}
+
 static void adjustSdkVersionGetterCallback(FString SdkVersion)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
@@ -181,6 +190,14 @@ static void adjustUpdateSkanConversionValueCallback(FString Error)
     }
 }
 
+static void adjustSkanConversionValueUpdatedCallback(FAdjustSkanConversionDataMap ConversionData)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnSkanConversionValueUpdatedDelegate.Broadcast(ConversionData);
+    }
+}
+
 static void adjustGoogleAdIdGetterCallback(FString GoogleAdId)
 {
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
@@ -194,6 +211,14 @@ static void adjustAmazonAdIdGetterCallback(FString AmazonAdId)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnAmazonAdIdGetterDelegate.Broadcast(AmazonAdId);
+    }
+}
+
+static void adjustPurchaseVerificationCallback(FAdjustPurchaseVerificationResult VerificationResult)
+{
+    for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
+    {
+        Itr->OnPurchaseVerificationFinishedDelegate.Broadcast(VerificationResult);
     }
 }
 
@@ -255,7 +280,7 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
                                                  suppressLogLevel:allowSuppressLevel];
 
     // SDK prefix
-    [adjustConfig setSdkPrefix:@"unreal5.0.1"];
+    [adjustConfig setSdkPrefix:@"unreal5.4.0"];
 
     // log level
     [adjustConfig setLogLevel:logLevel];
@@ -268,22 +293,23 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     [delegate setEventSuccessCallback:adjustEventSuccessCallback];
     [delegate setEventFailureCallback:adjustEventFailureCallback];
     [delegate setDeferredDeeplinkCallback:adjustDeferredDeeplinkCallback];
+    [delegate setSkanConversionValueUpdatedCallback:adjustSkanConversionValueUpdatedCallback];
     [delegate setShouldOpenDeferredDeeplink:Config.IsDeferredDeeplinkOpeningEnabled];
     adjustConfig.delegate = delegate;
 
     // default tracker
-    CFStringRef cfstrDefaultTracker = FPlatformString::TCHARToCFString(*Config.DefaultTracker);
-    NSString *strDefaultTracker = (NSString *)cfstrDefaultTracker;
-    if ([strDefaultTracker length] > 0)
+    if (!Config.DefaultTracker.IsEmpty())
     {
+        CFStringRef cfstrDefaultTracker = FPlatformString::TCHARToCFString(*Config.DefaultTracker);
+        NSString *strDefaultTracker = (NSString *)cfstrDefaultTracker;
         [adjustConfig setDefaultTracker:strDefaultTracker];
     }
 
     // external device ID
-    CFStringRef cfstrExternalDeviceId = FPlatformString::TCHARToCFString(*Config.ExternalDeviceId);
-    NSString *strExternalDeviceId = (NSString *)cfstrExternalDeviceId;
-    if ([strExternalDeviceId length] > 0)
+    if (!Config.ExternalDeviceId.IsEmpty())
     {
+        CFStringRef cfstrExternalDeviceId = FPlatformString::TCHARToCFString(*Config.ExternalDeviceId);
+        NSString *strExternalDeviceId = (NSString *)cfstrExternalDeviceId;
         [adjustConfig setExternalDeviceId:strExternalDeviceId];
     }
 
@@ -337,6 +363,47 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     // ATT consent waiting interval
     if (Config.AttConsentWaitingInterval > 0) {
         [adjustConfig setAttConsentWaitingInterval:Config.AttConsentWaitingInterval];
+    }
+
+    // disable App Tracking Transparency usage
+    if (Config.IsAppTrackingTransparencyUsageEnabled == false) {
+        [adjustConfig disableAppTrackingTransparencyUsage];
+    }
+
+    // first session delay
+    if (Config.IsFirstSessionDelayEnabled == true) {
+        [adjustConfig enableFirstSessionDelay];
+    }
+
+    // store info
+    if (!Config.StoreInfo.StoreName.IsEmpty()) {
+        CFStringRef cfstrStoreName = FPlatformString::TCHARToCFString(*(Config.StoreInfo.StoreName));
+        NSString *strStoreName = (NSString *)cfstrStoreName;
+        ADJStoreInfo *storeInfo = [[ADJStoreInfo alloc] initWithStoreName:strStoreName];
+        if (storeInfo != nil && !Config.StoreInfo.StoreAppId.IsEmpty()) {
+            CFStringRef cfstrStoreAppId = FPlatformString::TCHARToCFString(*(Config.StoreInfo.StoreAppId));
+            NSString *strStoreAppId = (NSString *)cfstrStoreAppId;
+            storeInfo.storeAppId = strStoreAppId;
+        }
+        [adjustConfig setStoreInfo:storeInfo];
+    }
+
+    // event deduplication IDs max size
+    if (Config.EventDeduplicationIdsMaxSize >= 0) {
+        adjustConfig.eventDeduplicationIdsMaxSize = Config.EventDeduplicationIdsMaxSize;
+    }
+
+    // URL strategy
+    if (Config.UrlStrategyDomains.Num() > 0) {
+        NSMutableArray *urlStrategyDomains = [[NSMutableArray alloc] init];
+        for (const FString& domain : Config.UrlStrategyDomains) {
+            CFStringRef cfstrDomain = FPlatformString::TCHARToCFString(*domain);
+            NSString *strDomain = (NSString *)cfstrDomain;
+            [urlStrategyDomains addObject:strDomain];
+        }
+        [adjustConfig setUrlStrategy:urlStrategyDomains
+                      useSubdomains:Config.ShouldUseSubdomains
+                    isDataResidency:Config.IsDataResidency];
     }
 
     // start SDK
@@ -401,7 +468,7 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     Env->DeleteLocalRef(jEnvironment);
 
     // SDK prefix
-    const char* cstrSdkPrefix = "unreal5.0.1";
+    const char* cstrSdkPrefix = "unreal5.4.0";
     jstring jSdkPrefix = Env->NewStringUTF(cstrSdkPrefix);
     jmethodID jmidAdjustConfigSetSdkPrefix = Env->GetMethodID(jcslAdjustConfig, "setSdkPrefix", "(Ljava/lang/String;)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSdkPrefix, jSdkPrefix);
@@ -470,22 +537,31 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     Env->DeleteLocalRef(joDeferredDeeplinkCallbackProxy);
 
     // default tracker
-    jstring jDefaultTracker = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.DefaultTracker));
-    jmethodID jmidAdjustConfigSetDefaultTracker = Env->GetMethodID(jcslAdjustConfig, "setDefaultTracker", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetDefaultTracker, jDefaultTracker);
-    Env->DeleteLocalRef(jDefaultTracker);
+    if (!Config.DefaultTracker.IsEmpty())
+    {
+        jstring jDefaultTracker = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.DefaultTracker));
+        jmethodID jmidAdjustConfigSetDefaultTracker = Env->GetMethodID(jcslAdjustConfig, "setDefaultTracker", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetDefaultTracker, jDefaultTracker);
+        Env->DeleteLocalRef(jDefaultTracker);
+    }
 
     // external device ID
-    jstring jExternalDeviceId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.ExternalDeviceId));
-    jmethodID jmidAdjustConfigSetExternalDeviceId = Env->GetMethodID(jcslAdjustConfig, "setExternalDeviceId", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetExternalDeviceId, jExternalDeviceId);
-    Env->DeleteLocalRef(jExternalDeviceId);
+    if (!Config.ExternalDeviceId.IsEmpty())
+    {
+        jstring jExternalDeviceId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.ExternalDeviceId));
+        jmethodID jmidAdjustConfigSetExternalDeviceId = Env->GetMethodID(jcslAdjustConfig, "setExternalDeviceId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetExternalDeviceId, jExternalDeviceId);
+        Env->DeleteLocalRef(jExternalDeviceId);
+    }
 
     // FB app ID
-    jstring jFbAppId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.FbAppId));
-    jmethodID jmidAdjustConfigSetFbAppId = Env->GetMethodID(jcslAdjustConfig, "setFbAppId", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetFbAppId, jFbAppId);
-    Env->DeleteLocalRef(jFbAppId);
+    if (!Config.FbAppId.IsEmpty())
+    {
+        jstring jFbAppId = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.FbAppId));
+        jmethodID jmidAdjustConfigSetFbAppId = Env->GetMethodID(jcslAdjustConfig, "setFbAppId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetFbAppId, jFbAppId);
+        Env->DeleteLocalRef(jFbAppId);
+    }
 
     // COPPA compliance
     if (Config.IsCoppaComplianceEnabled == true) {
@@ -517,6 +593,74 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigCostDataInAttribution);
     }
 
+    // first session delay
+    if (Config.IsFirstSessionDelayEnabled == true) {
+        jmethodID jmidAdjustConfigEnableFirstSessionDelay = Env->GetMethodID(jcslAdjustConfig, "enableFirstSessionDelay", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigEnableFirstSessionDelay);
+    }
+
+    // store info
+    if (!Config.StoreInfo.StoreName.IsEmpty()) {
+        jclass jcslAdjustStoreInfo = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustStoreInfo");
+        jmethodID jmidAdjustStoreInfoInit = Env->GetMethodID(jcslAdjustStoreInfo, "<init>", "(Ljava/lang/String;)V");
+        jstring jstrStoreName = Env->NewStringUTF(TCHAR_TO_UTF8(*(Config.StoreInfo.StoreName)));
+        jobject joAdjustStoreInfo = Env->NewObject(jcslAdjustStoreInfo, jmidAdjustStoreInfoInit, jstrStoreName);
+        Env->DeleteLocalRef(jstrStoreName);
+        
+        if (joAdjustStoreInfo != nullptr && !Config.StoreInfo.StoreAppId.IsEmpty()) {
+            jstring jstrStoreAppId = Env->NewStringUTF(TCHAR_TO_UTF8(*(Config.StoreInfo.StoreAppId)));
+            jmethodID jmidAdjustStoreInfoSetStoreAppId = Env->GetMethodID(jcslAdjustStoreInfo, "setStoreAppId", "(Ljava/lang/String;)V");
+            Env->CallVoidMethod(joAdjustStoreInfo, jmidAdjustStoreInfoSetStoreAppId, jstrStoreAppId);
+            Env->DeleteLocalRef(jstrStoreAppId);
+        }
+        
+        if (joAdjustStoreInfo != nullptr) {
+            jmethodID jmidAdjustConfigSetStoreInfo = Env->GetMethodID(jcslAdjustConfig, "setStoreInfo", "(Lcom/adjust/sdk/AdjustStoreInfo;)V");
+            Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetStoreInfo, joAdjustStoreInfo);
+            Env->DeleteLocalRef(joAdjustStoreInfo);
+        }
+    }
+
+    // event deduplication IDs max size
+    if (Config.EventDeduplicationIdsMaxSize >= 0) {
+        jclass clsInteger = Env->FindClass("java/lang/Integer");
+        jmethodID midInit = Env->GetMethodID(clsInteger, "<init>", "(I)V");
+        jobject jEventDeduplicationIdsMaxSize = Env->NewObject(clsInteger, midInit, Config.EventDeduplicationIdsMaxSize);
+        jmethodID jmidAdjustConfigSetEventDeduplicationIdsMaxSize = Env->GetMethodID(jcslAdjustConfig, "setEventDeduplicationIdsMaxSize", "(Ljava/lang/Integer;)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetEventDeduplicationIdsMaxSize, jEventDeduplicationIdsMaxSize);
+        Env->DeleteLocalRef(jEventDeduplicationIdsMaxSize);
+    }
+
+    // preinstall tracking
+    if (Config.IsPreinstallTrackingEnabled == true) {
+        jmethodID jmidAdjustConfigEnablePreinstallTracking = Env->GetMethodID(jcslAdjustConfig, "enablePreinstallTracking", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigEnablePreinstallTracking);
+    }
+
+    // preinstall file path
+    if (!Config.PreinstallFilePath.IsEmpty()) {
+        jstring jPreinstallFilePath = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.PreinstallFilePath));
+        jmethodID jmidAdjustConfigSetPreinstallFilePath = Env->GetMethodID(jcslAdjustConfig, "setPreinstallFilePath", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetPreinstallFilePath, jPreinstallFilePath);
+        Env->DeleteLocalRef(jPreinstallFilePath);
+    }
+
+    // URL strategy
+    if (Config.UrlStrategyDomains.Num() > 0) {
+        jclass jcslArrayList = Env->FindClass("java/util/ArrayList");
+        jmethodID jmidArrayListInit = Env->GetMethodID(jcslArrayList, "<init>", "()V");
+        jmethodID jmidArrayListAdd = Env->GetMethodID(jcslArrayList, "add", "(Ljava/lang/Object;)Z");
+        jobject joUrlStrategyDomains = Env->NewObject(jcslArrayList, jmidArrayListInit);
+        for (const FString& domain : Config.UrlStrategyDomains) {
+            jstring jDomain = Env->NewStringUTF(TCHAR_TO_UTF8(*domain));
+            Env->CallBooleanMethod(joUrlStrategyDomains, jmidArrayListAdd, jDomain);
+            Env->DeleteLocalRef(jDomain);
+        }
+        jmethodID jmidAdjustConfigSetUrlStrategy = Env->GetMethodID(jcslAdjustConfig, "setUrlStrategy", "(Ljava/util/List;ZZ)V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetUrlStrategy, joUrlStrategyDomains, Config.ShouldUseSubdomains, Config.IsDataResidency);
+        Env->DeleteLocalRef(joUrlStrategyDomains);
+    }
+
     // start SDK
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustInitSdk = Env->GetStaticMethodID(jcslAdjust, "initSdk", "(Lcom/adjust/sdk/AdjustConfig;)V");
@@ -535,9 +679,16 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
     ADJEvent *adjustEvent = [[ADJEvent alloc] initWithEventToken:strEventToken];
 
     // revenue & currency
-    CFStringRef cfstrCurrency = FPlatformString::TCHARToCFString(*Event.Currency);
-    NSString *strCurrency = (NSString *)cfstrCurrency;
-    [adjustEvent setRevenue:(double)Event.Revenue currency:strCurrency];
+    if (Event.Revenue > 0.0 || !Event.Currency.IsEmpty())
+    {
+        NSString *strCurrency = nil;
+        if (!Event.Currency.IsEmpty())
+        {
+            CFStringRef cfstrCurrency = FPlatformString::TCHARToCFString(*Event.Currency);
+            strCurrency = (NSString *)cfstrCurrency;
+        }
+        [adjustEvent setRevenue:(double)Event.Revenue currency:strCurrency];
+    }
 
     // callback parameters
     TMap<FString, FString> callbackParams = Event.CallbackParameters;
@@ -562,14 +713,36 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
     }
 
     // deduplication ID
-    CFStringRef cfstrDeduplicationId = FPlatformString::TCHARToCFString(*Event.DeduplicationId);
-    NSString *strDeduplicationId = (NSString *)cfstrDeduplicationId;
-    [adjustEvent setDeduplicationId:strDeduplicationId];
+    if (!Event.DeduplicationId.IsEmpty())
+    {
+        CFStringRef cfstrDeduplicationId = FPlatformString::TCHARToCFString(*Event.DeduplicationId);
+        NSString *strDeduplicationId = (NSString *)cfstrDeduplicationId;
+        [adjustEvent setDeduplicationId:strDeduplicationId];
+    }
 
     // callback ID
-    CFStringRef cfstrCallbackId = FPlatformString::TCHARToCFString(*Event.CallbackId);
-    NSString *strCallbackId = (NSString *)cfstrCallbackId;
-    [adjustEvent setCallbackId:strCallbackId];
+    if (!Event.CallbackId.IsEmpty())
+    {
+        CFStringRef cfstrCallbackId = FPlatformString::TCHARToCFString(*Event.CallbackId);
+        NSString *strCallbackId = (NSString *)cfstrCallbackId;
+        [adjustEvent setCallbackId:strCallbackId];
+    }
+
+    // transaction ID
+    if (!Event.TransactionId.IsEmpty())
+    {
+        CFStringRef cfstrTransactionId = FPlatformString::TCHARToCFString(*Event.TransactionId);
+        NSString *strTransactionId = (NSString *)cfstrTransactionId;
+        [adjustEvent setTransactionId:strTransactionId];
+    }
+
+    // product ID
+    if (!Event.ProductId.IsEmpty())
+    {
+        CFStringRef cfstrProductId = FPlatformString::TCHARToCFString(*Event.ProductId);
+        NSString *strProductId = (NSString *)cfstrProductId;
+        [adjustEvent setProductId:strProductId];
+    }
 
     // track event
     [Adjust trackEvent:adjustEvent];
@@ -586,22 +759,56 @@ void UAdjust::TrackEvent(const FAdjustEvent& Event)
     Env->DeleteLocalRef(jEventToken);
 
     // revenue & currency
-    jstring jCurrency = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.Currency));
-    jmethodID jmidAdjustEventSetRevenue = Env->GetMethodID(jcslAdjustEvent, "setRevenue", "(DLjava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetRevenue, (double)Event.Revenue, jCurrency);
-    Env->DeleteLocalRef(jCurrency);
+    if (Event.Revenue > 0.0 || !Event.Currency.IsEmpty())
+    {
+        jstring jCurrency = nullptr;
+        if (!Event.Currency.IsEmpty())
+        {
+            jCurrency = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.Currency));
+        }
+        jmethodID jmidAdjustEventSetRevenue = Env->GetMethodID(jcslAdjustEvent, "setRevenue", "(DLjava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetRevenue, (double)Event.Revenue, jCurrency);
+        if (jCurrency != nullptr)
+        {
+            Env->DeleteLocalRef(jCurrency);
+        }
+    }
 
     // deduplication ID
-    jstring jDeduplicationId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.DeduplicationId));
-    jmethodID jmidAdjustEventSetDeduplicationId = Env->GetMethodID(jcslAdjustEvent, "setDeduplicationId", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetDeduplicationId, jDeduplicationId);
-    Env->DeleteLocalRef(jDeduplicationId);
+    if (!Event.DeduplicationId.IsEmpty())
+    {
+        jstring jDeduplicationId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.DeduplicationId));
+        jmethodID jmidAdjustEventSetDeduplicationId = Env->GetMethodID(jcslAdjustEvent, "setDeduplicationId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetDeduplicationId, jDeduplicationId);
+        Env->DeleteLocalRef(jDeduplicationId);
+    }
 
     // callback ID
-    jstring jCallbackId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.CallbackId));
-    jmethodID jmidAdjustEventSetCallbackId = Env->GetMethodID(jcslAdjustEvent, "setCallbackId", "(Ljava/lang/String;)V");
-    Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetCallbackId, jCallbackId);
-    Env->DeleteLocalRef(jCallbackId);
+    if (!Event.CallbackId.IsEmpty())
+    {
+        jstring jCallbackId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.CallbackId));
+        jmethodID jmidAdjustEventSetCallbackId = Env->GetMethodID(jcslAdjustEvent, "setCallbackId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetCallbackId, jCallbackId);
+        Env->DeleteLocalRef(jCallbackId);
+    }
+
+    // product ID
+    if (!Event.ProductId.IsEmpty())
+    {
+        jstring jProductId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.ProductId));
+        jmethodID jmidAdjustEventSetProductId = Env->GetMethodID(jcslAdjustEvent, "setProductId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetProductId, jProductId);
+        Env->DeleteLocalRef(jProductId);
+    }
+
+    // purchase token (Android only)
+    if (!Event.PurchaseToken.IsEmpty())
+    {
+        jstring jPurchaseToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.PurchaseToken));
+        jmethodID jmidAdjustEventSetPurchaseToken = Env->GetMethodID(jcslAdjustEvent, "setPurchaseToken", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetPurchaseToken, jPurchaseToken);
+        Env->DeleteLocalRef(jPurchaseToken);
+    }
 
     // callback parameters
     jmethodID jmidAdjustEventAddCallbackParameter = Env->GetMethodID(jcslAdjustEvent, "addCallbackParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
@@ -665,7 +872,21 @@ void UAdjust::ProcessDeeplink(const FAdjustDeeplink& Deeplink)
     CFStringRef cfstrUrl = FPlatformString::TCHARToCFString(*(Deeplink.Deeplink));
     NSString *strUrl = (NSString *)cfstrUrl;
     NSURL *url = [NSURL URLWithString:strUrl];
-    [Adjust processDeeplink:[[ADJDeeplink alloc] initWithDeeplink:url]];
+    ADJDeeplink *deepLink = [[ADJDeeplink alloc] initWithDeeplink:url];
+    
+    // set referrer if provided
+    if (!Deeplink.Referrer.IsEmpty())
+    {
+        CFStringRef cfstrReferrer = FPlatformString::TCHARToCFString(*(Deeplink.Referrer));
+        NSString *strReferrer = (NSString *)cfstrReferrer;
+        NSURL *referrerUrl = [NSURL URLWithString:strReferrer];
+        if (referrerUrl != nil)
+        {
+            [deepLink setReferrer:referrerUrl];
+        }
+    }
+    
+    [Adjust processDeeplink:deepLink];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
 
@@ -680,6 +901,20 @@ void UAdjust::ProcessDeeplink(const FAdjustDeeplink& Deeplink)
     jmethodID jmidAdjustDeeplinkInit = Env->GetMethodID(jcslAdjustDeeplink, "<init>", "(Landroid/net/Uri;)V");
     jobject joAdjustDeeplink = Env->NewObject(jcslAdjustDeeplink, jmidAdjustDeeplinkInit, joUri);
     Env->DeleteLocalRef(joUri);
+
+    // set referrer if provided
+    if (!Deeplink.Referrer.IsEmpty())
+    {
+        jstring jstrReferrer = Env->NewStringUTF(TCHAR_TO_UTF8(*(Deeplink.Referrer)));
+        jobject joReferrerUri = Env->CallStaticObjectMethod(jcslUri, jmidUriParse, jstrReferrer);
+        if (joReferrerUri != nullptr)
+        {
+            jmethodID jmidAdjustDeeplinkSetReferrer = Env->GetMethodID(jcslAdjustDeeplink, "setReferrer", "(Landroid/net/Uri;)V");
+            Env->CallVoidMethod(joAdjustDeeplink, jmidAdjustDeeplinkSetReferrer, joReferrerUri);
+            Env->DeleteLocalRef(joReferrerUri);
+        }
+        Env->DeleteLocalRef(jstrReferrer);
+    }
 
     // process deep link
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
@@ -696,9 +931,29 @@ void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink)
     NSString *strUrl = (NSString *)cfstrUrl;
     NSURL *url = [NSURL URLWithString:strUrl];
     ADJDeeplink *deepLink = [[ADJDeeplink alloc] initWithDeeplink:url];
+    
+    // set referrer if provided
+    if (!Deeplink.Referrer.IsEmpty())
+    {
+        CFStringRef cfstrReferrer = FPlatformString::TCHARToCFString(*(Deeplink.Referrer));
+        NSString *strReferrer = (NSString *)cfstrReferrer;
+        NSURL *referrerUrl = [NSURL URLWithString:strReferrer];
+        if (referrerUrl != nil)
+        {
+            [deepLink setReferrer:referrerUrl];
+        }
+    }
+    
     [Adjust processAndResolveDeeplink:deepLink
                 withCompletionHandler:^(NSString * _Nullable resolvedLink) {
-        adjustDeeplinkResolutionCallback(FString(UTF8_TO_TCHAR([resolvedLink UTF8String])));
+        FString fsResolvedLink;
+        if (resolvedLink != nil)
+        {
+            fsResolvedLink = FString(UTF8_TO_TCHAR([resolvedLink UTF8String]));
+        }
+        AsyncTask(ENamedThreads::GameThread, [fsResolvedLink]() {
+            adjustDeeplinkResolutionCallback(fsResolvedLink);
+        });
     }];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
@@ -715,6 +970,20 @@ void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink)
     jobject joAdjustDeeplink = Env->NewObject(jcslAdjustDeeplink, jmidAdjustDeeplinkInit, joUri);
     Env->DeleteLocalRef(joUri);
 
+    // set referrer if provided
+    if (!Deeplink.Referrer.IsEmpty())
+    {
+        jstring jstrReferrer = Env->NewStringUTF(TCHAR_TO_UTF8(*(Deeplink.Referrer)));
+        jobject joReferrerUri = Env->CallStaticObjectMethod(jcslUri, jmidUriParse, jstrReferrer);
+        if (joReferrerUri != nullptr)
+        {
+            jmethodID jmidAdjustDeeplinkSetReferrer = Env->GetMethodID(jcslAdjustDeeplink, "setReferrer", "(Landroid/net/Uri;)V");
+            Env->CallVoidMethod(joAdjustDeeplink, jmidAdjustDeeplinkSetReferrer, joReferrerUri);
+            Env->DeleteLocalRef(joReferrerUri);
+        }
+        Env->DeleteLocalRef(jstrReferrer);
+    }
+
     setDeeplinkResolutionCallback(adjustDeeplinkResolutionCallback);
     jclass jcslUeDeeplinkResolvedCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeDeeplinkResolvedCallback");
     jmethodID jmidUeDeeplinkResolvedCallbackInit = Env->GetMethodID(jcslUeDeeplinkResolvedCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
@@ -726,6 +995,74 @@ void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink)
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustProcessAndResolveDeeplink, joAdjustDeeplink, FJavaWrapper::GameActivityThis, joDeeplinkResolvedCallbackProxy);
     Env->DeleteLocalRef(joAdjustDeeplink);
     Env->DeleteLocalRef(joDeeplinkResolvedCallbackProxy);
+#endif
+}
+
+void UAdjust::ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray)
+{
+#if PLATFORM_IOS
+    CFStringRef cfstrUrl = FPlatformString::TCHARToCFString(*Url);
+    NSString *strUrl = (NSString *)cfstrUrl;
+    NSURL *url = [NSURL URLWithString:strUrl];
+    
+    NSMutableArray *resolveUrlSuffixArray = nil;
+    if (ResolveUrlSuffixArray.Num() > 0)
+    {
+        resolveUrlSuffixArray = [[NSMutableArray alloc] init];
+        for (const FString& suffix : ResolveUrlSuffixArray)
+        {
+            CFStringRef cfstrSuffix = FPlatformString::TCHARToCFString(*suffix);
+            NSString *strSuffix = (NSString *)cfstrSuffix;
+            [resolveUrlSuffixArray addObject:strSuffix];
+        }
+    }
+    
+    [ADJLinkResolution resolveLinkWithUrl:url
+                    resolveUrlSuffixArray:resolveUrlSuffixArray
+                                 callback:^(NSURL * _Nullable resolvedLink) {
+        FString fsResolvedLink;
+        if (resolvedLink != nil)
+        {
+            fsResolvedLink = FString(UTF8_TO_TCHAR([[resolvedLink absoluteString] UTF8String]));
+        }
+        AsyncTask(ENamedThreads::GameThread, [fsResolvedLink]() {
+            adjustLinkResolutionCallback(fsResolvedLink);
+        });
+    }];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    
+    jstring jUrl = Env->NewStringUTF(TCHAR_TO_UTF8(*Url));
+    
+    jobjectArray jResolveUrlSuffixArray = nullptr;
+    if (ResolveUrlSuffixArray.Num() > 0)
+    {
+        jclass jcslString = Env->FindClass("java/lang/String");
+        jResolveUrlSuffixArray = Env->NewObjectArray(ResolveUrlSuffixArray.Num(), jcslString, nullptr);
+        for (int32 i = 0; i < ResolveUrlSuffixArray.Num(); i++)
+        {
+            jstring jSuffix = Env->NewStringUTF(TCHAR_TO_UTF8(*ResolveUrlSuffixArray[i]));
+            Env->SetObjectArrayElement(jResolveUrlSuffixArray, i, jSuffix);
+            Env->DeleteLocalRef(jSuffix);
+        }
+    }
+    
+    setLinkResolutionCallback(adjustLinkResolutionCallback);
+    jclass jcslUeLinkResolutionCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeLinkResolutionCallback");
+    jmethodID jmidUeLinkResolutionCallbackInit = Env->GetMethodID(jcslUeLinkResolutionCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joLinkResolutionCallbackProxy = Env->NewObject(jcslUeLinkResolutionCallback, jmidUeLinkResolutionCallbackInit, FJavaWrapper::GameActivityThis);
+    
+    jclass jcslAdjustLinkResolution = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustLinkResolution");
+    jmethodID jmidAdjustLinkResolutionResolveLink = Env->GetStaticMethodID(jcslAdjustLinkResolution, "resolveLink", "(Ljava/lang/String;[Ljava/lang/String;Lcom/adjust/sdk/AdjustLinkResolution$AdjustLinkResolutionCallback;)V");
+    
+    Env->CallStaticVoidMethod(jcslAdjustLinkResolution, jmidAdjustLinkResolutionResolveLink, jUrl, jResolveUrlSuffixArray, joLinkResolutionCallbackProxy);
+    
+    Env->DeleteLocalRef(jUrl);
+    if (jResolveUrlSuffixArray != nullptr)
+    {
+        Env->DeleteLocalRef(jResolveUrlSuffixArray);
+    }
+    Env->DeleteLocalRef(joLinkResolutionCallbackProxy);
 #endif
 }
 
@@ -785,7 +1122,10 @@ void UAdjust::GetIdfa()
 {
 #if PLATFORM_IOS
     [Adjust idfaWithCompletionHandler:^(NSString * _Nullable idfa) {
-        adjustIdfaGetterCallback(FString(UTF8_TO_TCHAR([idfa UTF8String])));
+        FString fsIdfa = FString(UTF8_TO_TCHAR([idfa UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsIdfa]() {
+            adjustIdfaGetterCallback(fsIdfa);
+        });
     }];
 #endif
 }
@@ -794,7 +1134,10 @@ void UAdjust::GetIdfv()
 {
 #if PLATFORM_IOS
     [Adjust idfvWithCompletionHandler:^(NSString * _Nullable idfv) {
-        adjustIdfvGetterCallback(FString(UTF8_TO_TCHAR([idfv UTF8String])));
+        FString fsIdfv = FString(UTF8_TO_TCHAR([idfv UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsIdfv]() {
+            adjustIdfvGetterCallback(fsIdfv);
+        });
     }];
 #endif
 }
@@ -829,6 +1172,26 @@ void UAdjust::GetAmazonAdId()
 #endif
 }
 
+void UAdjust::EnablePlayStoreKidsComplianceInDelay()
+{
+#if PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustEnablePlayStoreKidsComplianceInDelay = Env->GetStaticMethodID(jcslAdjust, "enablePlayStoreKidsComplianceInDelay", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustEnablePlayStoreKidsComplianceInDelay);
+#endif
+}
+
+void UAdjust::DisablePlayStoreKidsComplianceInDelay()
+{
+#if PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustDisablePlayStoreKidsComplianceInDelay = Env->GetStaticMethodID(jcslAdjust, "disablePlayStoreKidsComplianceInDelay", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustDisablePlayStoreKidsComplianceInDelay);
+#endif
+}
+
 void UAdjust::GetAdid()
 {
 #if PLATFORM_ANDROID
@@ -843,7 +1206,10 @@ void UAdjust::GetAdid()
     Env->DeleteLocalRef(joAdidGetterCallbackProxy);
 #elif PLATFORM_IOS
     [Adjust adidWithCompletionHandler:^(NSString * _Nullable adid) {
-        adjustAdidGetterCallback(FString(UTF8_TO_TCHAR([adid UTF8String])));
+        FString fsAdid = FString(UTF8_TO_TCHAR([adid UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsAdid]() {
+            adjustAdidGetterCallback(fsAdid);
+        });
     }];
 #endif
 }
@@ -862,7 +1228,10 @@ void UAdjust::IsEnabled()
     Env->DeleteLocalRef(joIsEnabledCallbackProxy);
 #elif PLATFORM_IOS
     [Adjust isEnabledWithCompletionHandler:^(BOOL isEnabled) {
-        adjustIsEnabledCallback(isEnabled);
+        bool bIsEnabled = (bool)isEnabled;
+        AsyncTask(ENamedThreads::GameThread, [bIsEnabled]() {
+            adjustIsEnabledCallback(bIsEnabled);
+        });
     }];
 #endif
 }
@@ -893,8 +1262,50 @@ void UAdjust::GetAttribution()
         ueAttribution.Adgroup = *FString(attribution.adgroup);
         ueAttribution.Creative = *FString(attribution.creative);
         ueAttribution.ClickLabel = *FString(attribution.clickLabel);
-        adjustAttributionGetterCallback(ueAttribution);
+        
+        FString fsJsonResponse;
+        if (attribution.jsonResponse != nil) {
+            NSError *error = nil;
+            NSData *dataJsonResponse = [NSJSONSerialization dataWithJSONObject:attribution.jsonResponse options:0 error:&error];
+            if (dataJsonResponse != nil && error == nil) {
+                NSString *stringJsonResponse = [[NSString alloc] initWithData:dataJsonResponse encoding:NSUTF8StringEncoding];
+                if (stringJsonResponse != nil) {
+                    fsJsonResponse = *FString(stringJsonResponse);
+                }
+            }
+        }
+        ueAttribution.JsonResponse = fsJsonResponse;
+        
+        AsyncTask(ENamedThreads::GameThread, [ueAttribution]() {
+            adjustAttributionGetterCallback(ueAttribution);
+        });
     }];
+#endif
+}
+
+void UAdjust::GetLastDeeplink()
+{
+#if PLATFORM_IOS
+    [Adjust lastDeeplinkWithCompletionHandler:^(NSURL * _Nullable lastDeeplink) {
+        FString fsLastDeeplink;
+        if (lastDeeplink != nil)
+        {
+            fsLastDeeplink = FString(UTF8_TO_TCHAR([[lastDeeplink absoluteString] UTF8String]));
+        }
+        AsyncTask(ENamedThreads::GameThread, [fsLastDeeplink]() {
+            adjustLastDeeplinkGetterCallback(fsLastDeeplink);
+        });
+    }];
+#elif PLATFORM_ANDROID
+    setLastDeeplinkGetterCallbackMethod(adjustLastDeeplinkGetterCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustGetLastDeeplink = Env->GetStaticMethodID(jcslAdjust, "getLastDeeplink", "(Landroid/content/Context;Lcom/adjust/sdk/OnLastDeeplinkReadListener;)V");
+    jclass jcslUeLastDeeplinkGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeLastDeeplinkGetterCallback");
+    jmethodID jmidUeLastDeeplinkGetterCallbackInit = Env->GetMethodID(jcslUeLastDeeplinkGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joLastDeeplinkGetterCallbackProxy = Env->NewObject(jcslUeLastDeeplinkGetterCallback, jmidUeLastDeeplinkGetterCallbackInit, FJavaWrapper::GameActivityThis);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetLastDeeplink, FJavaWrapper::GameActivityThis, joLastDeeplinkGetterCallbackProxy);
+    Env->DeleteLocalRef(joLastDeeplinkGetterCallbackProxy);
 #endif
 }
 
@@ -902,10 +1313,12 @@ void UAdjust::GetSdkVersion()
 {
 #if PLATFORM_IOS
     FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal5.0.1"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal5.4.0"));
     [Adjust sdkVersionWithCompletionHandler:^(NSString * _Nullable sdkVersion) {
-        FString FinalVersion = SdkPrefix + Separator + FString(UTF8_TO_TCHAR([sdkVersion UTF8String]));
-        adjustSdkVersionGetterCallback(FinalVersion);
+        FString fsSdkVersion = SdkPrefix + Separator + FString(UTF8_TO_TCHAR([sdkVersion UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsSdkVersion]() {
+            adjustSdkVersionGetterCallback(fsSdkVersion);
+        });
     }];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
@@ -915,11 +1328,63 @@ void UAdjust::GetSdkVersion()
     jclass jcslUeSdkVersionGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeSdkVersionGetterCallback");
     jmethodID jmidUeSdkVersionGetterCallbackInit = Env->GetMethodID(jcslUeSdkVersionGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;Ljava/lang/String;)V");
     // TODO: temp hack, parametrize this
-    jstring jSdkPrefix = Env->NewStringUTF("unreal5.0.1");
+    jstring jSdkPrefix = Env->NewStringUTF("unreal5.4.0");
     jobject joSdkVersionGetterCallbackProxy = Env->NewObject(jcslUeSdkVersionGetterCallback, jmidUeSdkVersionGetterCallbackInit, FJavaWrapper::GameActivityThis, jSdkPrefix);
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetSdkVersionId, joSdkVersionGetterCallbackProxy);
     Env->DeleteLocalRef(joSdkVersionGetterCallbackProxy);
     Env->DeleteLocalRef(jSdkPrefix);
+#endif
+}
+
+void UAdjust::EndFirstSessionDelay()
+{
+#if PLATFORM_IOS
+    [Adjust endFirstSessionDelay];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustEndFirstSessionDelay = Env->GetStaticMethodID(jcslAdjust, "endFirstSessionDelay", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustEndFirstSessionDelay);
+#endif
+}
+
+void UAdjust::EnableCoppaComplianceInDelay()
+{
+#if PLATFORM_IOS
+    [Adjust enableCoppaComplianceInDelay];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustEnableCoppaComplianceInDelay = Env->GetStaticMethodID(jcslAdjust, "enableCoppaComplianceInDelay", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustEnableCoppaComplianceInDelay);
+#endif
+}
+
+void UAdjust::DisableCoppaComplianceInDelay()
+{
+#if PLATFORM_IOS
+    [Adjust disableCoppaComplianceInDelay];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustDisableCoppaComplianceInDelay = Env->GetStaticMethodID(jcslAdjust, "disableCoppaComplianceInDelay", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustDisableCoppaComplianceInDelay);
+#endif
+}
+
+void UAdjust::SetExternalDeviceIdInDelay(const FString& ExternalDeviceId)
+{
+#if PLATFORM_IOS
+    CFStringRef cfstrExternalDeviceId = FPlatformString::TCHARToCFString(*ExternalDeviceId);
+    NSString *strExternalDeviceId = (NSString *)cfstrExternalDeviceId;
+    [Adjust setExternalDeviceIdInDelay:strExternalDeviceId];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustSetExternalDeviceIdInDelay = Env->GetStaticMethodID(jcslAdjust, "setExternalDeviceIdInDelay", "(Ljava/lang/String;)V");
+    jstring jExternalDeviceId = Env->NewStringUTF(TCHAR_TO_UTF8(*ExternalDeviceId));
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustSetExternalDeviceIdInDelay, jExternalDeviceId);
+    Env->DeleteLocalRef(jExternalDeviceId);
 #endif
 }
 
@@ -1310,7 +1775,10 @@ void UAdjust::RequestAppTrackingAuthorization()
 {
 #if PLATFORM_IOS
     [Adjust requestAppTrackingAuthorizationWithCompletionHandler:^(NSUInteger status) {
-        adjustRequestAppAuthorizationStatusCallback((int)status);
+        int nStatus = (int)status;
+        AsyncTask(ENamedThreads::GameThread, [nStatus]() {
+            adjustRequestAppAuthorizationStatusCallback(nStatus);
+        });
     }];
 #endif
 }
@@ -1332,7 +1800,370 @@ void UAdjust::UpdateSkanConversionValue(int ConversionValue, const FString& Coar
                           coarseValue:strCoarseValue
                            lockWindow:[NSNumber numberWithBool:lockWindow]
                 withCompletionHandler:^(NSError * _Nullable error) {
-        adjustUpdateSkanConversionValueCallback(FString(UTF8_TO_TCHAR([[error localizedDescription] UTF8String])));
+        FString fsError = FString(UTF8_TO_TCHAR([[error localizedDescription] UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [fsError]() {
+            adjustUpdateSkanConversionValueCallback(fsError);
+        });
     }];
+#endif
+}
+
+void UAdjust::VerifyAppStorePurchase(const FAdjustAppStorePurchase& Purchase)
+{
+#if PLATFORM_IOS
+    CFStringRef cfstrTransactionId = FPlatformString::TCHARToCFString(*Purchase.TransactionId);
+    NSString *strTransactionId = (NSString *)cfstrTransactionId;
+    CFStringRef cfstrProductId = FPlatformString::TCHARToCFString(*Purchase.ProductId);
+    NSString *strProductId = (NSString *)cfstrProductId;
+    
+    ADJAppStorePurchase *purchase = [[ADJAppStorePurchase alloc] initWithTransactionId:strTransactionId productId:strProductId];
+    [Adjust verifyAppStorePurchase:purchase withCompletionHandler:^(ADJPurchaseVerificationResult * _Nonnull result) {
+        FAdjustPurchaseVerificationResult ueResult;
+        ueResult.VerificationStatus = FString(UTF8_TO_TCHAR([result.verificationStatus UTF8String]));
+        ueResult.Code = result.code;
+        ueResult.Message = FString(UTF8_TO_TCHAR([result.message UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [ueResult]() {
+            adjustPurchaseVerificationCallback(ueResult);
+        });
+    }];
+#endif
+}
+
+void UAdjust::VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase)
+{
+#if PLATFORM_ANDROID
+    setPurchaseVerificationCallbackMethod(adjustPurchaseVerificationCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jclass jcslAdjustPlayStorePurchase = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustPlayStorePurchase");
+    jmethodID jmidAdjustPlayStorePurchaseInit = Env->GetMethodID(jcslAdjustPlayStorePurchase, "<init>", "(Ljava/lang/String;Ljava/lang/String;)V");
+    jstring jProductId = Env->NewStringUTF(TCHAR_TO_UTF8(*Purchase.ProductId));
+    jstring jPurchaseToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Purchase.PurchaseToken));
+    jobject joPurchase = Env->NewObject(jcslAdjustPlayStorePurchase, jmidAdjustPlayStorePurchaseInit, jProductId, jPurchaseToken);
+    jclass jcslUePurchaseVerificationCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUePurchaseVerificationCallback");
+    jmethodID jmidUePurchaseVerificationCallbackInit = Env->GetMethodID(jcslUePurchaseVerificationCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joPurchaseVerificationCallbackProxy = Env->NewObject(jcslUePurchaseVerificationCallback, jmidUePurchaseVerificationCallbackInit, FJavaWrapper::GameActivityThis);
+    jmethodID jmidAdjustVerifyPlayStorePurchase = Env->GetStaticMethodID(jcslAdjust, "verifyPlayStorePurchase", "(Lcom/adjust/sdk/AdjustPlayStorePurchase;Lcom/adjust/sdk/OnPurchaseVerificationFinishedListener;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustVerifyPlayStorePurchase, joPurchase, joPurchaseVerificationCallbackProxy);
+    Env->DeleteLocalRef(joPurchase);
+    Env->DeleteLocalRef(joPurchaseVerificationCallbackProxy);
+    Env->DeleteLocalRef(jProductId);
+    Env->DeleteLocalRef(jPurchaseToken);
+#endif
+}
+
+void UAdjust::VerifyAndTrackAppStorePurchase(const FAdjustEvent& Event)
+{
+#if PLATFORM_IOS
+    // event token
+    CFStringRef cfstrEventToken = FPlatformString::TCHARToCFString(*Event.EventToken);
+    NSString *strEventToken = (NSString *)cfstrEventToken;
+
+    ADJEvent *adjustEvent = [[ADJEvent alloc] initWithEventToken:strEventToken];
+
+    // revenue & currency
+    if (Event.Revenue > 0.0 || !Event.Currency.IsEmpty())
+    {
+        NSString *strCurrency = nil;
+        if (!Event.Currency.IsEmpty())
+        {
+            CFStringRef cfstrCurrency = FPlatformString::TCHARToCFString(*Event.Currency);
+            strCurrency = (NSString *)cfstrCurrency;
+        }
+        [adjustEvent setRevenue:(double)Event.Revenue currency:strCurrency];
+    }
+
+    // callback parameters
+    TMap<FString, FString> callbackParams = Event.CallbackParameters;
+    for (TPair<FString, FString> pair : callbackParams)
+    {
+        CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*pair.Key);
+        NSString *strKey = (NSString *)cfstrKey;
+        CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*pair.Value);
+        NSString *strValue = (NSString *)cfstrValue;
+        [adjustEvent addCallbackParameter:strKey value:strValue];
+    }
+
+    // partner parameters
+    TMap<FString, FString> partnerParams = Event.PartnerParameters;
+    for (TPair<FString, FString> pair : partnerParams)
+    {
+        CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*pair.Key);
+        NSString *strKey = (NSString *)cfstrKey;
+        CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*pair.Value);
+        NSString *strValue = (NSString *)cfstrValue;
+        [adjustEvent addPartnerParameter:strKey value:strValue];
+    }
+
+    // deduplication ID
+    if (!Event.DeduplicationId.IsEmpty())
+    {
+        CFStringRef cfstrDeduplicationId = FPlatformString::TCHARToCFString(*Event.DeduplicationId);
+        NSString *strDeduplicationId = (NSString *)cfstrDeduplicationId;
+        [adjustEvent setDeduplicationId:strDeduplicationId];
+    }
+
+    // callback ID
+    if (!Event.CallbackId.IsEmpty())
+    {
+        CFStringRef cfstrCallbackId = FPlatformString::TCHARToCFString(*Event.CallbackId);
+        NSString *strCallbackId = (NSString *)cfstrCallbackId;
+        [adjustEvent setCallbackId:strCallbackId];
+    }
+
+    // transaction ID
+    if (!Event.TransactionId.IsEmpty())
+    {
+        CFStringRef cfstrTransactionId = FPlatformString::TCHARToCFString(*Event.TransactionId);
+        NSString *strTransactionId = (NSString *)cfstrTransactionId;
+        [adjustEvent setTransactionId:strTransactionId];
+    }
+
+    // product ID
+    if (!Event.ProductId.IsEmpty())
+    {
+        CFStringRef cfstrProductId = FPlatformString::TCHARToCFString(*Event.ProductId);
+        NSString *strProductId = (NSString *)cfstrProductId;
+        [adjustEvent setProductId:strProductId];
+    }
+
+    // verify and track event
+    [Adjust verifyAndTrackAppStorePurchase:adjustEvent
+                    withCompletionHandler:^(ADJPurchaseVerificationResult * _Nonnull result) {
+        FAdjustPurchaseVerificationResult ueResult;
+        ueResult.VerificationStatus = FString(UTF8_TO_TCHAR([result.verificationStatus UTF8String]));
+        ueResult.Code = result.code;
+        ueResult.Message = FString(UTF8_TO_TCHAR([result.message UTF8String]));
+        AsyncTask(ENamedThreads::GameThread, [ueResult]() {
+            adjustPurchaseVerificationCallback(ueResult);
+        });
+    }];
+#endif
+}
+
+void UAdjust::VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event)
+{
+#if PLATFORM_ANDROID
+    setPurchaseVerificationCallbackMethod(adjustPurchaseVerificationCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+
+    // event token
+    jstring jEventToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.EventToken));
+
+    // create event object
+    jclass jcslAdjustEvent = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustEvent");
+    jmethodID jmidAdjustEventInit = Env->GetMethodID(jcslAdjustEvent, "<init>", "(Ljava/lang/String;)V");
+    jobject joAdjustEvent = Env->NewObject(jcslAdjustEvent, jmidAdjustEventInit, jEventToken);
+    Env->DeleteLocalRef(jEventToken);
+
+    // revenue & currency
+    if (Event.Revenue > 0.0 || !Event.Currency.IsEmpty())
+    {
+        jstring jCurrency = nullptr;
+        if (!Event.Currency.IsEmpty())
+        {
+            jCurrency = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.Currency));
+        }
+        jmethodID jmidAdjustEventSetRevenue = Env->GetMethodID(jcslAdjustEvent, "setRevenue", "(DLjava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetRevenue, (double)Event.Revenue, jCurrency);
+        if (jCurrency != nullptr)
+        {
+            Env->DeleteLocalRef(jCurrency);
+        }
+    }
+
+    // deduplication ID
+    if (!Event.DeduplicationId.IsEmpty())
+    {
+        jstring jDeduplicationId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.DeduplicationId));
+        jmethodID jmidAdjustEventSetDeduplicationId = Env->GetMethodID(jcslAdjustEvent, "setDeduplicationId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetDeduplicationId, jDeduplicationId);
+        Env->DeleteLocalRef(jDeduplicationId);
+    }
+
+    // callback ID
+    if (!Event.CallbackId.IsEmpty())
+    {
+        jstring jCallbackId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.CallbackId));
+        jmethodID jmidAdjustEventSetCallbackId = Env->GetMethodID(jcslAdjustEvent, "setCallbackId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetCallbackId, jCallbackId);
+        Env->DeleteLocalRef(jCallbackId);
+    }
+
+    // product ID
+    if (!Event.ProductId.IsEmpty())
+    {
+        jstring jProductId = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.ProductId));
+        jmethodID jmidAdjustEventSetProductId = Env->GetMethodID(jcslAdjustEvent, "setProductId", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetProductId, jProductId);
+        Env->DeleteLocalRef(jProductId);
+    }
+
+    // purchase token (Android only)
+    if (!Event.PurchaseToken.IsEmpty())
+    {
+        jstring jPurchaseToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Event.PurchaseToken));
+        jmethodID jmidAdjustEventSetPurchaseToken = Env->GetMethodID(jcslAdjustEvent, "setPurchaseToken", "(Ljava/lang/String;)V");
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventSetPurchaseToken, jPurchaseToken);
+        Env->DeleteLocalRef(jPurchaseToken);
+    }
+
+    // callback parameters
+    jmethodID jmidAdjustEventAddCallbackParameter = Env->GetMethodID(jcslAdjustEvent, "addCallbackParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    TMap<FString, FString> callbackParams = Event.CallbackParameters;
+    for (TPair<FString, FString> pair : callbackParams)
+    {
+        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Key));
+        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Value));
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventAddCallbackParameter, jKey, jValue);
+        Env->DeleteLocalRef(jKey);
+        Env->DeleteLocalRef(jValue);
+    }
+
+    // partner parameters
+    jmethodID jmidAdjustEventAddPartnerParameter = Env->GetMethodID(jcslAdjustEvent, "addPartnerParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    TMap<FString, FString> partnerParams = Event.PartnerParameters;
+    for (TPair<FString, FString> pair : partnerParams)
+    {
+        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Key));
+        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Value));
+        Env->CallVoidMethod(joAdjustEvent, jmidAdjustEventAddPartnerParameter, jKey, jValue);
+        Env->DeleteLocalRef(jKey);
+        Env->DeleteLocalRef(jValue);
+    }
+
+    // verify and track event
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jclass jcslUePurchaseVerificationCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUePurchaseVerificationCallback");
+    jmethodID jmidUePurchaseVerificationCallbackInit = Env->GetMethodID(jcslUePurchaseVerificationCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joPurchaseVerificationCallbackProxy = Env->NewObject(jcslUePurchaseVerificationCallback, jmidUePurchaseVerificationCallbackInit, FJavaWrapper::GameActivityThis);
+    jmethodID jmidAdjustVerifyAndTrackPlayStorePurchase = Env->GetStaticMethodID(jcslAdjust, "verifyAndTrackPlayStorePurchase", "(Lcom/adjust/sdk/AdjustEvent;Lcom/adjust/sdk/OnPurchaseVerificationFinishedListener;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustVerifyAndTrackPlayStorePurchase, joAdjustEvent, joPurchaseVerificationCallbackProxy);
+    Env->DeleteLocalRef(joAdjustEvent);
+    Env->DeleteLocalRef(joPurchaseVerificationCallbackProxy);
+#endif
+}
+
+void UAdjust::TrackAppStoreSubscription(const FAdjustAppStoreSubscription& Subscription)
+{
+#if PLATFORM_IOS
+    // price
+    NSString *strPrice = [NSString stringWithFormat:@"%f", Subscription.Price];
+    NSDecimalNumber *price = [NSDecimalNumber decimalNumberWithString:strPrice];
+    
+    // currency
+    CFStringRef cfstrCurrency = FPlatformString::TCHARToCFString(*Subscription.Currency);
+    NSString *strCurrency = (NSString *)cfstrCurrency;
+    
+    // transaction ID
+    CFStringRef cfstrTransactionId = FPlatformString::TCHARToCFString(*Subscription.TransactionId);
+    NSString *strTransactionId = (NSString *)cfstrTransactionId;
+    
+    // create subscription object
+    ADJAppStoreSubscription *subscription = [[ADJAppStoreSubscription alloc] initWithPrice:price
+                                                                                   currency:strCurrency
+                                                                              transactionId:strTransactionId];
+    
+    // transaction date
+    if (!Subscription.TransactionDate.IsEmpty())
+    {
+        NSString *strTransactionDate = [NSString stringWithUTF8String:TCHAR_TO_UTF8(*Subscription.TransactionDate)];
+        NSTimeInterval transactionDateInterval = [strTransactionDate doubleValue];
+        NSDate *transactionDate = [NSDate dateWithTimeIntervalSince1970:transactionDateInterval];
+        [subscription setTransactionDate:transactionDate];
+    }
+    
+    // sales region
+    if (!Subscription.SalesRegion.IsEmpty())
+    {
+        CFStringRef cfstrSalesRegion = FPlatformString::TCHARToCFString(*Subscription.SalesRegion);
+        NSString *strSalesRegion = (NSString *)cfstrSalesRegion;
+        [subscription setSalesRegion:strSalesRegion];
+    }
+    
+    // callback parameters
+    TMap<FString, FString> callbackParams = Subscription.CallbackParameters;
+    for (TPair<FString, FString> pair : callbackParams)
+    {
+        CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*pair.Key);
+        NSString *strKey = (NSString *)cfstrKey;
+        CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*pair.Value);
+        NSString *strValue = (NSString *)cfstrValue;
+        [subscription addCallbackParameter:strKey value:strValue];
+    }
+    
+    // partner parameters
+    TMap<FString, FString> partnerParams = Subscription.PartnerParameters;
+    for (TPair<FString, FString> pair : partnerParams)
+    {
+        CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*pair.Key);
+        NSString *strKey = (NSString *)cfstrKey;
+        CFStringRef cfstrValue = FPlatformString::TCHARToCFString(*pair.Value);
+        NSString *strValue = (NSString *)cfstrValue;
+        [subscription addPartnerParameter:strKey value:strValue];
+    }
+    
+    // track subscription
+    [Adjust trackAppStoreSubscription:subscription];
+#endif
+}
+
+void UAdjust::TrackPlayStoreSubscription(const FAdjustPlayStoreSubscription& Subscription)
+{
+#if PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    
+    // create subscription object
+    jclass jcslAdjustPlayStoreSubscription = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustPlayStoreSubscription");
+    jmethodID jmidAdjustPlayStoreSubscriptionInit = Env->GetMethodID(jcslAdjustPlayStoreSubscription, "<init>", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+    jlong jPrice = (jlong)Subscription.Price; // Price is already in micros
+    jstring jCurrency = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.Currency));
+    jstring jSku = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.Sku));
+    jstring jOrderId = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.OrderId));
+    jstring jSignature = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.Signature));
+    jstring jPurchaseToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.PurchaseToken));
+    jobject joSubscription = Env->NewObject(jcslAdjustPlayStoreSubscription, jmidAdjustPlayStoreSubscriptionInit, jPrice, jCurrency, jSku, jOrderId, jSignature, jPurchaseToken);
+    Env->DeleteLocalRef(jCurrency);
+    Env->DeleteLocalRef(jSku);
+    Env->DeleteLocalRef(jOrderId);
+    Env->DeleteLocalRef(jSignature);
+    Env->DeleteLocalRef(jPurchaseToken);
+    
+    // purchase time
+    if (Subscription.PurchaseTime > 0)
+    {
+        jmethodID jmidAdjustPlayStoreSubscriptionSetPurchaseTime = Env->GetMethodID(jcslAdjustPlayStoreSubscription, "setPurchaseTime", "(J)V");
+        Env->CallVoidMethod(joSubscription, jmidAdjustPlayStoreSubscriptionSetPurchaseTime, (jlong)Subscription.PurchaseTime);
+    }
+    
+    // callback parameters
+    jmethodID jmidAdjustPlayStoreSubscriptionAddCallbackParameter = Env->GetMethodID(jcslAdjustPlayStoreSubscription, "addCallbackParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    TMap<FString, FString> callbackParams = Subscription.CallbackParameters;
+    for (TPair<FString, FString> pair : callbackParams)
+    {
+        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Key));
+        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Value));
+        Env->CallVoidMethod(joSubscription, jmidAdjustPlayStoreSubscriptionAddCallbackParameter, jKey, jValue);
+        Env->DeleteLocalRef(jKey);
+        Env->DeleteLocalRef(jValue);
+    }
+    
+    // partner parameters
+    jmethodID jmidAdjustPlayStoreSubscriptionAddPartnerParameter = Env->GetMethodID(jcslAdjustPlayStoreSubscription, "addPartnerParameter", "(Ljava/lang/String;Ljava/lang/String;)V");
+    TMap<FString, FString> partnerParams = Subscription.PartnerParameters;
+    for (TPair<FString, FString> pair : partnerParams)
+    {
+        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Key));
+        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*pair.Value));
+        Env->CallVoidMethod(joSubscription, jmidAdjustPlayStoreSubscriptionAddPartnerParameter, jKey, jValue);
+        Env->DeleteLocalRef(jKey);
+        Env->DeleteLocalRef(jValue);
+    }
+    
+    // track subscription
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustTrackPlayStoreSubscription = Env->GetStaticMethodID(jcslAdjust, "trackPlayStoreSubscription", "(Lcom/adjust/sdk/AdjustPlayStoreSubscription;)V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustTrackPlayStoreSubscription, joSubscription);
+    Env->DeleteLocalRef(joSubscription);
 #endif
 }
