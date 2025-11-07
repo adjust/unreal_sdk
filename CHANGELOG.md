@@ -14,6 +14,7 @@
 - Added `GetLastDeeplink` method to `UAdjust` instance to retrieve the last processed deeplink.
 - Added `TransactionId` and `ProductId` fields to `FAdjustEvent` for iOS, and `ProductId` and `PurchaseToken` fields for Android to support in-app purchase event tracking.
 - Added `FbAppId` property to `FAdjustConfig` for Android to set Facebook App ID.
+- Updated the Adjust Signature library version to 3.61.0.
 - Added `OnSkanConversionValueUpdatedDelegate` callback to `UAdjustDelegates` to receive SKAdNetwork conversion value update data. This callback provides a `TMap<FString, FString>` dictionary containing conversion value data (such as `conversion_value`, `coarse_value`, `lock_window`, and `error`) whenever the SDK updates the conversion value.
 
 #### Fixed
