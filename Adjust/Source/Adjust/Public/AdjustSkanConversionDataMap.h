@@ -11,9 +11,6 @@
 #include "CoreMinimal.h"
 #include "AdjustSkanConversionDataMap.generated.h"
 
-/**
- * @brief Structure containing SKAdNetwork conversion value update data as a map.
- */
 USTRUCT(BlueprintType)
 struct ADJUST_API FAdjustSkanConversionDataMap
 {
@@ -22,4 +19,3 @@ struct ADJUST_API FAdjustSkanConversionDataMap
     UPROPERTY(BlueprintReadWrite, Category = "Adjust")
     TMap<FString, FString> Data;
 };
-

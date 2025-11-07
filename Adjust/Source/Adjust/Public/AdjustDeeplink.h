@@ -3,7 +3,7 @@
 //  Adjust SDK
 //
 //  Created by Uglješa Erceg (@uerceg) on 16th January 2025.
-//  Copyright © 2018-Present Adjust GmbH. All rights reserved.
+//  Copyright © 2025-Present Adjust GmbH. All rights reserved.
 //
 
 #pragma once

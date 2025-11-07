@@ -25,4 +25,3 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Adjust")
     FString Message;
 };
-

@@ -22,4 +22,3 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     FString PurchaseToken;
 };
-

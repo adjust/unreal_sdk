@@ -43,4 +43,3 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     TMap<FString, FString> PartnerParameters;
 };
-
