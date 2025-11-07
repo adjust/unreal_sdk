@@ -20,6 +20,7 @@ This is the Unreal Engine SDK of Adjust™. You can read more about Adjust™ at
       * [Attribution callback](#attribution-callback)
       * [Get user attribution](#attribution-getter)
    * [Preinstalled apps](#preinstalled-apps)
+      * [Preinstall tracking](#preinstall-tracking)
       * [Default link token](#preinstall-default-link)
    * [Global parameters](#global-params)
       * [Global callback parameters](#global-callback-params)
@@ -41,10 +42,14 @@ This is the Unreal Engine SDK of Adjust™. You can read more about Adjust™ at
       * [Deferred deep linking scenario](#deeplinking-deferred)
       * [Reattribution via deep links](#deeplinking-reattribution)
       * [Resolve Adjust short links](#short-links-resolution)
+      * [Link resolution](#link-resolution)
+      * [Get last deeplink](#get-last-deeplink)
+      * [Handling deeplinks with referrer](#deeplink-referrer)
    * [App Tracking Transparency](#app-tracking-transparency)
       * [ATT authorization wrapper](#att-wrapper)
       * [Get current authorization status](#att-status-getter)
       * [ATT prompt waiting interval](#att-waiting-interval)
+      * [Disable the usage of App Tracking Transparency](#disable-att-usage)
    * [SKAdNetwork and conversion values](#skan-framework)
       * [Disable SKAdNetwork communication](#skan-disable)
       * [Set up direct install postbacks](#skan-postbacks)
@@ -69,6 +74,12 @@ This is the Unreal Engine SDK of Adjust™. You can read more about Adjust™ at
    * [External device ID](#external-device-id)
    * [Push token](#push-token)
    * [Disable AdServices information reading](#disable-ad-services)
+   * [First session delay](#first-session-delay)
+   * [Store information](#store-info)
+   * [URL strategy and data residency](#url-strategy)
+   * [Facebook App ID](#fb-app-id)
+   * [Purchase verification](#purchase-verification)
+   * [Subscription tracking](#subscription-tracking)
 * [License](#license)
 
 ## <a id="basic-integration"></a>Basic integration
@@ -156,7 +167,14 @@ FString Currency;
 
 ### <a id="event-deduplication"></a>Event deduplication
 
-You can also add an optional deduplication ID to avoid recording duplicate events. The last ten transaction IDs are remembered by default, and events with duplicate deduplication IDs are skipped. This is especially useful for in-app purchase tracking. Deduplication ID can be assigned to `DeduplicationId` member of the `FAdjustEvent` structure.
+You can also add an optional deduplication ID to avoid recording duplicate events. By default, the SDK stores the last 10 identifiers and skips revenue events with duplicate transaction IDs. In case you would like the SDK to store more than 10 identifiers, you can set the desired number of identifiers by assigning the value to `EventDeduplicationIdsMaxSize` property of your `FAdjustConfig` structure instance before SDK initialization.
+
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+int EventDeduplicationIdsMaxSize = -1;
+```
+
+Deduplication ID can be assigned to `DeduplicationId` member of the `FAdjustEvent` structure.
 
 ```cpp
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
@@ -267,6 +285,10 @@ FString CostCurrency;
 // the FB install referrer value in case install is attributed to it (Android only)
 UPROPERTY(BlueprintReadOnly, Category = "Adjust")
 FString FbInstallReferrer;
+
+// the attribution response that the backend sends to the SDK
+UPROPERTY(BlueprintReadOnly, Category = "Adjust")
+FString JsonResponse;
 ```
 
 ### <a id="attribution-getter"></a>Get user attribution
@@ -288,7 +310,21 @@ FOnAttributionGetterDelegate OnAttributionGetterDelegate;
 
 ### <a id="preinstalled-apps"></a>Preinstalled apps
 
-You can use the Adjust SDK to record activity from apps that came preinstalled on a user’s device. This enables you to attribute these users to a custom defined campaign link instead to an organic one.
+You can use the Adjust SDK to record activity from apps that came preinstalled on a user's device. This enables you to attribute these users to a custom defined campaign link instead to an organic one.
+
+### <a id="preinstall-tracking"></a>Preinstall tracking
+
+> Note: This feature is Android only.
+
+You can enable preinstall tracking by setting the `IsPreinstallTrackingEnabled` property to `true` on your `FAdjustConfig` structure instance before SDK initialization. Optionally, you can also set the `PreinstallFilePath` property to specify the path to the file with preinstall data.
+
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+bool IsPreinstallTrackingEnabled = false;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+FString PreinstallFilePath;
+```
 
 ### <a id="preinstall-default-link"></a>Default link token
 
@@ -696,11 +732,163 @@ FOnDeeplinkResolutionDelegate OnDeeplinkResolutionDelegate;
 
 > Note: If the link passed to the `ProcessAndResolveDeeplink` method was shortened, the callback function receives the extended original link. Otherwise, the callback function receives the link you passed.
 
+### <a id="link-resolution"></a>Link resolution
+
+You need to set up link resolution for deep linking via email, SMS, QR codes, and platforms that shorten links. If you don't set up link resolution for such cases, a redirect from a universal link sends all users to the App Store, even if they have your app installed. With link resolution, the redirect to the universal link occurs within your app, and existing users aren't sent to the App Store.
+
+> Note: Check with your marketing team to see if link resolution is needed for the app. You can then set up link resolution domains for different use cases.
+
+#### How it works
+
+Link resolution is only applicable when users that have your app installed click on a redirect URL. You need to configure the domain in the redirect URL as a universal link domain in your app.
+
+Link resolution works as follows:
+
+1. When an existing user clicks a redirect link, iOS opens your app.
+2. Your app passes the redirect URL to the `ResolveLink` method in the Adjust SDK.
+3. The link resolution method in the Adjust SDK compares the domain in the redirect URL against the link resolution domain that the developer has set in the Adjust SDK, and one of the following happens:
+   - Domains don't match - The method forwards the deep link URL as is.
+   - Domains match - The method resolves the link and returns the resulting deep link.
+   
+   The Adjust SDK will follow up to ten redirects when attempting to resolve a URL. If there are more than ten redirects, the SDK will return the tenth redirect URL.
+4. Your app receives the returned URL and opens deep link content and displays it to the user. Your app also calls the `ProcessDeeplink` method in the Adjust SDK with the returned URL. This sends the resolved URL to Adjust's servers to be recorded.
+
+> Note: If a user who doesn't have your app installed clicks on the redirect URL, iOS handles this as a normal web URL and redirects the user to the App Store. In this case, link resolution isn't applicable.
+
+#### Use cases
+
+Link resolution is applicable for the following cases:
+
+- Email marketing
+- Platforms that shorten URLs
+
+#### Email marketing
+
+When email marketers run campaigns, the email marketing platform typically wraps all links in the emails with its own click measurement redirect URL. This lets email marketers view click-through statistics in the email marketing platform. However, if the emails contain universal links, the redirect URL causes iOS to not resolve the universal links.
+
+**Example:** An email marketer builds their email using a template. This template contains a link or an image with a universal link:
+```
+https://example.go.link/summer-clothes?promo=beach&adj_t=abc123
+```
+
+Before the email is sent, the email marketing platform wraps the universal link with its own redirect URL:
+```
+https://email.example.com/2wuTnQvU
+```
+
+A user, who has your app installed, clicks on the redirect URL in the email. iOS opens your app and passes the redirect URL to your app. Your app passes the redirect URL to the link resolution method in the Adjust SDK. The Adjust SDK resolves the redirect URL from within your app, so `https://email.example.com/2wuTnQvU` redirects to `https://example.go.link/summer-clothes?promo=beach&adj_t=abc123`. The link resolution method returns the resolved URL. Your app handles the returned URL and calls the `ProcessDeeplink` method in the Adjust SDK with the returned URL.
+
+#### URL shorteners
+
+When marketers run certain types of campaigns, sometimes a short URL is required. For example, SMS has a 160 character limit. Sometimes, customers want to shorten a link and share it on team communication platforms, such as Slack. However, if the short URL redirects to a universal link, iOS doesn't resolve the universal link.
+
+**Example:** A marketer creates a universal link:
+```
+https://example.go.link/summer-clothes?promo=beach&adj_t=abc123
+```
+
+The marketer uses a URL shortener service to generate a shortened link:
+```
+https://short.example.com/2wuTnQvU
+```
+
+A user, who has your app installed, clicks on the short URL in the SMS message. iOS opens your app and passes the short URL to your app. Your app passes the short URL to the link resolution method in the Adjust SDK. The Adjust SDK resolves the short URL from within your app, so `https://short.example.com/2wuTnQvU` redirects to `https://example.go.link/summer-clothes?promo=beach&adj_t=abc123`. The link resolution method returns the resolved URL. Your app handles the returned URL and calls the `ProcessDeeplink` method in the Adjust SDK with the returned URL.
+
+#### Setup
+
+To resolve a link, call the `ResolveLink` method of the `UAdjust` class with the URL you want to resolve and an array of URL suffixes to match against.
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray);
+```
+
+Before making this call, you need to assign a callback method to the instance of `UAdjustDelegates` class:
+
+```cpp
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLinkResolutionDelegate, const FString&, ResolvedLink);
+
+// ...
+
+UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+FOnLinkResolutionDelegate OnLinkResolutionDelegate;
+```
+
+**Example: Email marketing**
+
+```cpp
+TArray<FString> ResolveUrlSuffixArray;
+ResolveUrlSuffixArray.Add(TEXT("email.example.com"));
+UAdjust::ResolveLink(TEXT("https://email.example.com/2wuTnQvU"), ResolveUrlSuffixArray);
+```
+
+**Example: URL shorteners**
+
+```cpp
+TArray<FString> ResolveUrlSuffixArray;
+ResolveUrlSuffixArray.Add(TEXT("short.example.com"));
+UAdjust::ResolveLink(TEXT("https://short.example.com/2wuTnQvU"), ResolveUrlSuffixArray);
+```
+
+After receiving the resolved link in the callback, your app should call `ProcessDeeplink` with the resolved URL:
+
+```cpp
+void AYourGameMode::OnLinkResolved(const FString& ResolvedLink)
+{
+    if (!ResolvedLink.IsEmpty())
+    {
+        FAdjustDeeplink adjustDeeplink;
+        adjustDeeplink.Deeplink = ResolvedLink;
+        UAdjust::ProcessDeeplink(adjustDeeplink);
+    }
+}
+```
+
+> Note: For more detailed information on this topic in iOS and Android, check native guides: [iOS](https://dev.adjust.com/en/sdk/ios/features/deep-links/resolution) and [Android](https://dev.adjust.com/en/sdk/android/features/deep-links#link-resolution).
+
+### <a id="get-last-deeplink"></a>Get last deeplink
+
+You can retrieve the last processed deeplink at any time. Call the `GetLastDeeplink` method of the `UAdjust` class to return the last deeplink as a string.
+
+Before making this call, you need to assign a callback method to the instance of `UAdjustDelegates` class:
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void GetLastDeeplink();
+```
+
+```cpp
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLastDeeplinkGetterDelegate, const FString&, LastDeeplink);
+
+// ...
+
+UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+FOnLastDeeplinkGetterDelegate OnLastDeeplinkGetterDelegate;
+```
+
+### <a id="deeplink-referrer"></a>Handling deeplinks with referrer
+
+An optional referrer URL can be used to track the source of the deeplink or app open for better attribution or reattribution and deep linking. For example, channels like SEO / Organic Search, Adjust links are not directly used. If the client's root domain has Android App Links implemented and triggers an app opening, for such channels, we may have to rely on signals coming from the referrer URL to attribute or reattribute users.
+
+If your app is able to obtain this information internally, you can pass the referrer information to the SDK by setting the `Referrer` property of your `FAdjustDeeplink` structure instance:
+
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+FString Referrer;
+```
+
+```cpp
+FAdjustDeeplink adjustDeeplink;
+adjustDeeplink.Deeplink = TEXT("your-app-scheme://deep-link-content");
+adjustDeeplink.Referrer = TEXT("https://example.com/referrer");
+UAdjust::ProcessDeeplink(adjustDeeplink);
+```
+
 ### <a id="app-tracking-transparency"></a>App Tracking Transparency
 
-> Note: This feature exists only in iOS platform.
+> Note: This feature is iOS only.
 
-If you want to record the device’s ID for Advertisers (IDFA), you must display a prompt to get your user’s authorization. To do this, you need to include Apple’s App Tracking Transparency (ATT) framework in your app. The Adjust SDK stores the user’s authorization status and sends it to Adjust’s servers with each request.
+If you want to record the device's ID for Advertisers (IDFA), you must display a prompt to get your user's authorization. To do this, you need to include Apple's App Tracking Transparency (ATT) framework in your app. The Adjust SDK stores the user's authorization status and sends it to Adjust's servers with each request.
 
 Below, you can find the list of possible ATT status values:
 
@@ -715,9 +903,9 @@ Below, you can find the list of possible ATT status values:
 
 ### <a id="att-wrapper"></a>ATT authorization wrapper
 
-**Note**: This feature exists only in iOS platform.
+> Note: This feature is iOS only.
 
-The Adjust SDK contains a wrapper around [Apple’s requestTrackingAuthorizationWithCompletionHandler: method](https://developer.apple.com/documentation/apptrackingtransparency/attrackingmanager/3547037-requesttrackingauthorizationwith). You can use this wrapper if you don’t want to use the ATT prompt.
+The Adjust SDK contains a wrapper around [Apple's requestTrackingAuthorizationWithCompletionHandler: method](https://developer.apple.com/documentation/apptrackingtransparency/attrackingmanager/3547037-requesttrackingauthorizationwith). You can use this wrapper if you don't want to use the ATT prompt.
 
 The callback method triggers when your user responds to the consent dialog. This method sends the user’s consent status code to Adjust’s servers. You can define responses to each status code within the callback function.
 
@@ -770,12 +958,25 @@ FOnAuthorizationStatusGetterDelegate OnAuthorizationStatusGetterDelegate;
 
 ### <a id="att-waiting-interval"></a>ATT prompt waiting interval
 
-If your app includes an onboarding process or a tutorial, you may want to delay sending your user’s ATT consent status until after the user has completed this process. To do this, you can set the `AttConsentWaitingInterval` method of your `FAdjustConfig` structure to delay the sending of data for up to **360 seconds** to give the user time to complete the initial onboarding. After the timeout ends or the user sets their consent status, the SDK sends all information it has recorded during the delay to Adjust’s servers along with the user’s consent status.
+If your app includes an onboarding process or a tutorial, you may want to delay sending your user's ATT consent status until after the user has completed this process. To do this, you can set the `AttConsentWaitingInterval` method of your `FAdjustConfig` structure to delay the sending of data for up to **360 seconds** to give the user time to complete the initial onboarding. After the timeout ends or the user sets their consent status, the SDK sends all information it has recorded during the delay to Adjust's servers along with the user's consent status.
 
 ```cpp
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
 int AttConsentWaitingInterval = 0;
 ```
+
+### <a id="disable-att-usage"></a>Disable the usage of App Tracking Transparency
+
+> Note: This feature is iOS only.
+
+In case you want to disable Adjust SDK's automatic interaction with `AppTrackingTransparency.framework`, you need to set the `IsAppTrackingTransparencyUsageEnabled` property on your `FAdjustConfig` structure instance to `false` before SDK initialization.
+
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+bool IsAppTrackingTransparencyUsageEnabled = true;
+```
+
+> Note: Even with this setup, the SDK will still allow you to use `RequestAppTrackingAuthorization` and `GetAppTrackingAuthorizationStatus` methods.
 
 ### <a id="skan-framework"></a>SKAdNetwork and conversion values
 
@@ -1241,13 +1442,401 @@ Push tokens are used for Audience Builder and client callbacks, and they are req
 
 ### <a id="disable-ad-services"></a>Disable AdServices information reading
 
-> Note: This is iOS only feature.
+> Note: This feature is iOS only.
 
 The SDK is enabled by default to try to communicate with `AdServices.framework` on iOS in order to try to obtain attribution token which is later being used for handling Apple Search Ads attribution. In case you would not like Adjust to show information from Apple Search Ads campaigns, you can disable this in the SDK by setting `IsAdServicesEnabled` field of your `FAdjustConfig` structure to `false`:
 
 ```cpp
 UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
 bool IsAdServicesEnabled = true;
+```
+
+### <a id="first-session-delay"></a>First session delay
+
+The First Session Delay feature allows you to delay SDK initialization during the very first SDK session only. While in this delay mode, the Adjust SDK records all activity (such as installs and events) in memory, but does not transmit any data to Adjust servers.
+
+This gives your app an opportunity to gather additional data that may not be available at launch and, if needed, modify the SDK configuration before any data is sent. Once the delay ends, SDK will apply all the settings configured during the delay before tracking an install.
+
+#### When and why to use first session delay
+
+Use this feature if you need to:
+
+- Show the App Tracking Transparency (ATT) dialog and act on the user's response.
+- Set third-party sharing settings.
+- Set DMA consent parameters.
+- Set COPPA compliance for the user.
+- Indicate that the user falls under the Play Store's "Designed for Families" (kids) category.
+- Assign an external device ID.
+- Set consent measurement for specific users.
+- Set global partner or callback parameters.
+
+> Note: This feature can effectively replace the ATT waiting interval. If both are used in parallel, the first session delay takes precedence, and the ATT waiting interval will be ignored.
+
+#### Enabling first session delay
+
+To initialize the SDK in delayed mode, set the `IsFirstSessionDelayEnabled` property to `true` on your `FAdjustConfig` structure instance before SDK initialization:
+
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+bool IsFirstSessionDelayEnabled = false;
+```
+
+```cpp
+FAdjustConfig adjustConfig;
+adjustConfig.AppToken = TEXT("{YourAppToken}");
+adjustConfig.Environment = EAdjustEnvironment::Sandbox;
+adjustConfig.IsFirstSessionDelayEnabled = true;
+
+UAdjust::InitSdk(adjustConfig);
+```
+
+After this, the SDK will be initialized in memory and will not process anything until you explicitly call:
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void EndFirstSessionDelay();
+```
+
+> Note: The delay only occurs during the install session of the SDK (i.e., the first-ever SDK initialization). The delay will end only when `EndFirstSessionDelay` is called. If it is not called during the app's runtime, any delayed calls will be lost upon app restart. The next SDK initialization will then be treated as a first session again, and the SDK will initialize in delayed mode once more. Once the delay has ended or is no longer applicable (e.g., in subsequent sessions), any attempts to call `EndFirstSessionDelay` will be ignored.
+
+#### Configuration changing while on delay
+
+While the SDK is in first session delay mode, it is possible to change various SDK settings as if they were set in the config during `InitSdk`:
+
+**Enable COPPA compliance:**
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void EnableCoppaComplianceInDelay();
+```
+
+**Disable COPPA compliance:**
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void DisableCoppaComplianceInDelay();
+```
+
+**Enable Play Store kids compliance:**
+
+> Note: This feature is Android only.
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void EnablePlayStoreKidsComplianceInDelay();
+```
+
+**Disable Play Store kids compliance:**
+
+> Note: This feature is Android only.
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void DisablePlayStoreKidsComplianceInDelay();
+```
+
+**Set external device ID:**
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void SetExternalDeviceIdInDelay(const FString& ExternalDeviceId);
+```
+
+> Note: Similar to the methods for configuring and ending the first session delay, once the delay has ended or is no longer applicable (e.g., in subsequent sessions), any calls to methods that allow configuration changes during the delay will be ignored.
+
+### <a id="store-info"></a>Store information
+
+You can use the Adjust SDK to record information about the store from which an app was installed on a user's device. Adjust supports a predefined list of store types.
+
+To configure store information, set the `StoreInfo` property on your `FAdjustConfig` structure instance before SDK initialization:
+
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+FAdjustStoreInfo StoreInfo;
+```
+
+The `FAdjustStoreInfo` structure contains the following properties:
+
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+FString StoreName;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+FString StoreAppId;
+```
+
+### <a id="url-strategy"></a>URL strategy and data residency
+
+The URL strategy feature allows you to set either:
+
+- The country in which Adjust stores your data (data residency).
+- The endpoint to which the Adjust SDK sends traffic (URL strategy).
+
+This is useful if you're operating in a country with strict privacy requirements. When you set your URL strategy, Adjust stores data in the selected data residency region or sends traffic to the chosen domain.
+
+To set your URL strategy, configure the following properties on your `FAdjustConfig` structure instance before SDK initialization:
+
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+TArray<FString> UrlStrategyDomains;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+bool ShouldUseSubdomains = false;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+bool IsDataResidency = false;
+```
+
+- `UrlStrategyDomains` (`TArray<FString>`): The country or countries of data residence, or the endpoints to which you want to send SDK traffic.
+- `ShouldUseSubdomains` (`bool`): Whether the domain should be treated as an Adjust domain. If `true`, the SDK will prefix the domains with Adjust-specific subdomains. If `false`, the SDK will use the provided domain as-is, without adding any prefixes.
+- `IsDataResidency` (`bool`): Whether the domain should be used for data residency.
+
+The following table shows all available URL strategy and data residency configurations:
+
+| Strategy              | Main and fallback domain      | Use subdomains | Is data residency |
+| --------------------- | ----------------------------- | -------------- | ----------------- |
+| EU data residency     | `eu.adjust.com`               | `true`         | `true`            |
+| Turkish data residency| `tr.adjust.com`               | `true`         | `true`            |
+| US data residency     | `us.adjust.com`               | `true`         | `true`            |
+| China global URL strategy | `adjust.world`, `adjust.com` | `true`         | `false`           |
+| China URL strategy    | `adjust.cn`, `adjust.com`     | `true`         | `false`           |
+| China only URL strategy | `adjust.cn`                  | `true`         | `false`           |
+| India URL strategy    | `adjust.net.in`, `adjust.com` | `true`         | `false`           |
+
+**Example: EU data residency**
+
+```cpp
+FAdjustConfig adjustConfig;
+adjustConfig.UrlStrategyDomains.Add(TEXT("eu.adjust.com"));
+adjustConfig.ShouldUseSubdomains = true;
+adjustConfig.IsDataResidency = true;
+```
+
+**Example: Turkish data residency**
+
+```cpp
+FAdjustConfig adjustConfig;
+adjustConfig.UrlStrategyDomains.Add(TEXT("tr.adjust.com"));
+adjustConfig.ShouldUseSubdomains = true;
+adjustConfig.IsDataResidency = true;
+```
+
+**Example: US data residency**
+
+```cpp
+FAdjustConfig adjustConfig;
+adjustConfig.UrlStrategyDomains.Add(TEXT("us.adjust.com"));
+adjustConfig.ShouldUseSubdomains = true;
+adjustConfig.IsDataResidency = true;
+```
+
+**Example: China global URL strategy**
+
+```cpp
+FAdjustConfig adjustConfig;
+adjustConfig.UrlStrategyDomains.Add(TEXT("adjust.world"));
+adjustConfig.UrlStrategyDomains.Add(TEXT("adjust.com"));
+adjustConfig.ShouldUseSubdomains = true;
+adjustConfig.IsDataResidency = false;
+```
+
+**Example: China URL strategy**
+
+```cpp
+FAdjustConfig adjustConfig;
+adjustConfig.UrlStrategyDomains.Add(TEXT("adjust.cn"));
+adjustConfig.UrlStrategyDomains.Add(TEXT("adjust.com"));
+adjustConfig.ShouldUseSubdomains = true;
+adjustConfig.IsDataResidency = false;
+```
+
+**Example: China only URL strategy**
+
+```cpp
+FAdjustConfig adjustConfig;
+adjustConfig.UrlStrategyDomains.Add(TEXT("adjust.cn"));
+adjustConfig.ShouldUseSubdomains = true;
+adjustConfig.IsDataResidency = false;
+```
+
+**Example: India URL strategy**
+
+```cpp
+FAdjustConfig adjustConfig;
+adjustConfig.UrlStrategyDomains.Add(TEXT("adjust.net.in"));
+adjustConfig.UrlStrategyDomains.Add(TEXT("adjust.com"));
+adjustConfig.ShouldUseSubdomains = true;
+adjustConfig.IsDataResidency = false;
+```
+
+### <a id="fb-app-id"></a>Facebook App ID
+
+> Note: This feature is Android only.
+
+You can set the Facebook App ID by setting the `FbAppId` property on your `FAdjustConfig` structure instance before SDK initialization:
+
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+FString FbAppId;
+```
+
+## <a id="purchase-verification"></a>Purchase verification
+
+If you've enabled [purchase verification](https://help.adjust.com/en/article/purchase-verification), you can use the Adjust SDK to request purchase verification. There are two ways to verify purchases with the Adjust SDK:
+
+1. Create an `FAdjustEvent` object that represents your purchase and configure purchase properties for the target store.
+2. Create an `FAdjustAppStorePurchase` (Apple App Store) or `FAdjustPlayStorePurchase` (Google Play Store) object representing the purchase.
+
+> Tip: If you use revenue events to measure your purchases in Adjust, you should use the `FAdjustEvent` class. If you only want to verify a purchase but don't want to associate it with an event, use the `FAdjustAppStorePurchase` or `FAdjustPlayStorePurchase` class.
+
+When you send purchase information with the Adjust SDK, Adjust does the following:
+
+1. Sends the information to the relevant store and waits for a status response.
+2. Forwards the status response to the Adjust SDK.
+
+You can access the purchase verification status by using a callback. Results are returned as `FAdjustPurchaseVerificationResult` objects containing the following properties:
+
+- `VerificationStatus` (`FString`): The status of the purchase.
+- `Code` (`int`): The status code of the purchase.
+- `Message` (`FString`): Any message returned by the store.
+
+### <a id="verify-purchase-and-track"></a>Verify purchase and record event
+
+To send a revenue event for verification and listen for the purchase verification status, follow these steps:
+
+**For App Store:**
+
+1. Instantiate an `FAdjustEvent` object with your event token and set the following parameters:
+   - `ProductId` (`FString`): The product identifier of the item that was successfully purchased.
+   - `TransactionId` (`FString`): The ID of the transaction you want to verify.
+2. Call the `VerifyAndTrackAppStorePurchase` method with your event object.
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void VerifyAndTrackAppStorePurchase(const FAdjustEvent& Event);
+```
+
+**For Play Store:**
+
+1. Instantiate an `FAdjustEvent` object with your event token and set the following parameters:
+   - `ProductId` (`FString`): The ID of the product that has been purchased.
+   - `PurchaseToken` (`FString`): The purchase token associated with the purchase.
+2. Call the `VerifyAndTrackPlayStorePurchase` method with your event object.
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event);
+```
+
+Before making these calls, you need to assign a callback method to the instance of `UAdjustDelegates` class:
+
+```cpp
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPurchaseVerificationFinishedDelegate, const FAdjustPurchaseVerificationResult&, VerificationResult);
+
+// ...
+
+UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
+FOnPurchaseVerificationFinishedDelegate OnPurchaseVerificationFinishedDelegate;
+```
+
+### <a id="verify-purchase-only"></a>Only verify purchase
+
+To send a standalone purchase and listen for the purchase verification status, follow these steps:
+
+**For App Store:**
+
+1. Instantiate an `FAdjustAppStorePurchase` object with the following arguments:
+   - `ProductId` (`FString`): The product identifier of the item that was successfully purchased.
+   - `TransactionId` (`FString`): The ID of the transaction you want to verify.
+2. Call the `VerifyAppStorePurchase` method with your purchase object.
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void VerifyAppStorePurchase(const FAdjustAppStorePurchase& Purchase);
+```
+
+**For Play Store:**
+
+1. Instantiate an `FAdjustPlayStorePurchase` object with the following arguments:
+   - `ProductId` (`FString`): The ID of the product that has been purchased.
+   - `PurchaseToken` (`FString`): The purchase token associated with the purchase.
+2. Call the `VerifyPlayStorePurchase` method with your purchase object.
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase);
+```
+
+The same callback delegate (`OnPurchaseVerificationFinishedDelegate`) is used for both methods.
+
+## <a id="subscription-tracking"></a>Subscription tracking
+
+> Important: The following steps only set up subscription measurement within the Adjust SDK. To enable the feature, follow the steps at [Set up subscriptions for your app](https://help.adjust.com/en/article/set-up-subscriptions-for-your-app).
+
+You can record App Store and Play Store subscriptions with the Adjust SDK. After the user purchases a subscription, create an `FAdjustAppStoreSubscription` or `FAdjustPlayStoreSubscription` instance containing the details.
+
+### <a id="app-store-subscription"></a>App Store subscription
+
+Create an `FAdjustAppStoreSubscription` object with the following properties:
+
+- `Price` (`double`): The price of the subscription.
+- `Currency` (`FString`): The currency of the subscription.
+- `TransactionId` (`FString`): Your ID for the transaction.
+- `TransactionDate` (`FString`): The date on which the user purchased a subscription (Unix timestamp string). This field is optional.
+- `SalesRegion` (`FString`): The region in which the user purchased a subscription (country code). This field is optional.
+- `CallbackParameters` (`TMap<FString, FString>`): Callback parameters to append to your callback URL.
+- `PartnerParameters` (`TMap<FString, FString>`): Partner parameters to send to network partners.
+
+```cpp
+FAdjustAppStoreSubscription Subscription;
+Subscription.Price = 9.99;
+Subscription.Currency = TEXT("USD");
+Subscription.TransactionId = TEXT("transaction-id");
+Subscription.TransactionDate = TEXT("1234567890");
+Subscription.SalesRegion = TEXT("US");
+Subscription.CallbackParameters.Add(TEXT("key1"), TEXT("value1"));
+Subscription.PartnerParameters.Add(TEXT("key1"), TEXT("value1"));
+
+UAdjust::TrackAppStoreSubscription(Subscription);
+```
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void TrackAppStoreSubscription(const FAdjustAppStoreSubscription& Subscription);
+```
+
+### <a id="play-store-subscription"></a>Play Store subscription
+
+Create an `FAdjustPlayStoreSubscription` object with the following properties:
+
+- `Price` (`int64`): The price of the subscription (in micros).
+- `Currency` (`FString`): The currency of the subscription.
+- `Sku` (`FString`): The ID of the product.
+- `OrderId` (`FString`): Your ID for the transaction.
+- `Signature` (`FString`): The signature of the purchase data.
+- `PurchaseToken` (`FString`): The unique token of the transaction.
+- `PurchaseTime` (`int64`): The date on which the user purchased a subscription (Unix timestamp in milliseconds). This field is optional.
+- `CallbackParameters` (`TMap<FString, FString>`): Callback parameters to append to your callback URL.
+- `PartnerParameters` (`TMap<FString, FString>`): Partner parameters to send to network partners.
+
+```cpp
+FAdjustPlayStoreSubscription Subscription;
+Subscription.Price = 9990000; // 9.99 in micros
+Subscription.Currency = TEXT("USD");
+Subscription.Sku = TEXT("sku-id");
+Subscription.OrderId = TEXT("order-id");
+Subscription.Signature = TEXT("signature");
+Subscription.PurchaseToken = TEXT("purchase-token");
+Subscription.PurchaseTime = 1234567890000;
+Subscription.CallbackParameters.Add(TEXT("key1"), TEXT("value1"));
+Subscription.PartnerParameters.Add(TEXT("key1"), TEXT("value1"));
+
+UAdjust::TrackPlayStoreSubscription(Subscription);
+```
+
+```cpp
+UFUNCTION(BlueprintCallable, Category = "Adjust")
+static void TrackPlayStoreSubscription(const FAdjustPlayStoreSubscription& Subscription);
 ```
 
 ## <a id="license"></a>License

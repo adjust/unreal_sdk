@@ -1,4 +1,4 @@
-### Version 5.4.0 (6th November 2025)
+### Version 5.4.0 (7th November 2025)
 #### Added
 - Added `JsonResponse` field (`FString`) to `FAdjustAttribution` where every key-value pair sent by the backend as part of the attribution response can be found.
 - Added ability to disable SDK's interaction with `AppTrackingTransparency.framework` API. You can disable it by setting the `IsAppTrackingTransparencyUsageEnabled` property to `false` on your `FAdjustConfig` instance.
