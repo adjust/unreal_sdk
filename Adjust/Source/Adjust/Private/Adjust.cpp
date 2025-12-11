@@ -661,6 +661,12 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         Env->DeleteLocalRef(joUrlStrategyDomains);
     }
 
+    // disable app set ID reading
+    if (Config.IsAppSetIdReadingEnabled == false) {
+        jmethodID jmidAdjustConfigDisableAppSetIdReading = Env->GetMethodID(jcslAdjustConfig, "disableAppSetIdReading", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigDisableAppSetIdReading);
+    }
+
     // start SDK
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustInitSdk = Env->GetStaticMethodID(jcslAdjust, "initSdk", "(Lcom/adjust/sdk/AdjustConfig;)V");
@@ -1275,6 +1281,77 @@ void UAdjust::GetAttribution()
             }
         }
         ueAttribution.JsonResponse = fsJsonResponse;
+        
+        AsyncTask(ENamedThreads::GameThread, [ueAttribution]() {
+            adjustAttributionGetterCallback(ueAttribution);
+        });
+    }];
+#endif
+}
+
+void UAdjust::GetAdidWithTimeout(int32 TimeoutInMilliseconds)
+{
+#if PLATFORM_ANDROID
+    setAdidGetterCallbackMethod(adjustAdidGetterCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustGetAdidWithTimeout = Env->GetStaticMethodID(jcslAdjust, "getAdidWithTimeout", "(Landroid/content/Context;JLcom/adjust/sdk/OnAdidReadListener;)V");
+    jclass jcslUeAdidGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeAdidGetterCallback");
+    jmethodID jmidUeAdidGetterCallbackInit = Env->GetMethodID(jcslUeAdidGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joAdidGetterCallbackProxy = Env->NewObject(jcslUeAdidGetterCallback, jmidUeAdidGetterCallbackInit, FJavaWrapper::GameActivityThis);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetAdidWithTimeout, FJavaWrapper::GameActivityThis, (jlong)TimeoutInMilliseconds, joAdidGetterCallbackProxy);
+    Env->DeleteLocalRef(joAdidGetterCallbackProxy);
+#elif PLATFORM_IOS
+    [Adjust adidWithTimeout:TimeoutInMilliseconds completionHandler:^(NSString * _Nullable adid) {
+        FString fsAdid;
+        if (adid != nil) {
+            fsAdid = FString(UTF8_TO_TCHAR([adid UTF8String]));
+        }
+        AsyncTask(ENamedThreads::GameThread, [fsAdid]() {
+            adjustAdidGetterCallback(fsAdid);
+        });
+    }];
+#endif
+}
+
+void UAdjust::GetAttributionWithTimeout(int32 TimeoutInMilliseconds)
+{
+#if PLATFORM_ANDROID
+    setAttributionGetterCallbackMethod(adjustAttributionGetterCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustGetAttributionWithTimeout = Env->GetStaticMethodID(jcslAdjust, "getAttributionWithTimeout", "(Landroid/content/Context;JLcom/adjust/sdk/OnAttributionReadListener;)V");
+    jclass jcslUeAttributionGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeAttributionGetterCallback");
+    jmethodID jmidUeAttributionGetterCallbackInit = Env->GetMethodID(jcslUeAttributionGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joAttributionGetterCallbackProxy = Env->NewObject(jcslUeAttributionGetterCallback, jmidUeAttributionGetterCallbackInit, FJavaWrapper::GameActivityThis);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetAttributionWithTimeout, FJavaWrapper::GameActivityThis, (jlong)TimeoutInMilliseconds, joAttributionGetterCallbackProxy);
+    Env->DeleteLocalRef(joAttributionGetterCallbackProxy);
+#elif PLATFORM_IOS
+    [Adjust attributionWithTimeout:TimeoutInMilliseconds completionHandler:^(ADJAttribution * _Nullable attribution) {
+        FAdjustAttribution ueAttribution;
+        
+        if (attribution != nil) {
+            ueAttribution.TrackerToken = *FString(attribution.trackerToken);
+            ueAttribution.TrackerName = *FString(attribution.trackerName);
+            ueAttribution.Network = *FString(attribution.network);
+            ueAttribution.Campaign = *FString(attribution.campaign);
+            ueAttribution.Adgroup = *FString(attribution.adgroup);
+            ueAttribution.Creative = *FString(attribution.creative);
+            ueAttribution.ClickLabel = *FString(attribution.clickLabel);
+            
+            FString fsJsonResponse;
+            if (attribution.jsonResponse != nil) {
+                NSError *error = nil;
+                NSData *dataJsonResponse = [NSJSONSerialization dataWithJSONObject:attribution.jsonResponse options:0 error:&error];
+                if (dataJsonResponse != nil && error == nil) {
+                    NSString *stringJsonResponse = [[NSString alloc] initWithData:dataJsonResponse encoding:NSUTF8StringEncoding];
+                    if (stringJsonResponse != nil) {
+                        fsJsonResponse = *FString(stringJsonResponse);
+                    }
+                }
+            }
+            ueAttribution.JsonResponse = fsJsonResponse;
+        }
         
         AsyncTask(ENamedThreads::GameThread, [ueAttribution]() {
             adjustAttributionGetterCallback(ueAttribution);

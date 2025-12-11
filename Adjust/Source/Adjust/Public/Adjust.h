@@ -93,7 +93,13 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     static void GetAdid();
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void GetAdidWithTimeout(int32 TimeoutInMilliseconds);
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void GetAttribution();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void GetAttributionWithTimeout(int32 TimeoutInMilliseconds);
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void GetLastDeeplink();
