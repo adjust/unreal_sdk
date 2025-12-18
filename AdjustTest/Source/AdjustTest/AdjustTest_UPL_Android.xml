@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--AdjustTest plugin additions-->
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+    <buildGradleAdditions>
+        <insert>
+            repositories {
+                mavenCentral()
+            }
+            dependencies {
+                implementation files('${PROJECT_DIR}/../../AdjustTest/Source/AdjustTest/Private/libs/adjust-test-library.jar')
+                implementation files('${PROJECT_DIR}/../../AdjustTest/Source/AdjustTest/Private/libs/adjust-test-options.jar')
+                implementation files('${PROJECT_DIR}/../../AdjustTest/Source/AdjustTest/Private/libs/adjust-test.jar')
+                implementation files('${PROJECT_DIR}/../../AdjustTest/Source/AdjustTest/Private/libs/gson-2.8.6.jar')
+                implementation files('${PROJECT_DIR}/../../AdjustTest/Source/AdjustTest/Private/libs/Java-WebSocket-1.4.0.jar')
+                implementation files('${PROJECT_DIR}/../../AdjustTest/Source/AdjustTest/Private/libs/slf4j-api-1.7.30.jar')
+                implementation files('${PROJECT_DIR}/../../AdjustTest/Source/AdjustTest/Private/libs/slf4j-simple-1.7.30.jar')
+            }
+        </insert>
+    </buildGradleAdditions>
+
+    <gameActivityImportAdditions>
+        <insert>
+            import com.adjust.test.*;
+        </insert>
+    </gameActivityImportAdditions>
+
+    <!-- optional additions to the GameActivity class in GameActivity.java -->
+    <gameActivityClassAdditions>
+        <insert>
+            // Begin AdjustTest gameActivityClassAdditions
+            public class AdjustUeTestLibCommandJsonListenerCallback implements ICommandJsonListener {
+                public native void commandJsonReceived(String className, String methodName, String jsonParameters);
+
+                public AdjustUeTestLibCommandJsonListenerCallback() {}
+
+                @Override
+                public void executeCommand(String className, String methodName, String jsonParameters) {
+                    commandJsonReceived(className, methodName, jsonParameters);
+                }
+            }
+            // End AdjustTest gameActivityClassAdditions
+        </insert>
+    </gameActivityClassAdditions>
+</root>
