@@ -16,15 +16,15 @@
 
 class Command {
 private:
-	void replace(SafeString &s, const SafeString &search, const SafeString &replace);
+	void replace(std::string &s, const std::string &search, const std::string &replace);
 public:
-	SafeString className;
-	SafeString methodName;
-	std::map<SafeString, std::vector<SafeString>> parameters;
+	std::string className;
+	std::string methodName;
+	std::map<std::string, std::vector<std::string>> parameters;
 
-	Command(SafeString className, SafeString methodName, SafeString parametersJson);
+	Command(std::string className, std::string methodName, std::string parametersJson);
 
-	std::vector<SafeString> getParameters(SafeString parameterKey);
-	SafeString getFirstParameterValue(SafeString parameterKey);
-	bool containsParameter(SafeString parameterKey);
+	std::vector<std::string> getParameters(std::string parameterKey);
+	std::string getFirstParameterValue(std::string parameterKey);
+	bool containsParameter(std::string parameterKey);
 };

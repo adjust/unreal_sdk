@@ -30,16 +30,16 @@ UAdjustTest::UAdjustTest(const FObjectInitializer& ObjectInitializer) : Super(Ob
 
 static TestLib* testLibrary = nullptr;
 static AdjustCommandExecutor* commandExecutor = nullptr;
-static std::vector<SafeString> pendingTests;
-static std::vector<SafeString> pendingTestDirectories;
+static std::vector<std::string> pendingTests;
+static std::vector<std::string> pendingTestDirectories;
 
 void UAdjustTest::StartTestSession(const FString& BaseUrl, const FString& ControlUrl, const FString& ClientSdk)
 {
-    SafeString baseUrlStr = SafeString(TCHAR_TO_UTF8(*BaseUrl));
+    std::string baseUrlStr = std::string(TCHAR_TO_UTF8(*BaseUrl));
     
     // determine URL overwrite based on platform
     // input is just IP:port, we add the protocol based on platform
-    SafeString urlOverwrite;
+    std::string urlOverwrite;
 #if PLATFORM_IOS
     // iOS always uses http://
     urlOverwrite = "http://" + baseUrlStr;
@@ -47,35 +47,30 @@ void UAdjustTest::StartTestSession(const FString& BaseUrl, const FString& Contro
     // Android always uses https:// on port 8443
     // extract IP from baseUrlStr and replace port with 8443
     size_t lastColon = baseUrlStr.find_last_of(':');
-    SafeString ipOnly = (lastColon != SafeString::npos) ? baseUrlStr.substr(0, lastColon) : baseUrlStr;
-    urlOverwrite = SafeString("https://") + ipOnly + SafeString(":8443");
+    std::string ipOnly = (lastColon != std::string::npos) ? baseUrlStr.substr(0, lastColon) : baseUrlStr;
+    urlOverwrite = std::string("https://") + ipOnly + std::string(":8443");
 #else
     urlOverwrite = baseUrlStr;
 #endif
 
-    SafeString controlUrlStr = SafeString(TCHAR_TO_UTF8(*ControlUrl));
+    std::string controlUrlStr = std::string(TCHAR_TO_UTF8(*ControlUrl));
     
     // for Android, control URL should be WebSocket URL (ws://) based on base URL
 #if PLATFORM_ANDROID
     // reuse ipOnly from above to build WebSocket URL
     // controlUrl should be ws://IP:1987 (WebSocket port, typically 1987)
-    controlUrlStr = SafeString("ws://") + ipOnly + SafeString(":1987");
+    controlUrlStr = std::string("ws://") + ipOnly + std::string(":1987");
 #endif
 
     // create command executor
     if (commandExecutor == nullptr) {
-        // convert SafeString to std::string for AdjustCommandExecutor (not part of JNI boundary)
-        commandExecutor = new AdjustCommandExecutor(std::string(urlOverwrite.c_str()));
+        commandExecutor = new AdjustCommandExecutor(urlOverwrite);
     }
 
     // create command callback function
-    auto commandCallback = [](SafeString className, SafeString methodName, SafeString jsonParameters) {
+    auto commandCallback = [](std::string className, std::string methodName, std::string jsonParameters) {
         if (commandExecutor != nullptr) {
-            // CRITICAL: Capture SafeString by value and convert to std::string INSIDE AsyncTask on game thread
-            // Converting std::string in JNI callback context causes allocator issues
-            // SafeString uses SystemAllocator (malloc/free) which is safe to capture
             AsyncTask(ENamedThreads::GameThread, [className, methodName, jsonParameters]() {
-                // Command now accepts SafeString directly - no conversion needed!
                 Command* command = new Command(className, methodName, jsonParameters);
                 if (commandExecutor != nullptr) {
                     commandExecutor->executeCommand(command);
@@ -105,7 +100,7 @@ void UAdjustTest::StartTestSession(const FString& BaseUrl, const FString& Contro
     }
 
     // start test session
-    SafeString clientSdkStr = SafeString(TCHAR_TO_UTF8(*ClientSdk));
+    std::string clientSdkStr = std::string(TCHAR_TO_UTF8(*ClientSdk));
     
     if (testLibrary != nullptr) {
         testLibrary->startTestSession(clientSdkStr);
@@ -114,7 +109,7 @@ void UAdjustTest::StartTestSession(const FString& BaseUrl, const FString& Contro
 
 void UAdjustTest::AddTest(const FString& TestName)
 {
-    SafeString testNameStr = SafeString(TCHAR_TO_UTF8(*TestName));
+    std::string testNameStr = std::string(TCHAR_TO_UTF8(*TestName));
     
     if (testLibrary != nullptr) {
         testLibrary->addTest(testNameStr);
@@ -125,7 +120,7 @@ void UAdjustTest::AddTest(const FString& TestName)
 
 void UAdjustTest::AddTestDirectory(const FString& TestDirectory)
 {
-    SafeString testDirectoryStr = SafeString(TCHAR_TO_UTF8(*TestDirectory));
+    std::string testDirectoryStr = std::string(TCHAR_TO_UTF8(*TestDirectory));
     
     if (testLibrary != nullptr) {
         testLibrary->addTestDirectory(testDirectoryStr);
@@ -136,13 +131,13 @@ void UAdjustTest::AddTestDirectory(const FString& TestDirectory)
 
 void UAdjustTest::AddInfoToSend(const FString& Key, const FString& Value)
 {
-    SafeString keyStr = SafeString(TCHAR_TO_UTF8(*Key));
-    SafeString valueStr = SafeString(TCHAR_TO_UTF8(*Value));
+    std::string keyStr = std::string(TCHAR_TO_UTF8(*Key));
+    std::string valueStr = std::string(TCHAR_TO_UTF8(*Value));
     TestLib::addInfoToSend(keyStr, valueStr);
 }
 
 void UAdjustTest::SendInfoToServer(const FString& BasePath)
 {
-    SafeString basePathStr = SafeString(TCHAR_TO_UTF8(*BasePath));
+    std::string basePathStr = std::string(TCHAR_TO_UTF8(*BasePath));
     TestLib::sendInfoToServer(basePathStr);
 }

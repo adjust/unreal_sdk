@@ -134,36 +134,36 @@ void AdjustCommandExecutor::testOptions() {
         stringTestOptions["testUrlOverwrite"] = this->urlOverwrite;
     }
 
-    if (this->command->containsParameter(SafeString("basePath"))) {
-        std::string basePathStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("basePath")));
+    if (this->command->containsParameter(std::string("basePath"))) {
+        std::string basePathStr = this->command->getFirstParameterValue(std::string("basePath"));
         this->basePath = basePathStr;
         localBasePath = basePathStr;
         if (persistentTestDelegates != nullptr) {
             persistentTestDelegates->localBasePath = FString(UTF8_TO_TCHAR(basePathStr.c_str()));
         }
     }
-    if (this->command->containsParameter(SafeString("timerInterval"))) {
-        intTestOptions["timerIntervalInMilliseconds"] = std::stoi(StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("timerInterval"))));
+    if (this->command->containsParameter(std::string("timerInterval"))) {
+        intTestOptions["timerIntervalInMilliseconds"] = std::stoi(this->command->getFirstParameterValue(std::string("timerInterval")));
     }
-    if (this->command->containsParameter(SafeString("timerStart"))) {
-        intTestOptions["timerStartInMilliseconds"] = std::stoi(StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("timerStart"))));
+    if (this->command->containsParameter(std::string("timerStart"))) {
+        intTestOptions["timerStartInMilliseconds"] = std::stoi(this->command->getFirstParameterValue(std::string("timerStart")));
     }
-    if (this->command->containsParameter(SafeString("sessionInterval"))) {
-        intTestOptions["sessionIntervalInMilliseconds"] = std::stoi(StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("sessionInterval"))));
+    if (this->command->containsParameter(std::string("sessionInterval"))) {
+        intTestOptions["sessionIntervalInMilliseconds"] = std::stoi(this->command->getFirstParameterValue(std::string("sessionInterval")));
     }
-    if (this->command->containsParameter(SafeString("subsessionInterval"))) {
-        intTestOptions["subsessionIntervalInMilliseconds"] = std::stoi(StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("subsessionInterval"))));
+    if (this->command->containsParameter(std::string("subsessionInterval"))) {
+        intTestOptions["subsessionIntervalInMilliseconds"] = std::stoi(this->command->getFirstParameterValue(std::string("subsessionInterval")));
     }
-    if (this->command->containsParameter(SafeString("attStatus"))) {
-        intTestOptions["attStatusInt"] = std::stoi(StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("attStatus"))));
-    }
-
-    if (this->command->containsParameter(SafeString("idfa"))) {
-        stringTestOptions["idfa"] = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("idfa")));
+    if (this->command->containsParameter(std::string("attStatus"))) {
+        intTestOptions["attStatusInt"] = std::stoi(this->command->getFirstParameterValue(std::string("attStatus")));
     }
 
-    if (this->command->containsParameter(SafeString("noBackoffWait"))) {
-        if (StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("noBackoffWait"))) == "true") {
+    if (this->command->containsParameter(std::string("idfa"))) {
+        stringTestOptions["idfa"] = this->command->getFirstParameterValue(std::string("idfa"));
+    }
+
+    if (this->command->containsParameter(std::string("noBackoffWait"))) {
+        if (this->command->getFirstParameterValue(std::string("noBackoffWait")) == "true") {
             intTestOptions["noBackoffWait"] = 1;
         } else {
             intTestOptions["noBackoffWait"] = 0;
@@ -171,22 +171,22 @@ void AdjustCommandExecutor::testOptions() {
     }
     // "false" is default value - AdServices will not be used in test app by default
     intTestOptions["adServicesFrameworkEnabled"] = 0;
-    if (this->command->containsParameter(SafeString("adServicesFrameworkEnabled"))) {
-        if (StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("adServicesFrameworkEnabled"))) == "true") {
+    if (this->command->containsParameter(std::string("adServicesFrameworkEnabled"))) {
+        if (this->command->getFirstParameterValue(std::string("adServicesFrameworkEnabled")) == "true") {
             intTestOptions["adServicesFrameworkEnabled"] = 1;
         }
     }
 
-    if (this->command->containsParameter(SafeString("tryInstallReferrer"))) {
-        if (StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("tryInstallReferrer"))) == "true") {
+    if (this->command->containsParameter(std::string("tryInstallReferrer"))) {
+        if (this->command->getFirstParameterValue(std::string("tryInstallReferrer")) == "true") {
             intTestOptions["tryInstallReferrer"] = 1;
         } else {
             intTestOptions["tryInstallReferrer"] = 0;
         }
     }
 
-    if (this->command->containsParameter(SafeString("doNotIgnoreSystemLifecycleBootstrap"))) {
-        if (StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("doNotIgnoreSystemLifecycleBootstrap"))) == "true") {
+    if (this->command->containsParameter(std::string("doNotIgnoreSystemLifecycleBootstrap"))) {
+        if (this->command->getFirstParameterValue(std::string("doNotIgnoreSystemLifecycleBootstrap")) == "true") {
             intTestOptions["doNotIgnoreSystemLifecycleBootstrap"] = 1;
         } else {
             intTestOptions["doNotIgnoreSystemLifecycleBootstrap"] = 0;
@@ -195,12 +195,8 @@ void AdjustCommandExecutor::testOptions() {
 
     bool useTestConnectionOptions = false;
 
-    if (this->command->containsParameter(SafeString("teardown"))) {
-        std::vector<SafeString> teardownOptionsSafe = this->command->getParameters(SafeString("teardown"));
-        std::vector<std::string> teardownOptions;
-        for (const auto& option : teardownOptionsSafe) {
-            teardownOptions.push_back(StdStringFromSafeString(option));
-        }
+    if (this->command->containsParameter(std::string("teardown"))) {
+        std::vector<std::string> teardownOptions = this->command->getParameters(std::string("teardown"));
         std::vector<std::string>::iterator toIterator = teardownOptions.begin();
         while(toIterator != teardownOptions.end()) {
             std::string teardownOption = (*toIterator);
@@ -281,8 +277,8 @@ void AdjustCommandExecutor::testOptions() {
 
 void AdjustCommandExecutor::config() {
     int configNumber = 0;
-    if (this->command->containsParameter(SafeString("configName"))) {
-        std::string configName = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("configName")));
+    if (this->command->containsParameter(std::string("configName"))) {
+        std::string configName = this->command->getFirstParameterValue(std::string("configName"));
         if (!configName.empty()) {
             std::string configNumberStr = configName.substr(configName.length() - 1, 1);
             configNumber = std::stoi(configNumberStr);
@@ -296,11 +292,11 @@ void AdjustCommandExecutor::config() {
         FAdjustConfig newConfig;
         std::string environmentParam = "";
         std::string appToken = "";
-        if (this->command->containsParameter(SafeString("environment"))) {
-            environmentParam = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("environment")));
+        if (this->command->containsParameter(std::string("environment"))) {
+            environmentParam = this->command->getFirstParameterValue(std::string("environment"));
         }
-        if (this->command->containsParameter(SafeString("appToken"))) {
-            appToken = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("appToken")));
+        if (this->command->containsParameter(std::string("appToken"))) {
+            appToken = this->command->getFirstParameterValue(std::string("appToken"));
         }
 
         // handle environment parameter
@@ -320,8 +316,8 @@ void AdjustCommandExecutor::config() {
         adjustConfig = &this->savedConfigs[configNumber];
     }
 
-    if (this->command->containsParameter(SafeString("logLevel"))) {
-        std::string logLevelString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("logLevel")));
+    if (this->command->containsParameter(std::string("logLevel"))) {
+        std::string logLevelString = this->command->getFirstParameterValue(std::string("logLevel"));
         if (logLevelString == "verbose") {
             adjustConfig->LogLevel = EAdjustLogLevel::Verbose;
         } else if (logLevelString == "debug") {
@@ -339,50 +335,50 @@ void AdjustCommandExecutor::config() {
         }
     }
 
-    if (this->command->containsParameter(SafeString("checkPasteboard"))) {
-        std::string checkPasteboardString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("checkPasteboard")));
+    if (this->command->containsParameter(std::string("checkPasteboard"))) {
+        std::string checkPasteboardString = this->command->getFirstParameterValue(std::string("checkPasteboard"));
         bool checkPasteboard = (checkPasteboardString == "true");
         if (checkPasteboard) {
             adjustConfig->IsLinkMeEnabled = true;
         }
     }
 
-    if (this->command->containsParameter(SafeString("attConsentWaitingSeconds"))) {
-        std::string attConsentWaitingSecondsString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("attConsentWaitingSeconds")));
+    if (this->command->containsParameter(std::string("attConsentWaitingSeconds"))) {
+        std::string attConsentWaitingSecondsString = this->command->getFirstParameterValue(std::string("attConsentWaitingSeconds"));
         adjustConfig->AttConsentWaitingInterval = std::stoi(attConsentWaitingSecondsString);
     }
 
-    if (this->command->containsParameter(SafeString("eventDeduplicationIdsMaxSize"))) {
-        std::string eventDeduplicationIdsMaxSizeString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("eventDeduplicationIdsMaxSize")));
+    if (this->command->containsParameter(std::string("eventDeduplicationIdsMaxSize"))) {
+        std::string eventDeduplicationIdsMaxSizeString = this->command->getFirstParameterValue(std::string("eventDeduplicationIdsMaxSize"));
         adjustConfig->EventDeduplicationIdsMaxSize = std::stoi(eventDeduplicationIdsMaxSizeString);
     }
 
-    if (this->command->containsParameter(SafeString("coppaCompliant"))) {
-        std::string coppaCompliantString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("coppaCompliant")));
+    if (this->command->containsParameter(std::string("coppaCompliant"))) {
+        std::string coppaCompliantString = this->command->getFirstParameterValue(std::string("coppaCompliant"));
         bool coppaCompliant = (coppaCompliantString == "true");
         if (coppaCompliant) {
             adjustConfig->IsCoppaComplianceEnabled = true;
         }
     }
 
-    if (this->command->containsParameter(SafeString("needsCost"))) {
-        std::string needsCostString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("needsCost")));
+    if (this->command->containsParameter(std::string("needsCost"))) {
+        std::string needsCostString = this->command->getFirstParameterValue(std::string("needsCost"));
         bool needsCost = (needsCostString == "true");
         if (needsCost) {
             adjustConfig->IsCostDataInAttributionEnabled = true;
         }
     }
 
-    if (this->command->containsParameter(SafeString("allowIdfaReading"))) {
-        std::string allowIdfaReadingString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("allowIdfaReading")));
+    if (this->command->containsParameter(std::string("allowIdfaReading"))) {
+        std::string allowIdfaReadingString = this->command->getFirstParameterValue(std::string("allowIdfaReading"));
         bool allowIdfaReading = (allowIdfaReadingString == "true");
         if (!allowIdfaReading) {
             adjustConfig->IsIdfaReadingEnabled = false;
         }
     }
 
-    if (this->command->containsParameter(SafeString("allowAdServicesInfoReading"))) {
-        std::string allowAdServicesInfoReadingString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("allowAdServicesInfoReading")));
+    if (this->command->containsParameter(std::string("allowAdServicesInfoReading"))) {
+        std::string allowAdServicesInfoReadingString = this->command->getFirstParameterValue(std::string("allowAdServicesInfoReading"));
         bool allowAdServicesInfoReading = (allowAdServicesInfoReadingString == "true");
         if (!allowAdServicesInfoReading) {
             adjustConfig->IsAdServicesEnabled = false;
@@ -390,16 +386,16 @@ void AdjustCommandExecutor::config() {
     }
 
 #if PLATFORM_ANDROID
-    if (this->command->containsParameter(SafeString("allowAppSetIdReading"))) {
-        std::string allowAppSetIdReadingString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("allowAppSetIdReading")));
+    if (this->command->containsParameter(std::string("allowAppSetIdReading"))) {
+        std::string allowAppSetIdReadingString = this->command->getFirstParameterValue(std::string("allowAppSetIdReading"));
         bool allowAppSetIdReading = (allowAppSetIdReadingString == "true");
         if (!allowAppSetIdReading) {
             adjustConfig->IsAppSetIdReadingEnabled = false;
         }
     }
 
-    if (this->command->containsParameter(SafeString("appSetIdReadingEnabled"))) {
-        std::string appSetIdReadingEnabledString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("appSetIdReadingEnabled")));
+    if (this->command->containsParameter(std::string("appSetIdReadingEnabled"))) {
+        std::string appSetIdReadingEnabledString = this->command->getFirstParameterValue(std::string("appSetIdReadingEnabled"));
         bool appSetIdReadingEnabled = (appSetIdReadingEnabledString == "true");
         if (!appSetIdReadingEnabled) {
             adjustConfig->IsAppSetIdReadingEnabled = false;
@@ -407,58 +403,58 @@ void AdjustCommandExecutor::config() {
     }
 #endif
 
-    if (this->command->containsParameter(SafeString("allowSkAdNetworkHandling"))) {
-        std::string allowSkAdNetworkHandlingString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("allowSkAdNetworkHandling")));
+    if (this->command->containsParameter(std::string("allowSkAdNetworkHandling"))) {
+        std::string allowSkAdNetworkHandlingString = this->command->getFirstParameterValue(std::string("allowSkAdNetworkHandling"));
         bool allowSkAdNetworkHandling = (allowSkAdNetworkHandlingString == "true");
         if (allowSkAdNetworkHandling == false) {
             adjustConfig->IsSkanAttributionEnabled = false;
         }
     }
 
-    if (this->command->containsParameter(SafeString("sendInBackground"))) {
-        std::string sendInBackgroundString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("sendInBackground")));
+    if (this->command->containsParameter(std::string("sendInBackground"))) {
+        std::string sendInBackgroundString = this->command->getFirstParameterValue(std::string("sendInBackground"));
         bool sendInBackground = (sendInBackgroundString == "true");
         if (sendInBackground) {
             adjustConfig->IsSendingInBackgroundEnabled = true;
         }
     }
 
-    if (this->command->containsParameter(SafeString("defaultTracker"))) {
-        std::string defaultTracker = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("defaultTracker")));
+    if (this->command->containsParameter(std::string("defaultTracker"))) {
+        std::string defaultTracker = this->command->getFirstParameterValue(std::string("defaultTracker"));
         adjustConfig->DefaultTracker = FString(UTF8_TO_TCHAR(defaultTracker.c_str()));
     }
 
-    if (this->command->containsParameter(SafeString("externalDeviceId"))) {
-        std::string externalDeviceId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("externalDeviceId")));
+    if (this->command->containsParameter(std::string("externalDeviceId"))) {
+        std::string externalDeviceId = this->command->getFirstParameterValue(std::string("externalDeviceId"));
         adjustConfig->ExternalDeviceId = FString(UTF8_TO_TCHAR(externalDeviceId.c_str()));
     }
 
-    if (this->command->containsParameter(SafeString("playStoreKids"))) {
-        std::string playStoreKidsString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("playStoreKids")));
+    if (this->command->containsParameter(std::string("playStoreKids"))) {
+        std::string playStoreKidsString = this->command->getFirstParameterValue(std::string("playStoreKids"));
         if (playStoreKidsString == "true") {
             adjustConfig->IsPlayStoreKidsComplianceEnabled = true;
         }
     }
 
-    if (this->command->containsParameter(SafeString("allowAttUsage"))) {
-        std::string allowAttUsageString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("allowAttUsage")));
+    if (this->command->containsParameter(std::string("allowAttUsage"))) {
+        std::string allowAttUsageString = this->command->getFirstParameterValue(std::string("allowAttUsage"));
         if (allowAttUsageString == "false") {
             adjustConfig->IsAppTrackingTransparencyUsageEnabled = false;
         }
     }
 
-    if (this->command->containsParameter(SafeString("firstSessionDelayEnabled"))) {
-        std::string firstSessionDelayEnabledString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("firstSessionDelayEnabled")));
+    if (this->command->containsParameter(std::string("firstSessionDelayEnabled"))) {
+        std::string firstSessionDelayEnabledString = this->command->getFirstParameterValue(std::string("firstSessionDelayEnabled"));
         if (firstSessionDelayEnabledString == "true") {
             adjustConfig->IsFirstSessionDelayEnabled = true;
         }
     }
 
-    if (this->command->containsParameter(SafeString("storeName"))) {
-        std::string storeName = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("storeName")));
+    if (this->command->containsParameter(std::string("storeName"))) {
+        std::string storeName = this->command->getFirstParameterValue(std::string("storeName"));
         adjustConfig->StoreInfo.StoreName = FString(UTF8_TO_TCHAR(storeName.c_str()));
-        if (this->command->containsParameter(SafeString("storeAppId"))) {
-            std::string storeAppId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("storeAppId")));
+        if (this->command->containsParameter(std::string("storeAppId"))) {
+            std::string storeAppId = this->command->getFirstParameterValue(std::string("storeAppId"));
             adjustConfig->StoreInfo.StoreAppId = FString(UTF8_TO_TCHAR(storeAppId.c_str()));
         }
     }
@@ -502,38 +498,38 @@ void AdjustCommandExecutor::config() {
     persistentTestDelegates->shouldSendSkanCallback = false;
     
     // register and activate attribution callback if attributionCallbackSendAll is present
-    if (this->command->containsParameter(SafeString("attributionCallbackSendAll"))) {
+    if (this->command->containsParameter(std::string("attributionCallbackSendAll"))) {
         persistentTestDelegates->shouldSendAttributionCallback = true;
         persistentAdjustDelegates->OnAttributionChangedDelegate.AddDynamic(persistentTestDelegates, &UAdjustTestCommandExecutorDelegates::OnAttributionChanged);
     }
     
     // register and activate session success callback if sessionCallbackSendSuccess is present
-    if (this->command->containsParameter(SafeString("sessionCallbackSendSuccess"))) {
+    if (this->command->containsParameter(std::string("sessionCallbackSendSuccess"))) {
         persistentTestDelegates->shouldSendSessionSuccessCallback = true;
         persistentAdjustDelegates->OnSessionSuccessDelegate.AddDynamic(persistentTestDelegates, &UAdjustTestCommandExecutorDelegates::OnSessionSuccess);
     }
     
     // register and activate session failure callback if sessionCallbackSendFailure is present
-    if (this->command->containsParameter(SafeString("sessionCallbackSendFailure"))) {
+    if (this->command->containsParameter(std::string("sessionCallbackSendFailure"))) {
         persistentTestDelegates->shouldSendSessionFailureCallback = true;
         persistentAdjustDelegates->OnSessionFailureDelegate.AddDynamic(persistentTestDelegates, &UAdjustTestCommandExecutorDelegates::OnSessionFailure);
     }
     
     // register and activate event success callback if eventCallbackSendSuccess is present
-    if (this->command->containsParameter(SafeString("eventCallbackSendSuccess"))) {
+    if (this->command->containsParameter(std::string("eventCallbackSendSuccess"))) {
         persistentTestDelegates->shouldSendEventSuccessCallback = true;
         persistentAdjustDelegates->OnEventSuccessDelegate.AddDynamic(persistentTestDelegates, &UAdjustTestCommandExecutorDelegates::OnEventSuccess);
     }
     
     // register and activate event failure callback if eventCallbackSendFailure is present
-    if (this->command->containsParameter(SafeString("eventCallbackSendFailure"))) {
+    if (this->command->containsParameter(std::string("eventCallbackSendFailure"))) {
         persistentTestDelegates->shouldSendEventFailureCallback = true;
         persistentAdjustDelegates->OnEventFailureDelegate.AddDynamic(persistentTestDelegates, &UAdjustTestCommandExecutorDelegates::OnEventFailure);
     }
     
     // register and activate deferred deeplink callback if deferredDeeplinkCallback is present
-    if (this->command->containsParameter(SafeString("deferredDeeplinkCallback"))) {
-        std::string openDeeplinkString = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("deferredDeeplinkCallback")));
+    if (this->command->containsParameter(std::string("deferredDeeplinkCallback"))) {
+        std::string openDeeplinkString = this->command->getFirstParameterValue(std::string("deferredDeeplinkCallback"));
         bool openDeeplink = (openDeeplinkString == "true");
         adjustConfig->IsDeferredDeeplinkOpeningEnabled = openDeeplink;
         persistentTestDelegates->shouldSendDeferredDeeplinkCallback = true;
@@ -542,7 +538,7 @@ void AdjustCommandExecutor::config() {
     
 #if PLATFORM_IOS
     // register and activate SKAN callback if skanCallback is present (NOT skanCallbackSendAll)
-    if (this->command->containsParameter(SafeString("skanCallback"))) {
+    if (this->command->containsParameter(std::string("skanCallback"))) {
         persistentTestDelegates->shouldSendSkanCallback = true;
         persistentAdjustDelegates->OnSkanConversionValueUpdatedDelegate.AddDynamic(persistentTestDelegates, &UAdjustTestCommandExecutorDelegates::OnSkanConversionValueUpdated);
     }
@@ -552,8 +548,8 @@ void AdjustCommandExecutor::config() {
 void AdjustCommandExecutor::start() {
     config();
     int configNumber = 0;
-    if (this->command->containsParameter(SafeString("configName"))) {
-        std::string configName = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("configName")));
+    if (this->command->containsParameter(std::string("configName"))) {
+        std::string configName = this->command->getFirstParameterValue(std::string("configName"));
         if (!configName.empty()) {
             std::string configNumberStr = configName.substr(configName.length() - 1, 1);
             configNumber = std::stoi(configNumberStr);
@@ -567,8 +563,8 @@ void AdjustCommandExecutor::start() {
 
 void AdjustCommandExecutor::event() {
     int eventNumber = 0;
-    if (this->command->containsParameter(SafeString("eventName"))) {
-        std::string eventName = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("eventName")));
+    if (this->command->containsParameter(std::string("eventName"))) {
+        std::string eventName = this->command->getFirstParameterValue(std::string("eventName"));
         if (!eventName.empty()) {
             std::string eventNumberStr = eventName.substr(eventName.length() - 1, 1);
             eventNumber = std::stoi(eventNumberStr);
@@ -579,19 +575,15 @@ void AdjustCommandExecutor::event() {
     if (this->savedEvents.count(eventNumber) > 0) {
         adjustEvent = &this->savedEvents[eventNumber];
     } else {
-        std::string eventToken = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("eventToken")));
+        std::string eventToken = this->command->getFirstParameterValue(std::string("eventToken"));
         FAdjustEvent newEvent;
         newEvent.EventToken = FString(UTF8_TO_TCHAR(eventToken.c_str()));
         savedEvents[eventNumber] = newEvent;
         adjustEvent = &this->savedEvents[eventNumber];
     }
 
-    if (this->command->containsParameter(SafeString("revenue"))) {
-        std::vector<SafeString> revenueParamsSafe = this->command->getParameters(SafeString("revenue"));
-        std::vector<std::string> revenueParams;
-        for (const auto& param : revenueParamsSafe) {
-            revenueParams.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("revenue"))) {
+        std::vector<std::string> revenueParams = this->command->getParameters(std::string("revenue"));
         if (revenueParams.size() >= 2) {
             std::string currency = revenueParams[0];
             double revenue = std::stod(revenueParams[1]);
@@ -600,12 +592,8 @@ void AdjustCommandExecutor::event() {
         }
     }
 
-    if (this->command->containsParameter(SafeString("callbackParams"))) {
-        std::vector<SafeString> callbackParamsSafe = this->command->getParameters(SafeString("callbackParams"));
-        std::vector<std::string> callbackParams;
-        for (const auto& param : callbackParamsSafe) {
-            callbackParams.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("callbackParams"))) {
+        std::vector<std::string> callbackParams = this->command->getParameters(std::string("callbackParams"));
         for (size_t i = 0; i < callbackParams.size(); i = i + 2) {
             if (i + 1 < callbackParams.size()) {
                 std::string key = callbackParams[i];
@@ -615,12 +603,8 @@ void AdjustCommandExecutor::event() {
         }
     }
 
-    if (this->command->containsParameter(SafeString("partnerParams"))) {
-        std::vector<SafeString> partnerParamsSafe = this->command->getParameters(SafeString("partnerParams"));
-        std::vector<std::string> partnerParams;
-        for (const auto& param : partnerParamsSafe) {
-            partnerParams.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("partnerParams"))) {
+        std::vector<std::string> partnerParams = this->command->getParameters(std::string("partnerParams"));
         for (size_t i = 0; i < partnerParams.size(); i = i + 2) {
             if (i + 1 < partnerParams.size()) {
                 std::string key = partnerParams[i];
@@ -630,34 +614,34 @@ void AdjustCommandExecutor::event() {
         }
     }
 
-    if (this->command->containsParameter(SafeString("orderId"))) {
-        std::string orderId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("orderId")));
+    if (this->command->containsParameter(std::string("orderId"))) {
+        std::string orderId = this->command->getFirstParameterValue(std::string("orderId"));
         adjustEvent->TransactionId = FString(UTF8_TO_TCHAR(orderId.c_str()));
     }
 
-    if (this->command->containsParameter(SafeString("callbackId"))) {
-        std::string callbackId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("callbackId")));
+    if (this->command->containsParameter(std::string("callbackId"))) {
+        std::string callbackId = this->command->getFirstParameterValue(std::string("callbackId"));
         adjustEvent->CallbackId = FString(UTF8_TO_TCHAR(callbackId.c_str()));
     }
 
-    if (this->command->containsParameter(SafeString("transactionId"))) {
-        std::string transactionId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("transactionId")));
+    if (this->command->containsParameter(std::string("transactionId"))) {
+        std::string transactionId = this->command->getFirstParameterValue(std::string("transactionId"));
         adjustEvent->TransactionId = FString(UTF8_TO_TCHAR(transactionId.c_str()));
     }
 
-    if (this->command->containsParameter(SafeString("productId"))) {
-        std::string productId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("productId")));
+    if (this->command->containsParameter(std::string("productId"))) {
+        std::string productId = this->command->getFirstParameterValue(std::string("productId"));
         adjustEvent->ProductId = FString(UTF8_TO_TCHAR(productId.c_str()));
     }
 
-    if (this->command->containsParameter(SafeString("deduplicationId"))) {
-        std::string deduplicationId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("deduplicationId")));
+    if (this->command->containsParameter(std::string("deduplicationId"))) {
+        std::string deduplicationId = this->command->getFirstParameterValue(std::string("deduplicationId"));
         adjustEvent->DeduplicationId = FString(UTF8_TO_TCHAR(deduplicationId.c_str()));
     }
 
 #if PLATFORM_ANDROID
-    if (this->command->containsParameter(SafeString("purchaseToken"))) {
-        std::string purchaseToken = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("purchaseToken")));
+    if (this->command->containsParameter(std::string("purchaseToken"))) {
+        std::string purchaseToken = this->command->getFirstParameterValue(std::string("purchaseToken"));
         adjustEvent->PurchaseToken = FString(UTF8_TO_TCHAR(purchaseToken.c_str()));
     }
 #endif
@@ -666,8 +650,8 @@ void AdjustCommandExecutor::event() {
 void AdjustCommandExecutor::trackEvent() {
     event();
     int eventNumber = 0;
-    if (this->command->containsParameter(SafeString("eventName"))) {
-        std::string eventName = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("eventName")));
+    if (this->command->containsParameter(std::string("eventName"))) {
+        std::string eventName = this->command->getFirstParameterValue(std::string("eventName"));
         if (!eventName.empty()) {
             std::string eventNumberStr = eventName.substr(eventName.length() - 1, 1);
             eventNumber = std::stoi(eventNumberStr);
@@ -688,7 +672,7 @@ void AdjustCommandExecutor::pause() {
 }
 
 void AdjustCommandExecutor::setEnabled() {
-    std::string enabledStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("enabled")));
+    std::string enabledStr = this->command->getFirstParameterValue(std::string("enabled"));
     bool enabled = (enabledStr == "true");
     if (enabled) {
         UAdjust::Enable();
@@ -698,7 +682,7 @@ void AdjustCommandExecutor::setEnabled() {
 }
 
 void AdjustCommandExecutor::setOfflineMode() {
-    std::string enabledStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("enabled")));
+    std::string enabledStr = this->command->getFirstParameterValue(std::string("enabled"));
     bool enabled = (enabledStr == "true");
     if (enabled) {
         UAdjust::SwitchToOfflineMode();
@@ -708,12 +692,8 @@ void AdjustCommandExecutor::setOfflineMode() {
 }
 
 void AdjustCommandExecutor::addGlobalCallbackParameter() {
-    if (this->command->containsParameter(SafeString("KeyValue"))) {
-        std::vector<SafeString> keyValuePairsSafe = this->command->getParameters(SafeString("KeyValue"));
-        std::vector<std::string> keyValuePairs;
-        for (const auto& param : keyValuePairsSafe) {
-            keyValuePairs.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("KeyValue"))) {
+        std::vector<std::string> keyValuePairs = this->command->getParameters(std::string("KeyValue"));
         for (size_t i = 0; i < keyValuePairs.size(); i = i + 2) {
             if (i + 1 < keyValuePairs.size()) {
                 std::string key = keyValuePairs[i];
@@ -721,20 +701,16 @@ void AdjustCommandExecutor::addGlobalCallbackParameter() {
                 UAdjust::AddGlobalCallbackParameter(FString(UTF8_TO_TCHAR(key.c_str())), FString(UTF8_TO_TCHAR(value.c_str())));
             }
         }
-    } else if (this->command->containsParameter(SafeString("key")) && this->command->containsParameter(SafeString("value"))) {
-        FString key = FString(UTF8_TO_TCHAR(StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("key"))).c_str()));
-        FString value = FString(UTF8_TO_TCHAR(StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("value"))).c_str()));
+    } else if (this->command->containsParameter(std::string("key")) && this->command->containsParameter(std::string("value"))) {
+        FString key = FString(UTF8_TO_TCHAR(this->command->getFirstParameterValue(std::string("key")).c_str()));
+        FString value = FString(UTF8_TO_TCHAR(this->command->getFirstParameterValue(std::string("value")).c_str()));
         UAdjust::AddGlobalCallbackParameter(key, value);
     }
 }
 
 void AdjustCommandExecutor::addGlobalPartnerParameter() {
-    if (this->command->containsParameter(SafeString("KeyValue"))) {
-        std::vector<SafeString> keyValuePairsSafe = this->command->getParameters(SafeString("KeyValue"));
-        std::vector<std::string> keyValuePairs;
-        for (const auto& param : keyValuePairsSafe) {
-            keyValuePairs.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("KeyValue"))) {
+        std::vector<std::string> keyValuePairs = this->command->getParameters(std::string("KeyValue"));
         for (size_t i = 0; i < keyValuePairs.size(); i = i + 2) {
             if (i + 1 < keyValuePairs.size()) {
                 std::string key = keyValuePairs[i];
@@ -742,20 +718,16 @@ void AdjustCommandExecutor::addGlobalPartnerParameter() {
                 UAdjust::AddGlobalPartnerParameter(FString(UTF8_TO_TCHAR(key.c_str())), FString(UTF8_TO_TCHAR(value.c_str())));
             }
         }
-    } else if (this->command->containsParameter(SafeString("key")) && this->command->containsParameter(SafeString("value"))) {
-        FString key = FString(UTF8_TO_TCHAR(StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("key"))).c_str()));
-        FString value = FString(UTF8_TO_TCHAR(StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("value"))).c_str()));
+    } else if (this->command->containsParameter(std::string("key")) && this->command->containsParameter(std::string("value"))) {
+        FString key = FString(UTF8_TO_TCHAR(this->command->getFirstParameterValue(std::string("key")).c_str()));
+        FString value = FString(UTF8_TO_TCHAR(this->command->getFirstParameterValue(std::string("value")).c_str()));
         UAdjust::AddGlobalPartnerParameter(key, value);
     }
 }
 
 void AdjustCommandExecutor::removeGlobalCallbackParameter() {
-    if (this->command->containsParameter(SafeString("key"))) {
-        std::vector<SafeString> keysSafe = this->command->getParameters(SafeString("key"));
-        std::vector<std::string> keys;
-        for (const auto& key : keysSafe) {
-            keys.push_back(StdStringFromSafeString(key));
-        }
+    if (this->command->containsParameter(std::string("key"))) {
+        std::vector<std::string> keys = this->command->getParameters(std::string("key"));
         for (size_t i = 0; i < keys.size(); i++) {
             std::string key = keys[i];
             UAdjust::RemoveGlobalCallbackParameter(FString(UTF8_TO_TCHAR(key.c_str())));
@@ -764,12 +736,8 @@ void AdjustCommandExecutor::removeGlobalCallbackParameter() {
 }
 
 void AdjustCommandExecutor::removeGlobalPartnerParameter() {
-    if (this->command->containsParameter(SafeString("key"))) {
-        std::vector<SafeString> keysSafe = this->command->getParameters(SafeString("key"));
-        std::vector<std::string> keys;
-        for (const auto& key : keysSafe) {
-            keys.push_back(StdStringFromSafeString(key));
-        }
+    if (this->command->containsParameter(std::string("key"))) {
+        std::vector<std::string> keys = this->command->getParameters(std::string("key"));
         for (size_t i = 0; i < keys.size(); i++) {
             std::string key = keys[i];
             UAdjust::RemoveGlobalPartnerParameter(FString(UTF8_TO_TCHAR(key.c_str())));
@@ -786,15 +754,15 @@ void AdjustCommandExecutor::removeGlobalPartnerParameters() {
 }
 
 void AdjustCommandExecutor::setPushToken() {
-    std::string token = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("pushToken")));
+    std::string token = this->command->getFirstParameterValue(std::string("pushToken"));
     UAdjust::SetPushToken(FString(UTF8_TO_TCHAR(token.c_str())));
 }
 
 void AdjustCommandExecutor::openDeeplink() {
-    std::string deeplink = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("deeplink")));
+    std::string deeplink = this->command->getFirstParameterValue(std::string("deeplink"));
     std::string referrer = "";
-    if (this->command->containsParameter(SafeString("referrer"))) {
-        referrer = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("referrer")));
+    if (this->command->containsParameter(std::string("referrer"))) {
+        referrer = this->command->getFirstParameterValue(std::string("referrer"));
     }
     FAdjustDeeplink adjustDeeplink;
     adjustDeeplink.Deeplink = FString(UTF8_TO_TCHAR(deeplink.c_str()));
@@ -810,11 +778,11 @@ void AdjustCommandExecutor::gdprForgetMe() {
 
 void AdjustCommandExecutor::trackSubscription() {
 #if PLATFORM_IOS
-    std::string price = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("revenue")));
-    std::string currency = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("currency")));
-    std::string transactionId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("transactionId")));
-    std::string transactionDate = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("transactionDate")));
-    std::string salesRegion = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("salesRegion")));
+    std::string price = this->command->getFirstParameterValue(std::string("revenue"));
+    std::string currency = this->command->getFirstParameterValue(std::string("currency"));
+    std::string transactionId = this->command->getFirstParameterValue(std::string("transactionId"));
+    std::string transactionDate = this->command->getFirstParameterValue(std::string("transactionDate"));
+    std::string salesRegion = this->command->getFirstParameterValue(std::string("salesRegion"));
 
     FAdjustAppStoreSubscription subscription;
     subscription.Price = std::stod(price);
@@ -823,12 +791,8 @@ void AdjustCommandExecutor::trackSubscription() {
     subscription.TransactionDate = FString(UTF8_TO_TCHAR(transactionDate.c_str()));
     subscription.SalesRegion = FString(UTF8_TO_TCHAR(salesRegion.c_str()));
 
-    if (this->command->containsParameter(SafeString("callbackParams"))) {
-        std::vector<SafeString> callbackParamsSafe = this->command->getParameters(SafeString("callbackParams"));
-        std::vector<std::string> callbackParams;
-        for (const auto& param : callbackParamsSafe) {
-            callbackParams.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("callbackParams"))) {
+        std::vector<std::string> callbackParams = this->command->getParameters(std::string("callbackParams"));
         for (size_t i = 0; i < callbackParams.size(); i = i + 2) {
             if (i + 1 < callbackParams.size()) {
                 std::string key = callbackParams[i];
@@ -838,12 +802,8 @@ void AdjustCommandExecutor::trackSubscription() {
         }
     }
 
-    if (this->command->containsParameter(SafeString("partnerParams"))) {
-        std::vector<SafeString> partnerParamsSafe = this->command->getParameters(SafeString("partnerParams"));
-        std::vector<std::string> partnerParams;
-        for (const auto& param : partnerParamsSafe) {
-            partnerParams.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("partnerParams"))) {
+        std::vector<std::string> partnerParams = this->command->getParameters(std::string("partnerParams"));
         for (size_t i = 0; i < partnerParams.size(); i = i + 2) {
             if (i + 1 < partnerParams.size()) {
                 std::string key = partnerParams[i];
@@ -855,13 +815,13 @@ void AdjustCommandExecutor::trackSubscription() {
 
     UAdjust::TrackAppStoreSubscription(subscription);
 #elif PLATFORM_ANDROID
-    std::string price = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("revenue")));
-    std::string currency = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("currency")));
-    std::string sku = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("productId")));
-    std::string orderId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("transactionId")));
-    std::string signature = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("receipt")));
-    std::string purchaseToken = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("purchaseToken")));
-    std::string purchaseTime = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("transactionDate")));
+    std::string price = this->command->getFirstParameterValue(std::string("revenue"));
+    std::string currency = this->command->getFirstParameterValue(std::string("currency"));
+    std::string sku = this->command->getFirstParameterValue(std::string("productId"));
+    std::string orderId = this->command->getFirstParameterValue(std::string("transactionId"));
+    std::string signature = this->command->getFirstParameterValue(std::string("receipt"));
+    std::string purchaseToken = this->command->getFirstParameterValue(std::string("purchaseToken"));
+    std::string purchaseTime = this->command->getFirstParameterValue(std::string("transactionDate"));
 
     FAdjustPlayStoreSubscription subscription;
     // convert price to micros (multiply by 1,000,000)
@@ -874,12 +834,8 @@ void AdjustCommandExecutor::trackSubscription() {
     subscription.PurchaseToken = FString(UTF8_TO_TCHAR(purchaseToken.c_str()));
     subscription.PurchaseTime = std::stoll(purchaseTime);
 
-    if (this->command->containsParameter(SafeString("callbackParams"))) {
-        std::vector<SafeString> callbackParamsSafe = this->command->getParameters(SafeString("callbackParams"));
-        std::vector<std::string> callbackParams;
-        for (const auto& param : callbackParamsSafe) {
-            callbackParams.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("callbackParams"))) {
+        std::vector<std::string> callbackParams = this->command->getParameters(std::string("callbackParams"));
         for (size_t i = 0; i < callbackParams.size(); i = i + 2) {
             if (i + 1 < callbackParams.size()) {
                 std::string key = callbackParams[i];
@@ -889,12 +845,8 @@ void AdjustCommandExecutor::trackSubscription() {
         }
     }
 
-    if (this->command->containsParameter(SafeString("partnerParams"))) {
-        std::vector<SafeString> partnerParamsSafe = this->command->getParameters(SafeString("partnerParams"));
-        std::vector<std::string> partnerParams;
-        for (const auto& param : partnerParamsSafe) {
-            partnerParams.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("partnerParams"))) {
+        std::vector<std::string> partnerParams = this->command->getParameters(std::string("partnerParams"));
         for (size_t i = 0; i < partnerParams.size(); i = i + 2) {
             if (i + 1 < partnerParams.size()) {
                 std::string key = partnerParams[i];
@@ -909,7 +861,7 @@ void AdjustCommandExecutor::trackSubscription() {
 }
 
 void AdjustCommandExecutor::trackThirdPartySharing() {
-    std::string enabled = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("isEnabled")));
+    std::string enabled = this->command->getFirstParameterValue(std::string("isEnabled"));
     FAdjustThirdPartySharing thirdPartySharing;
     if (enabled == "true") {
         thirdPartySharing.Sharing = EAdjustThirdPartySharingState::Enable;
@@ -919,12 +871,8 @@ void AdjustCommandExecutor::trackThirdPartySharing() {
         thirdPartySharing.Sharing = EAdjustThirdPartySharingState::Current;
     }
 
-    if (this->command->containsParameter(SafeString("granularOptions"))) {
-        std::vector<SafeString> granularOptionsSafe = this->command->getParameters(SafeString("granularOptions"));
-        std::vector<std::string> granularOptions;
-        for (const auto& option : granularOptionsSafe) {
-            granularOptions.push_back(StdStringFromSafeString(option));
-        }
+    if (this->command->containsParameter(std::string("granularOptions"))) {
+        std::vector<std::string> granularOptions = this->command->getParameters(std::string("granularOptions"));
         for (size_t i = 0; i < granularOptions.size(); i = i + 3) {
             if (i + 2 < granularOptions.size()) {
                 std::string partnerName = granularOptions[i];
@@ -940,12 +888,8 @@ void AdjustCommandExecutor::trackThirdPartySharing() {
         }
     }
 
-    if (this->command->containsParameter(SafeString("partnerSharingSettings"))) {
-        std::vector<SafeString> partnerSharingSettingsSafe = this->command->getParameters(SafeString("partnerSharingSettings"));
-        std::vector<std::string> partnerSharingSettings;
-        for (const auto& setting : partnerSharingSettingsSafe) {
-            partnerSharingSettings.push_back(StdStringFromSafeString(setting));
-        }
+    if (this->command->containsParameter(std::string("partnerSharingSettings"))) {
+        std::vector<std::string> partnerSharingSettings = this->command->getParameters(std::string("partnerSharingSettings"));
         for (size_t i = 0; i < partnerSharingSettings.size(); i = i + 3) {
             if (i + 2 < partnerSharingSettings.size()) {
                 std::string partnerName = partnerSharingSettings[i];
@@ -965,21 +909,17 @@ void AdjustCommandExecutor::trackThirdPartySharing() {
 }
 
 void AdjustCommandExecutor::trackMeasurementConsent() {
-    std::string enabled = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("isEnabled")));
+    std::string enabled = this->command->getFirstParameterValue(std::string("isEnabled"));
     UAdjust::TrackMeasurementConsent(enabled == "true" ? true : false);
 }
 
 void AdjustCommandExecutor::trackAdRevenue() {
-    std::string source = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("adRevenueSource")));
+    std::string source = this->command->getFirstParameterValue(std::string("adRevenueSource"));
     FAdjustAdRevenue adjustAdRevenue;
     adjustAdRevenue.Source = FString(UTF8_TO_TCHAR(source.c_str()));
 
-    if (this->command->containsParameter(SafeString("revenue"))) {
-        std::vector<SafeString> revenueParamsSafe = this->command->getParameters(SafeString("revenue"));
-        std::vector<std::string> revenueParams;
-        for (const auto& param : revenueParamsSafe) {
-            revenueParams.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("revenue"))) {
+        std::vector<std::string> revenueParams = this->command->getParameters(std::string("revenue"));
         if (revenueParams.size() >= 2) {
             std::string currency = revenueParams[0];
             double revenue = std::stod(revenueParams[1]);
@@ -988,12 +928,8 @@ void AdjustCommandExecutor::trackAdRevenue() {
         }
     }
 
-    if (this->command->containsParameter(SafeString("callbackParams"))) {
-        std::vector<SafeString> callbackParamsSafe = this->command->getParameters(SafeString("callbackParams"));
-        std::vector<std::string> callbackParams;
-        for (const auto& param : callbackParamsSafe) {
-            callbackParams.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("callbackParams"))) {
+        std::vector<std::string> callbackParams = this->command->getParameters(std::string("callbackParams"));
         for (size_t i = 0; i < callbackParams.size(); i = i + 2) {
             if (i + 1 < callbackParams.size()) {
                 std::string key = callbackParams[i];
@@ -1003,12 +939,8 @@ void AdjustCommandExecutor::trackAdRevenue() {
         }
     }
 
-    if (this->command->containsParameter(SafeString("partnerParams"))) {
-        std::vector<SafeString> partnerParamsSafe = this->command->getParameters(SafeString("partnerParams"));
-        std::vector<std::string> partnerParams;
-        for (const auto& param : partnerParamsSafe) {
-            partnerParams.push_back(StdStringFromSafeString(param));
-        }
+    if (this->command->containsParameter(std::string("partnerParams"))) {
+        std::vector<std::string> partnerParams = this->command->getParameters(std::string("partnerParams"));
         for (size_t i = 0; i < partnerParams.size(); i = i + 2) {
             if (i + 1 < partnerParams.size()) {
                 std::string key = partnerParams[i];
@@ -1018,23 +950,23 @@ void AdjustCommandExecutor::trackAdRevenue() {
         }
     }
 
-    if (this->command->containsParameter(SafeString("adImpressionsCount"))) {
-        int adImpressionsCount = std::stoi(StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("adImpressionsCount"))));
+    if (this->command->containsParameter(std::string("adImpressionsCount"))) {
+        int adImpressionsCount = std::stoi(this->command->getFirstParameterValue(std::string("adImpressionsCount")));
         adjustAdRevenue.AdImpressionsCount = adImpressionsCount;
     }
 
-    if (this->command->containsParameter(SafeString("adRevenueNetwork"))) {
-        std::string adRevenueNetwork = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("adRevenueNetwork")));
+    if (this->command->containsParameter(std::string("adRevenueNetwork"))) {
+        std::string adRevenueNetwork = this->command->getFirstParameterValue(std::string("adRevenueNetwork"));
         adjustAdRevenue.AdRevenueNetwork = FString(UTF8_TO_TCHAR(adRevenueNetwork.c_str()));
     }
 
-    if (this->command->containsParameter(SafeString("adRevenueUnit"))) {
-        std::string adRevenueUnit = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("adRevenueUnit")));
+    if (this->command->containsParameter(std::string("adRevenueUnit"))) {
+        std::string adRevenueUnit = this->command->getFirstParameterValue(std::string("adRevenueUnit"));
         adjustAdRevenue.AdRevenueUnit = FString(UTF8_TO_TCHAR(adRevenueUnit.c_str()));
     }
 
-    if (this->command->containsParameter(SafeString("adRevenuePlacement"))) {
-        std::string adRevenuePlacement = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("adRevenuePlacement")));
+    if (this->command->containsParameter(std::string("adRevenuePlacement"))) {
+        std::string adRevenuePlacement = this->command->getFirstParameterValue(std::string("adRevenuePlacement"));
         adjustAdRevenue.AdRevenuePlacement = FString(UTF8_TO_TCHAR(adRevenuePlacement.c_str()));
     }
 
@@ -1042,31 +974,31 @@ void AdjustCommandExecutor::trackAdRevenue() {
 }
 
 void AdjustCommandExecutor::getLastDeeplink() {
-    SafeString testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        std::string testCallbackIdStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
-        testCallbackId = SafeStringFromStdString(testCallbackIdStr);
+    std::string testCallbackId = "";
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        std::string testCallbackIdStr = this->command->getFirstParameterValue(std::string("testCallbackId"));
+        testCallbackId = testCallbackIdStr;
     }
-    SafeString localExtraPath = SafeStringFromStdString(this->basePath);
+    std::string localExtraPath = this->basePath;
     
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetLastDeeplink([testCallbackId, localExtraPath](const FString& LastDeeplink) {
         FTCHARToUTF8 lastDeeplinkUTF8(*LastDeeplink);
-        SafeString lastDeeplinkSafe(lastDeeplinkUTF8.Get(), lastDeeplinkUTF8.Length());
-        TestLib::addInfoToSend(SafeString("last_deeplink"), lastDeeplinkSafe);
+        std::string lastDeeplink(lastDeeplinkUTF8.Get(), lastDeeplinkUTF8.Length());
+        TestLib::addInfoToSend(std::string("last_deeplink"), lastDeeplink);
         if (!testCallbackId.empty()) {
-            TestLib::addInfoToSend(SafeString("test_callback_id"), testCallbackId);
+            TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
         TestLib::sendInfoToServer(localExtraPath);
     });
 }
 
 void AdjustCommandExecutor::verifyPurchase() {
-    SafeString localBasePathValue = SafeStringFromStdString(this->basePath);
+    std::string localBasePathValue = this->basePath;
     
 #if PLATFORM_IOS
-    std::string productId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("productId")));
-    std::string transactionId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("transactionId")));
+    std::string productId = this->command->getFirstParameterValue(std::string("productId"));
+    std::string transactionId = this->command->getFirstParameterValue(std::string("transactionId"));
 
     FAdjustAppStorePurchase purchase;
     purchase.ProductId = FString(UTF8_TO_TCHAR(productId.c_str()));
@@ -1075,19 +1007,18 @@ void AdjustCommandExecutor::verifyPurchase() {
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::VerifyAppStorePurchase(purchase, [localBasePathValue](const FAdjustPurchaseVerificationResult& VerificationResult) {
         FTCHARToUTF8 verificationStatusUTF8(*VerificationResult.VerificationStatus);
-        SafeString verificationStatusSafe(verificationStatusUTF8.Get(), verificationStatusUTF8.Length());
-        TestLib::addInfoToSend(SafeString("verification_status"), verificationStatusSafe);
+        std::string verificationStatus(verificationStatusUTF8.Get(), verificationStatusUTF8.Length());
+        TestLib::addInfoToSend(std::string("verification_status"), verificationStatus);
         std::string codeStr = std::to_string(VerificationResult.Code);
-        SafeString codeStrSafe = SafeStringFromStdString(codeStr);
-        TestLib::addInfoToSend(SafeString("code"), codeStrSafe);
+        TestLib::addInfoToSend(std::string("code"), codeStr);
         FTCHARToUTF8 messageUTF8(*VerificationResult.Message);
-        SafeString messageSafe(messageUTF8.Get(), messageUTF8.Length());
-        TestLib::addInfoToSend(SafeString("message"), messageSafe);
+        std::string message(messageUTF8.Get(), messageUTF8.Length());
+        TestLib::addInfoToSend(std::string("message"), message);
         TestLib::sendInfoToServer(localBasePathValue);
     });
 #elif PLATFORM_ANDROID
-    std::string productId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("productId")));
-    std::string purchaseToken = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("purchaseToken")));
+    std::string productId = this->command->getFirstParameterValue(std::string("productId"));
+    std::string purchaseToken = this->command->getFirstParameterValue(std::string("purchaseToken"));
 
     FAdjustPlayStorePurchase purchase;
     purchase.ProductId = FString(UTF8_TO_TCHAR(productId.c_str()));
@@ -1096,14 +1027,13 @@ void AdjustCommandExecutor::verifyPurchase() {
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::VerifyPlayStorePurchase(purchase, [localBasePathValue](const FAdjustPurchaseVerificationResult& VerificationResult) {
         FTCHARToUTF8 verificationStatusUTF8(*VerificationResult.VerificationStatus);
-        SafeString verificationStatusSafe(verificationStatusUTF8.Get(), verificationStatusUTF8.Length());
-        TestLib::addInfoToSend(SafeString("verification_status"), verificationStatusSafe);
+        std::string verificationStatus(verificationStatusUTF8.Get(), verificationStatusUTF8.Length());
+        TestLib::addInfoToSend(std::string("verification_status"), verificationStatus);
         std::string codeStr = std::to_string(VerificationResult.Code);
-        SafeString codeStrSafe = SafeStringFromStdString(codeStr);
-        TestLib::addInfoToSend(SafeString("code"), codeStrSafe);
+        TestLib::addInfoToSend(std::string("code"), codeStr);
         FTCHARToUTF8 messageUTF8(*VerificationResult.Message);
-        SafeString messageSafe(messageUTF8.Get(), messageUTF8.Length());
-        TestLib::addInfoToSend(SafeString("message"), messageSafe);
+        std::string message(messageUTF8.Get(), messageUTF8.Length());
+        TestLib::addInfoToSend(std::string("message"), message);
         TestLib::sendInfoToServer(localBasePathValue);
     });
 #endif
@@ -1112,8 +1042,8 @@ void AdjustCommandExecutor::verifyPurchase() {
 void AdjustCommandExecutor::verifyTrack() {
     event();
     int eventNumber = 0;
-    if (this->command->containsParameter(SafeString("eventName"))) {
-        std::string eventName = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("eventName")));
+    if (this->command->containsParameter(std::string("eventName"))) {
+        std::string eventName = this->command->getFirstParameterValue(std::string("eventName"));
         if (!eventName.empty()) {
             std::string eventNumberStr = eventName.substr(eventName.length() - 1, 1);
             eventNumber = std::stoi(eventNumberStr);
@@ -1121,34 +1051,32 @@ void AdjustCommandExecutor::verifyTrack() {
     }
 
     FAdjustEvent adjustEvent = this->savedEvents[eventNumber];
-    SafeString localBasePathValue = SafeStringFromStdString(this->basePath);
+    std::string localBasePathValue = this->basePath;
 
 #if PLATFORM_IOS
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::VerifyAndTrackAppStorePurchase(adjustEvent, [localBasePathValue](const FAdjustPurchaseVerificationResult& VerificationResult) {
         FTCHARToUTF8 verificationStatusUTF8(*VerificationResult.VerificationStatus);
-        SafeString verificationStatusSafe(verificationStatusUTF8.Get(), verificationStatusUTF8.Length());
-        TestLib::addInfoToSend(SafeString("verification_status"), verificationStatusSafe);
+        std::string verificationStatus(verificationStatusUTF8.Get(), verificationStatusUTF8.Length());
+        TestLib::addInfoToSend(std::string("verification_status"), verificationStatus);
         std::string codeStr = std::to_string(VerificationResult.Code);
-        SafeString codeStrSafe = SafeStringFromStdString(codeStr);
-        TestLib::addInfoToSend(SafeString("code"), codeStrSafe);
+        TestLib::addInfoToSend(std::string("code"), codeStr);
         FTCHARToUTF8 messageUTF8(*VerificationResult.Message);
-        SafeString messageSafe(messageUTF8.Get(), messageUTF8.Length());
-        TestLib::addInfoToSend(SafeString("message"), messageSafe);
+        std::string message(messageUTF8.Get(), messageUTF8.Length());
+        TestLib::addInfoToSend(std::string("message"), message);
         TestLib::sendInfoToServer(localBasePathValue);
     });
 #elif PLATFORM_ANDROID
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::VerifyAndTrackPlayStorePurchase(adjustEvent, [localBasePathValue](const FAdjustPurchaseVerificationResult& VerificationResult) {
         FTCHARToUTF8 verificationStatusUTF8(*VerificationResult.VerificationStatus);
-        SafeString verificationStatusSafe(verificationStatusUTF8.Get(), verificationStatusUTF8.Length());
-        TestLib::addInfoToSend(SafeString("verification_status"), verificationStatusSafe);
+        std::string verificationStatus(verificationStatusUTF8.Get(), verificationStatusUTF8.Length());
+        TestLib::addInfoToSend(std::string("verification_status"), verificationStatus);
         std::string codeStr = std::to_string(VerificationResult.Code);
-        SafeString codeStrSafe = SafeStringFromStdString(codeStr);
-        TestLib::addInfoToSend(SafeString("code"), codeStrSafe);
+        TestLib::addInfoToSend(std::string("code"), codeStr);
         FTCHARToUTF8 messageUTF8(*VerificationResult.Message);
-        SafeString messageSafe(messageUTF8.Get(), messageUTF8.Length());
-        TestLib::addInfoToSend(SafeString("message"), messageSafe);
+        std::string message(messageUTF8.Get(), messageUTF8.Length());
+        TestLib::addInfoToSend(std::string("message"), message);
         TestLib::sendInfoToServer(localBasePathValue);
     });
 #endif
@@ -1157,10 +1085,10 @@ void AdjustCommandExecutor::verifyTrack() {
 }
 
 void AdjustCommandExecutor::processDeeplink() {
-    std::string deeplink = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("deeplink")));
+    std::string deeplink = this->command->getFirstParameterValue(std::string("deeplink"));
     std::string referrer = "";
-    if (this->command->containsParameter(SafeString("referrer"))) {
-        referrer = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("referrer")));
+    if (this->command->containsParameter(std::string("referrer"))) {
+        referrer = this->command->getFirstParameterValue(std::string("referrer"));
     }
     FAdjustDeeplink adjustDeeplink;
     adjustDeeplink.Deeplink = FString(UTF8_TO_TCHAR(deeplink.c_str()));
@@ -1171,26 +1099,26 @@ void AdjustCommandExecutor::processDeeplink() {
     // capture basePath at the time processDeeplink is called
     // this ensures that even if the deeplink is saved and processed later
     // the callback will use the correct basePath for the test that called processDeeplink
-    SafeString localBasePathValue = SafeStringFromStdString(this->basePath);
+    std::string localBasePathValue = this->basePath;
     
     // use lambda-based C++ API - the lambda captures basePath by value
     // so it will use the correct basePath even if called before SDK initialization
     // and processed later after other tests have started
     UAdjust::ProcessAndResolveDeeplink(adjustDeeplink, [localBasePathValue](const FString& ResolvedLink) {
         FTCHARToUTF8 resolvedLinkUTF8(*ResolvedLink);
-        SafeString resolvedLinkSafe(resolvedLinkUTF8.Get(), resolvedLinkUTF8.Length());
-        TestLib::addInfoToSend(SafeString("resolved_link"), resolvedLinkSafe);
+        std::string resolvedLink(resolvedLinkUTF8.Get(), resolvedLinkUTF8.Length());
+        TestLib::addInfoToSend(std::string("resolved_link"), resolvedLink);
         TestLib::sendInfoToServer(localBasePathValue);
     });
 }
 
 void AdjustCommandExecutor::attributionGetter() {
-    SafeString testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        std::string testCallbackIdStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
-        testCallbackId = SafeStringFromStdString(testCallbackIdStr);
+    std::string testCallbackId = "";
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        std::string testCallbackIdStr = this->command->getFirstParameterValue(std::string("testCallbackId"));
+        testCallbackId = testCallbackIdStr;
     }
-    SafeString localBasePathValue = SafeStringFromStdString(this->basePath);
+    std::string localBasePathValue = this->basePath;
     
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetAttribution([testCallbackId, localBasePathValue](const FAdjustAttribution& Attribution) {
@@ -1200,60 +1128,59 @@ void AdjustCommandExecutor::attributionGetter() {
         
         if (isEmpty) {
 #if PLATFORM_IOS
-            TestLib::addInfoToSend(SafeString("attribution"), SafeString("nil"));
+            TestLib::addInfoToSend(std::string("attribution"), std::string("nil"));
 #elif PLATFORM_ANDROID
-            TestLib::addInfoToSend(SafeString("attribution"), SafeString("null"));
+            TestLib::addInfoToSend(std::string("attribution"), std::string("null"));
 #endif
         } else {
             FTCHARToUTF8 trackerTokenUTF8(*Attribution.TrackerToken);
-            SafeString trackerTokenSafe(trackerTokenUTF8.Get(), trackerTokenUTF8.Length());
-            TestLib::addInfoToSend(SafeString("tracker_token"), trackerTokenSafe);
+            std::string trackerToken(trackerTokenUTF8.Get(), trackerTokenUTF8.Length());
+            TestLib::addInfoToSend(std::string("tracker_token"), trackerToken);
             
             FTCHARToUTF8 trackerNameUTF8(*Attribution.TrackerName);
-            SafeString trackerNameSafe(trackerNameUTF8.Get(), trackerNameUTF8.Length());
-            TestLib::addInfoToSend(SafeString("tracker_name"), trackerNameSafe);
+            std::string trackerName(trackerNameUTF8.Get(), trackerNameUTF8.Length());
+            TestLib::addInfoToSend(std::string("tracker_name"), trackerName);
             
             FTCHARToUTF8 networkUTF8(*Attribution.Network);
-            SafeString networkSafe(networkUTF8.Get(), networkUTF8.Length());
-            TestLib::addInfoToSend(SafeString("network"), networkSafe);
+            std::string network(networkUTF8.Get(), networkUTF8.Length());
+            TestLib::addInfoToSend(std::string("network"), network);
             
             FTCHARToUTF8 campaignUTF8(*Attribution.Campaign);
-            SafeString campaignSafe(campaignUTF8.Get(), campaignUTF8.Length());
-            TestLib::addInfoToSend(SafeString("campaign"), campaignSafe);
+            std::string campaign(campaignUTF8.Get(), campaignUTF8.Length());
+            TestLib::addInfoToSend(std::string("campaign"), campaign);
             
             FTCHARToUTF8 adgroupUTF8(*Attribution.Adgroup);
-            SafeString adgroupSafe(adgroupUTF8.Get(), adgroupUTF8.Length());
-            TestLib::addInfoToSend(SafeString("adgroup"), adgroupSafe);
+            std::string adgroup(adgroupUTF8.Get(), adgroupUTF8.Length());
+            TestLib::addInfoToSend(std::string("adgroup"), adgroup);
             
             FTCHARToUTF8 creativeUTF8(*Attribution.Creative);
-            SafeString creativeSafe(creativeUTF8.Get(), creativeUTF8.Length());
-            TestLib::addInfoToSend(SafeString("creative"), creativeSafe);
+            std::string creative(creativeUTF8.Get(), creativeUTF8.Length());
+            TestLib::addInfoToSend(std::string("creative"), creative);
             
             FTCHARToUTF8 clickLabelUTF8(*Attribution.ClickLabel);
-            SafeString clickLabelSafe(clickLabelUTF8.Get(), clickLabelUTF8.Length());
-            TestLib::addInfoToSend(SafeString("click_label"), clickLabelSafe);
+            std::string clickLabel(clickLabelUTF8.Get(), clickLabelUTF8.Length());
+            TestLib::addInfoToSend(std::string("click_label"), clickLabel);
             
             FTCHARToUTF8 costTypeUTF8(*Attribution.CostType);
-            SafeString costTypeSafe(costTypeUTF8.Get(), costTypeUTF8.Length());
-            TestLib::addInfoToSend(SafeString("cost_type"), costTypeSafe);
+            std::string costType(costTypeUTF8.Get(), costTypeUTF8.Length());
+            TestLib::addInfoToSend(std::string("cost_type"), costType);
             
             std::ostringstream sstream;
             sstream << Attribution.CostAmount;
             std::string costAmountStr = sstream.str();
-            SafeString costAmountSafe = SafeStringFromStdString(costAmountStr);
-            TestLib::addInfoToSend(SafeString("cost_amount"), costAmountSafe);
+            TestLib::addInfoToSend(std::string("cost_amount"), costAmountStr);
             
             FTCHARToUTF8 costCurrencyUTF8(*Attribution.CostCurrency);
-            SafeString costCurrencySafe(costCurrencyUTF8.Get(), costCurrencyUTF8.Length());
-            TestLib::addInfoToSend(SafeString("cost_currency"), costCurrencySafe);
+            std::string costCurrency(costCurrencyUTF8.Get(), costCurrencyUTF8.Length());
+            TestLib::addInfoToSend(std::string("cost_currency"), costCurrency);
 #if PLATFORM_ANDROID
             FTCHARToUTF8 fbInstallReferrerUTF8(*Attribution.FbInstallReferrer);
-            SafeString fbInstallReferrerSafe(fbInstallReferrerUTF8.Get(), fbInstallReferrerUTF8.Length());
-            TestLib::addInfoToSend(SafeString("fb_install_referrer"), fbInstallReferrerSafe);
+            std::string fbInstallReferrer(fbInstallReferrerUTF8.Get(), fbInstallReferrerUTF8.Length());
+            TestLib::addInfoToSend(std::string("fb_install_referrer"), fbInstallReferrer);
             
             FTCHARToUTF8 jsonResponseUTF8(*Attribution.JsonResponse);
-            SafeString jsonResponseSafe(jsonResponseUTF8.Get(), jsonResponseUTF8.Length());
-            TestLib::addInfoToSend(SafeString("json_response"), jsonResponseSafe);
+            std::string jsonResponse(jsonResponseUTF8.Get(), jsonResponseUTF8.Length());
+            TestLib::addInfoToSend(std::string("json_response"), jsonResponse);
 #elif PLATFORM_IOS
             FTCHARToUTF8 jsonResponseUTF8(*Attribution.JsonResponse);
             std::string jsonStr = std::string(jsonResponseUTF8.Get(), jsonResponseUTF8.Length());
@@ -1263,84 +1190,83 @@ void AdjustCommandExecutor::attributionGetter() {
                 std::regex fbInstallReferrerPatternFirst(R"("fb_install_referrer"\s*:\s*"[^"]*"\s*,)");
                 jsonStr = std::regex_replace(jsonStr, fbInstallReferrerPatternFirst, "");
             }
-            SafeString jsonStrSafe = SafeStringFromStdString(jsonStr);
-            TestLib::addInfoToSend(SafeString("json_response"), jsonStrSafe);
+            TestLib::addInfoToSend(std::string("json_response"), jsonStr);
 #endif
         }
         if (!testCallbackId.empty()) {
-            TestLib::addInfoToSend(SafeString("test_callback_id"), testCallbackId);
+            TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
         TestLib::sendInfoToServer(localBasePathValue);
     });
 }
 
 void AdjustCommandExecutor::adidGetter() {
-    SafeString testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        std::string testCallbackIdStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
-        testCallbackId = SafeStringFromStdString(testCallbackIdStr);
+    std::string testCallbackId = "";
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        std::string testCallbackIdStr = this->command->getFirstParameterValue(std::string("testCallbackId"));
+        testCallbackId = testCallbackIdStr;
     }
-    SafeString localExtraPath = SafeStringFromStdString(this->basePath);
+    std::string localExtraPath = this->basePath;
     
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetAdid([testCallbackId, localExtraPath](const FString& Adid) {
         if (Adid.IsEmpty()) {
 #if PLATFORM_IOS
-            TestLib::addInfoToSend(SafeString("adid"), SafeString("nil"));
+            TestLib::addInfoToSend(std::string("adid"), std::string("nil"));
 #elif PLATFORM_ANDROID
-            TestLib::addInfoToSend(SafeString("adid"), SafeString("null"));
+            TestLib::addInfoToSend(std::string("adid"), std::string("null"));
 #endif
         } else {
             FTCHARToUTF8 adidUTF8(*Adid);
-            SafeString adidSafe(adidUTF8.Get(), adidUTF8.Length());
-            TestLib::addInfoToSend(SafeString("adid"), adidSafe);
+            std::string adid(adidUTF8.Get(), adidUTF8.Length());
+            TestLib::addInfoToSend(std::string("adid"), adid);
         }
         if (!testCallbackId.empty()) {
-            TestLib::addInfoToSend(SafeString("test_callback_id"), testCallbackId);
+            TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
         TestLib::sendInfoToServer(localExtraPath);
     });
 }
 
 void AdjustCommandExecutor::adidGetterWithTimeout() {
-    std::string timeoutStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("timeout")));
+    std::string timeoutStr = this->command->getFirstParameterValue(std::string("timeout"));
     int timeout = std::stoi(timeoutStr);
-    SafeString testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        std::string testCallbackIdStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
-        testCallbackId = SafeStringFromStdString(testCallbackIdStr);
+    std::string testCallbackId = "";
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        std::string testCallbackIdStr = this->command->getFirstParameterValue(std::string("testCallbackId"));
+        testCallbackId = testCallbackIdStr;
     }
-    SafeString localExtraPath = SafeStringFromStdString(this->basePath);
+    std::string localExtraPath = this->basePath;
     
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetAdidWithTimeout(timeout, [testCallbackId, localExtraPath](const FString& Adid) {
         if (Adid.IsEmpty()) {
 #if PLATFORM_IOS
-            TestLib::addInfoToSend(SafeString("adid"), SafeString("nil"));
+            TestLib::addInfoToSend(std::string("adid"), std::string("nil"));
 #elif PLATFORM_ANDROID
-            TestLib::addInfoToSend(SafeString("adid"), SafeString("null"));
+            TestLib::addInfoToSend(std::string("adid"), std::string("null"));
 #endif
         } else {
             FTCHARToUTF8 adidUTF8(*Adid);
-            SafeString adidSafe(adidUTF8.Get(), adidUTF8.Length());
-            TestLib::addInfoToSend(SafeString("adid"), adidSafe);
+            std::string adid(adidUTF8.Get(), adidUTF8.Length());
+            TestLib::addInfoToSend(std::string("adid"), adid);
         }
         if (!testCallbackId.empty()) {
-            TestLib::addInfoToSend(SafeString("test_callback_id"), testCallbackId);
+            TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
         TestLib::sendInfoToServer(localExtraPath);
     });
 }
 
 void AdjustCommandExecutor::attributionGetterWithTimeout() {
-    std::string timeoutStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("timeout")));
+    std::string timeoutStr = this->command->getFirstParameterValue(std::string("timeout"));
     int timeout = std::stoi(timeoutStr);
-    SafeString testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        std::string testCallbackIdStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
-        testCallbackId = SafeStringFromStdString(testCallbackIdStr);
+    std::string testCallbackId = "";
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        std::string testCallbackIdStr = this->command->getFirstParameterValue(std::string("testCallbackId"));
+        testCallbackId = testCallbackIdStr;
     }
-    SafeString localBasePathValue = SafeStringFromStdString(this->basePath);
+    std::string localBasePathValue = this->basePath;
     
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetAttributionWithTimeout(timeout, [testCallbackId, localBasePathValue](const FAdjustAttribution& Attribution) {
@@ -1350,60 +1276,59 @@ void AdjustCommandExecutor::attributionGetterWithTimeout() {
         
         if (isEmpty) {
 #if PLATFORM_IOS
-            TestLib::addInfoToSend(SafeString("attribution"), SafeString("nil"));
+            TestLib::addInfoToSend(std::string("attribution"), std::string("nil"));
 #elif PLATFORM_ANDROID
-            TestLib::addInfoToSend(SafeString("attribution"), SafeString("null"));
+            TestLib::addInfoToSend(std::string("attribution"), std::string("null"));
 #endif
         } else {
             FTCHARToUTF8 trackerTokenUTF8(*Attribution.TrackerToken);
-            SafeString trackerTokenSafe(trackerTokenUTF8.Get(), trackerTokenUTF8.Length());
-            TestLib::addInfoToSend(SafeString("tracker_token"), trackerTokenSafe);
+            std::string trackerToken(trackerTokenUTF8.Get(), trackerTokenUTF8.Length());
+            TestLib::addInfoToSend(std::string("tracker_token"), trackerToken);
             
             FTCHARToUTF8 trackerNameUTF8(*Attribution.TrackerName);
-            SafeString trackerNameSafe(trackerNameUTF8.Get(), trackerNameUTF8.Length());
-            TestLib::addInfoToSend(SafeString("tracker_name"), trackerNameSafe);
+            std::string trackerName(trackerNameUTF8.Get(), trackerNameUTF8.Length());
+            TestLib::addInfoToSend(std::string("tracker_name"), trackerName);
             
             FTCHARToUTF8 networkUTF8(*Attribution.Network);
-            SafeString networkSafe(networkUTF8.Get(), networkUTF8.Length());
-            TestLib::addInfoToSend(SafeString("network"), networkSafe);
+            std::string network(networkUTF8.Get(), networkUTF8.Length());
+            TestLib::addInfoToSend(std::string("network"), network);
             
             FTCHARToUTF8 campaignUTF8(*Attribution.Campaign);
-            SafeString campaignSafe(campaignUTF8.Get(), campaignUTF8.Length());
-            TestLib::addInfoToSend(SafeString("campaign"), campaignSafe);
+            std::string campaign(campaignUTF8.Get(), campaignUTF8.Length());
+            TestLib::addInfoToSend(std::string("campaign"), campaign);
             
             FTCHARToUTF8 adgroupUTF8(*Attribution.Adgroup);
-            SafeString adgroupSafe(adgroupUTF8.Get(), adgroupUTF8.Length());
-            TestLib::addInfoToSend(SafeString("adgroup"), adgroupSafe);
+            std::string adgroup(adgroupUTF8.Get(), adgroupUTF8.Length());
+            TestLib::addInfoToSend(std::string("adgroup"), adgroup);
             
             FTCHARToUTF8 creativeUTF8(*Attribution.Creative);
-            SafeString creativeSafe(creativeUTF8.Get(), creativeUTF8.Length());
-            TestLib::addInfoToSend(SafeString("creative"), creativeSafe);
+            std::string creative(creativeUTF8.Get(), creativeUTF8.Length());
+            TestLib::addInfoToSend(std::string("creative"), creative);
             
             FTCHARToUTF8 clickLabelUTF8(*Attribution.ClickLabel);
-            SafeString clickLabelSafe(clickLabelUTF8.Get(), clickLabelUTF8.Length());
-            TestLib::addInfoToSend(SafeString("click_label"), clickLabelSafe);
+            std::string clickLabel(clickLabelUTF8.Get(), clickLabelUTF8.Length());
+            TestLib::addInfoToSend(std::string("click_label"), clickLabel);
             
             FTCHARToUTF8 costTypeUTF8(*Attribution.CostType);
-            SafeString costTypeSafe(costTypeUTF8.Get(), costTypeUTF8.Length());
-            TestLib::addInfoToSend(SafeString("cost_type"), costTypeSafe);
+            std::string costType(costTypeUTF8.Get(), costTypeUTF8.Length());
+            TestLib::addInfoToSend(std::string("cost_type"), costType);
             
             std::ostringstream sstream;
             sstream << Attribution.CostAmount;
             std::string costAmountStr = sstream.str();
-            SafeString costAmountSafe = SafeStringFromStdString(costAmountStr);
-            TestLib::addInfoToSend(SafeString("cost_amount"), costAmountSafe);
+            TestLib::addInfoToSend(std::string("cost_amount"), costAmountStr);
             
             FTCHARToUTF8 costCurrencyUTF8(*Attribution.CostCurrency);
-            SafeString costCurrencySafe(costCurrencyUTF8.Get(), costCurrencyUTF8.Length());
-            TestLib::addInfoToSend(SafeString("cost_currency"), costCurrencySafe);
+            std::string costCurrency(costCurrencyUTF8.Get(), costCurrencyUTF8.Length());
+            TestLib::addInfoToSend(std::string("cost_currency"), costCurrency);
 #if PLATFORM_ANDROID
             FTCHARToUTF8 fbInstallReferrerUTF8(*Attribution.FbInstallReferrer);
-            SafeString fbInstallReferrerSafe(fbInstallReferrerUTF8.Get(), fbInstallReferrerUTF8.Length());
-            TestLib::addInfoToSend(SafeString("fb_install_referrer"), fbInstallReferrerSafe);
+            std::string fbInstallReferrer(fbInstallReferrerUTF8.Get(), fbInstallReferrerUTF8.Length());
+            TestLib::addInfoToSend(std::string("fb_install_referrer"), fbInstallReferrer);
             
             FTCHARToUTF8 jsonResponseUTF8(*Attribution.JsonResponse);
-            SafeString jsonResponseSafe(jsonResponseUTF8.Get(), jsonResponseUTF8.Length());
-            TestLib::addInfoToSend(SafeString("json_response"), jsonResponseSafe);
+            std::string jsonResponse(jsonResponseUTF8.Get(), jsonResponseUTF8.Length());
+            TestLib::addInfoToSend(std::string("json_response"), jsonResponse);
 #elif PLATFORM_IOS
             FTCHARToUTF8 jsonResponseUTF8(*Attribution.JsonResponse);
             std::string jsonStr = std::string(jsonResponseUTF8.Get(), jsonResponseUTF8.Length());
@@ -1413,12 +1338,11 @@ void AdjustCommandExecutor::attributionGetterWithTimeout() {
                 std::regex fbInstallReferrerPatternFirst(R"("fb_install_referrer"\s*:\s*"[^"]*"\s*,)");
                 jsonStr = std::regex_replace(jsonStr, fbInstallReferrerPatternFirst, "");
             }
-            SafeString jsonStrSafe = SafeStringFromStdString(jsonStr);
-            TestLib::addInfoToSend(SafeString("json_response"), jsonStrSafe);
+            TestLib::addInfoToSend(std::string("json_response"), jsonStr);
 #endif
         }
         if (!testCallbackId.empty()) {
-            TestLib::addInfoToSend(SafeString("test_callback_id"), testCallbackId);
+            TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
         TestLib::sendInfoToServer(localBasePathValue);
     });
@@ -1426,20 +1350,20 @@ void AdjustCommandExecutor::attributionGetterWithTimeout() {
 
 void AdjustCommandExecutor::idfaGetter() {
 #if PLATFORM_IOS
-    SafeString testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        std::string testCallbackIdStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
-        testCallbackId = SafeStringFromStdString(testCallbackIdStr);
+    std::string testCallbackId = "";
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        std::string testCallbackIdStr = this->command->getFirstParameterValue(std::string("testCallbackId"));
+        testCallbackId = testCallbackIdStr;
     }
-    SafeString localExtraPath = SafeStringFromStdString(this->basePath);
+    std::string localExtraPath = this->basePath;
 
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetIdfa([testCallbackId, localExtraPath](const FString& Idfa) {
         FTCHARToUTF8 idfaUTF8(*Idfa);
-        SafeString idfaSafe(idfaUTF8.Get(), idfaUTF8.Length());
-        TestLib::addInfoToSend(SafeString("idfa"), idfaSafe);
+        std::string idfa(idfaUTF8.Get(), idfaUTF8.Length());
+        TestLib::addInfoToSend(std::string("idfa"), idfa);
         if (!testCallbackId.empty()) {
-            TestLib::addInfoToSend(SafeString("test_callback_id"), testCallbackId);
+            TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
         TestLib::sendInfoToServer(localExtraPath);
     });
@@ -1448,20 +1372,20 @@ void AdjustCommandExecutor::idfaGetter() {
 
 void AdjustCommandExecutor::idfvGetter() {
 #if PLATFORM_IOS
-    SafeString testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        std::string testCallbackIdStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
-        testCallbackId = SafeStringFromStdString(testCallbackIdStr);
+    std::string testCallbackId = "";
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        std::string testCallbackIdStr = this->command->getFirstParameterValue(std::string("testCallbackId"));
+        testCallbackId = testCallbackIdStr;
     }
-    SafeString localExtraPath = SafeStringFromStdString(this->basePath);
+    std::string localExtraPath = this->basePath;
 
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetIdfv([testCallbackId, localExtraPath](const FString& Idfv) {
         FTCHARToUTF8 idfvUTF8(*Idfv);
-        SafeString idfvSafe(idfvUTF8.Get(), idfvUTF8.Length());
-        TestLib::addInfoToSend(SafeString("idfv"), idfvSafe);
+        std::string idfv(idfvUTF8.Get(), idfvUTF8.Length());
+        TestLib::addInfoToSend(std::string("idfv"), idfv);
         if (!testCallbackId.empty()) {
-            TestLib::addInfoToSend(SafeString("test_callback_id"), testCallbackId);
+            TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
         TestLib::sendInfoToServer(localExtraPath);
     });
@@ -1470,20 +1394,20 @@ void AdjustCommandExecutor::idfvGetter() {
 
 void AdjustCommandExecutor::googleAdIdGetter() {
 #if PLATFORM_ANDROID
-    SafeString testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        std::string testCallbackIdStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
-        testCallbackId = SafeStringFromStdString(testCallbackIdStr);
+    std::string testCallbackId = "";
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        std::string testCallbackIdStr = this->command->getFirstParameterValue(std::string("testCallbackId"));
+        testCallbackId = testCallbackIdStr;
     }
-    SafeString localExtraPath = SafeStringFromStdString(this->basePath);
+    std::string localExtraPath = this->basePath;
 
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetGoogleAdId([testCallbackId, localExtraPath](const FString& GoogleAdId) {
         FTCHARToUTF8 googleAdIdUTF8(*GoogleAdId);
-        SafeString googleAdIdSafe(googleAdIdUTF8.Get(), googleAdIdUTF8.Length());
-        TestLib::addInfoToSend(SafeString("gps_adid"), googleAdIdSafe);
+        std::string googleAdId(googleAdIdUTF8.Get(), googleAdIdUTF8.Length());
+        TestLib::addInfoToSend(std::string("gps_adid"), googleAdId);
         if (!testCallbackId.empty()) {
-            TestLib::addInfoToSend(SafeString("test_callback_id"), testCallbackId);
+            TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
         TestLib::sendInfoToServer(localExtraPath);
     });
@@ -1492,20 +1416,20 @@ void AdjustCommandExecutor::googleAdIdGetter() {
 
 void AdjustCommandExecutor::amazonAdIdGetter() {
 #if PLATFORM_ANDROID
-    SafeString testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        std::string testCallbackIdStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
-        testCallbackId = SafeStringFromStdString(testCallbackIdStr);
+    std::string testCallbackId = "";
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        std::string testCallbackIdStr = this->command->getFirstParameterValue(std::string("testCallbackId"));
+        testCallbackId = testCallbackIdStr;
     }
-    SafeString localExtraPath = SafeStringFromStdString(this->basePath);
+    std::string localExtraPath = this->basePath;
 
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetAmazonAdId([testCallbackId, localExtraPath](const FString& AmazonAdId) {
         FTCHARToUTF8 amazonAdIdUTF8(*AmazonAdId);
-        SafeString amazonAdIdSafe(amazonAdIdUTF8.Get(), amazonAdIdUTF8.Length());
-        TestLib::addInfoToSend(SafeString("fire_adid"), amazonAdIdSafe);
+        std::string amazonAdId(amazonAdIdUTF8.Get(), amazonAdIdUTF8.Length());
+        TestLib::addInfoToSend(std::string("fire_adid"), amazonAdId);
         if (!testCallbackId.empty()) {
-            TestLib::addInfoToSend(SafeString("test_callback_id"), testCallbackId);
+            TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
         TestLib::sendInfoToServer(localExtraPath);
     });
@@ -1513,20 +1437,20 @@ void AdjustCommandExecutor::amazonAdIdGetter() {
 }
 
 void AdjustCommandExecutor::sdkVersionGetter() {
-    SafeString testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        std::string testCallbackIdStr = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
-        testCallbackId = SafeStringFromStdString(testCallbackIdStr);
+    std::string testCallbackId = "";
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        std::string testCallbackIdStr = this->command->getFirstParameterValue(std::string("testCallbackId"));
+        testCallbackId = testCallbackIdStr;
     }
-    SafeString localExtraPath = SafeStringFromStdString(this->basePath);
+    std::string localExtraPath = this->basePath;
     
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetSdkVersion([testCallbackId, localExtraPath](const FString& SdkVersion) {
         FTCHARToUTF8 sdkVersionUTF8(*SdkVersion);
-        SafeString sdkVersionSafe(sdkVersionUTF8.Get(), sdkVersionUTF8.Length());
-        TestLib::addInfoToSend(SafeString("sdk_version"), sdkVersionSafe);
+        std::string sdkVersion(sdkVersionUTF8.Get(), sdkVersionUTF8.Length());
+        TestLib::addInfoToSend(std::string("sdk_version"), sdkVersion);
         if (!testCallbackId.empty()) {
-            TestLib::addInfoToSend(SafeString("test_callback_id"), testCallbackId);
+            TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
         TestLib::sendInfoToServer(localExtraPath);
     });
@@ -1534,8 +1458,8 @@ void AdjustCommandExecutor::sdkVersionGetter() {
 
 void AdjustCommandExecutor::lastDeeplinkGetter() {
     std::string testCallbackId = "";
-    if (this->command->containsParameter(SafeString("testCallbackId"))) {
-        testCallbackId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("testCallbackId")));
+    if (this->command->containsParameter(std::string("testCallbackId"))) {
+        testCallbackId = this->command->getFirstParameterValue(std::string("testCallbackId"));
     }
     std::string localExtraPath = this->basePath;
     
@@ -1557,7 +1481,7 @@ void AdjustCommandExecutor::endFirstSessionDelay() {
 }
 
 void AdjustCommandExecutor::coppaComplianceInDelay() {
-    std::string strIsEnabled = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("isEnabled")));
+    std::string strIsEnabled = this->command->getFirstParameterValue(std::string("isEnabled"));
     bool enabled = (strIsEnabled == "true");
     if (enabled) {
         UAdjust::EnableCoppaComplianceInDelay();
@@ -1567,7 +1491,7 @@ void AdjustCommandExecutor::coppaComplianceInDelay() {
 }
 
 void AdjustCommandExecutor::playStoreKidsComplianceInDelay() {
-    std::string strIsEnabled = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("isEnabled")));
+    std::string strIsEnabled = this->command->getFirstParameterValue(std::string("isEnabled"));
     bool enabled = (strIsEnabled == "true");
     if (enabled) {
         UAdjust::EnablePlayStoreKidsComplianceInDelay();
@@ -1577,6 +1501,6 @@ void AdjustCommandExecutor::playStoreKidsComplianceInDelay() {
 }
 
 void AdjustCommandExecutor::externalDeviceIdInDelay() {
-    std::string externalDeviceId = StdStringFromSafeString(this->command->getFirstParameterValue(SafeString("externalDeviceId")));
+    std::string externalDeviceId = this->command->getFirstParameterValue(std::string("externalDeviceId"));
     UAdjust::SetExternalDeviceIdInDelay(FString(UTF8_TO_TCHAR(externalDeviceId.c_str())));
 }

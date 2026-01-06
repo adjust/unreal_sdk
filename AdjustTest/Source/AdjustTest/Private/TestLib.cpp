@@ -22,56 +22,20 @@
 #if PLATFORM_ANDROID
 static void* staticTestLibrary = nullptr; // Java object global reference
 static TestLib* staticTestLibInstance = nullptr; // C++ TestLib instance to keep alive
-static void(*staticTestLibCallback)(SafeString className, SafeString methodName, SafeString jsonParameters) = nullptr;
+static void(*staticTestLibCallback)(std::string className, std::string methodName, std::string jsonParameters) = nullptr;
 
 // wrapper function that can be used as a function pointer
 static void TestLibCommandCallbackWrapper(FString className, FString methodName, FString jsonParameters)
 {
     if (staticTestLibCallback != nullptr) {
-        // TCHAR_TO_UTF8 returns a temporary ANSICHAR* that might use Unreal's allocator
-        // We need to copy the data immediately to SafeString to avoid allocator validation issues
         FTCHARToUTF8 classNameUTF8(*className);
-        // CRITICAL: Copy using malloc to ensure SystemAllocator gets proper copy
-        int32 classNameLen = classNameUTF8.Length();
-        char* classNameBuffer = (char*)malloc(classNameLen + 1);
-        SafeString classNameStr;
-        if (classNameBuffer != nullptr) {
-            memcpy(classNameBuffer, classNameUTF8.Get(), classNameLen);
-            classNameBuffer[classNameLen] = '\0';
-            classNameStr = SafeString(classNameBuffer, classNameLen);
-            free(classNameBuffer);
-        } else {
-            classNameStr = SafeString("");
-        }
+        std::string classNameStr(classNameUTF8.Get(), classNameUTF8.Length());
         
         FTCHARToUTF8 methodNameUTF8(*methodName);
-        // CRITICAL: Copy using malloc to ensure SystemAllocator gets proper copy
-        int32 methodNameLen = methodNameUTF8.Length();
-        char* methodNameBuffer = (char*)malloc(methodNameLen + 1);
-        SafeString methodNameStr;
-        if (methodNameBuffer != nullptr) {
-            memcpy(methodNameBuffer, methodNameUTF8.Get(), methodNameLen);
-            methodNameBuffer[methodNameLen] = '\0';
-            methodNameStr = SafeString(methodNameBuffer, methodNameLen);
-            free(methodNameBuffer);
-        } else {
-            methodNameStr = SafeString("");
-        }
+        std::string methodNameStr(methodNameUTF8.Get(), methodNameUTF8.Length());
         
         FTCHARToUTF8 jsonParametersUTF8(*jsonParameters);
-        // CRITICAL: FTCHARToUTF8::Get() may point to JVM-allocated memory, so we must copy it using malloc
-        // before creating SafeString to ensure SystemAllocator gets a proper copy
-        int32 jsonParamsLen = jsonParametersUTF8.Length();
-        char* jsonParamsBuffer = (char*)malloc(jsonParamsLen + 1);
-        SafeString jsonParametersStr;
-        if (jsonParamsBuffer != nullptr) {
-            memcpy(jsonParamsBuffer, jsonParametersUTF8.Get(), jsonParamsLen);
-            jsonParamsBuffer[jsonParamsLen] = '\0';
-            jsonParametersStr = SafeString(jsonParamsBuffer, jsonParamsLen);
-            free(jsonParamsBuffer);
-        } else {
-            jsonParametersStr = SafeString("");
-        }
+        std::string jsonParametersStr(jsonParametersUTF8.Get(), jsonParametersUTF8.Length());
         
         staticTestLibCallback(classNameStr, methodNameStr, jsonParametersStr);
     }
@@ -80,7 +44,7 @@ static void TestLibCommandCallbackWrapper(FString className, FString methodName,
 static ATLTestLibraryWrapper* staticTestLibrary = nullptr;
 #endif
 
-void TestLib::initTestLibrary(const SafeString& baseUrl, const SafeString& controlUrl, void(*callback)(SafeString className, SafeString methodName, SafeString jsonParameters)) {
+void TestLib::initTestLibrary(const std::string& baseUrl, const std::string& controlUrl, void(*callback)(std::string className, std::string methodName, std::string jsonParameters)) {
 #if PLATFORM_ANDROID
     staticTestLibCallback = callback;
     setExecuteTestLibCommandCallbackMethod(TestLibCommandCallbackWrapper);
@@ -168,7 +132,7 @@ void TestLib::initTestLibrary(const SafeString& baseUrl, const SafeString& contr
 #endif
 }
 
-TestLib::TestLib(const SafeString& baseUrl, const SafeString& controlUrl, void(*executeCommandCallback)(SafeString className, SafeString methodName, SafeString jsonParameters)) 
+TestLib::TestLib(const std::string& baseUrl, const std::string& controlUrl, void(*executeCommandCallback)(std::string className, std::string methodName, std::string jsonParameters)) 
 #if PLATFORM_IOS
     : testLibrary(nullptr)
 #elif PLATFORM_ANDROID
@@ -216,7 +180,7 @@ TestLib::~TestLib() {
 #endif
 }
 
-void TestLib::addTest(const SafeString& testName) {
+void TestLib::addTest(const std::string& testName) {
 #if PLATFORM_ANDROID
     if (testLibrary == nullptr) {
         return;
@@ -242,7 +206,7 @@ void TestLib::addTest(const SafeString& testName) {
 #endif
 }
 
-void TestLib::addTestDirectory(const SafeString& testDirectory) {
+void TestLib::addTestDirectory(const std::string& testDirectory) {
 #if PLATFORM_ANDROID
     if (testLibrary == nullptr) {
         return;
@@ -268,7 +232,7 @@ void TestLib::addTestDirectory(const SafeString& testDirectory) {
 #endif
 }
 
-void TestLib::startTestSession(const SafeString& clientSdk) {
+void TestLib::startTestSession(const std::string& clientSdk) {
 #if PLATFORM_ANDROID
     if (testLibrary == nullptr) {
         return;
@@ -294,7 +258,7 @@ void TestLib::startTestSession(const SafeString& clientSdk) {
 #endif
 }
 
-void TestLib::addInfoToSend(const SafeString& key, const SafeString& value) {
+void TestLib::addInfoToSend(const std::string& key, const std::string& value) {
 #if PLATFORM_ANDROID
     if (staticTestLibrary == nullptr) {
         return;
@@ -327,7 +291,7 @@ void TestLib::addInfoToSend(const SafeString& key, const SafeString& value) {
 #endif
 }
 
-void TestLib::sendInfoToServer(const SafeString& basePath) {
+void TestLib::sendInfoToServer(const std::string& basePath) {
 #if PLATFORM_ANDROID
     if (staticTestLibrary == nullptr) {
         return;

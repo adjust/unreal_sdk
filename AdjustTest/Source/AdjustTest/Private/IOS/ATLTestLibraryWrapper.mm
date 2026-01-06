@@ -44,9 +44,6 @@ void ATLTestLibraryWrapper::addTest(std::string testName) {
 	ATLTestLibraryWrapperObjC *testLibWrapper = (__bridge ATLTestLibraryWrapperObjC *)testLibrary;
 	if (testLibWrapper != nil && testLibWrapper.testLibrary != nil) {
 		[testLibWrapper.testLibrary addTest:[NSString stringWithUTF8String:testName.c_str()]];
-	} else {
-		if (testLibWrapper != nil) {
-		}
 	}
 }
 
@@ -62,15 +59,11 @@ void ATLTestLibraryWrapper::startTestSession(std::string clientSdk) {
 }
 
 void ATLTestLibraryWrapper::addInfoToSend(std::string key, std::string value) {
-          key.c_str(), value.c_str(), testLibrary);
 	ATLTestLibraryWrapperObjC *testLibWrapper = (__bridge ATLTestLibraryWrapperObjC *)testLibrary;
 	if (testLibWrapper != nil && testLibWrapper.testLibrary != nil) {
 		NSString *keyString = [NSString stringWithUTF8String:key.c_str()];
 		NSString *valueString = [NSString stringWithUTF8String:value.c_str()];
 		[testLibWrapper.testLibrary addInfoToSend:keyString value:valueString];
-	} else {
-		if (testLibWrapper != nil) {
-		}
 	}
 }
 
@@ -79,8 +72,5 @@ void ATLTestLibraryWrapper::sendInfoToServer(std::string basePath) {
 	if (testLibWrapper != nil && testLibWrapper.testLibrary != nil) {
 		NSString *basePathString = [NSString stringWithUTF8String:basePath.c_str()];
 		[testLibWrapper.testLibrary sendInfoToServer:basePathString];
-	} else {
-		if (testLibWrapper != nil) {
-		}
 	}
 }
