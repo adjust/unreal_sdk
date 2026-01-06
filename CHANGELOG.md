@@ -15,6 +15,7 @@
 
 #### Changed
 - Updated the Adjust Signature library version to 3.62.0.
+- Improved iOS backoff strategy and Apple Ads flows.
 
 #### Native SDKs
 - [Android@v5.5.0][android_sdk_v5.5.0]
