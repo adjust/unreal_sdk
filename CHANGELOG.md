@@ -1,3 +1,27 @@
+### Version 5.5.0 (7th January 2026)
+#### Added
+- Added `GetAdidWithTimeout` method to the `UAdjust` API to allow retrieving the ADID with a specified timeout. If the value is not obtained in time, an empty string is returned via the callback.
+- Added `GetAttributionWithTimeout` method to the `UAdjust` API to allow retrieving the current attribution information with a specified timeout. If the value is not obtained in time, an empty attribution object is returned via the callback.
+- Added `IsAppSetIdReadingEnabled` property to `FAdjustConfig` to allow disabling the SDK's reading of the app set ID on Android. Set this property to `false` to disable app set ID reading.
+- Added C++-only method overloads that accept lambda callbacks for a cleaner C++ API. These methods are not exposed to Blueprint and provide better support for concurrent calls. The following methods now have lambda-based overloads:
+  - `GetAdid`, `GetAdidWithTimeout` - retrieve ADID with optional timeout
+  - `GetAttribution`, `GetAttributionWithTimeout` - retrieve attribution with optional timeout
+  - `GetLastDeeplink` - retrieve last processed deeplink
+  - `GetSdkVersion` - retrieve SDK version
+  - `IsEnabled` - check if SDK is enabled
+  - `ProcessAndResolveDeeplink` - process and resolve deeplinks
+  - iOS-specific: `GetIdfa`, `GetIdfv`, `GetAppTrackingAuthorizationStatus`, `RequestAppTrackingAuthorization`, `UpdateSkanConversionValue`, `VerifyAppStorePurchase`, `VerifyAndTrackAppStorePurchase`
+  - Android-specific: `GetGoogleAdId`, `GetAmazonAdId`, `VerifyPlayStorePurchase`, `VerifyAndTrackPlayStorePurchase`
+
+#### Changed
+- Updated the Adjust Signature library version to 3.62.0.
+
+#### Native SDKs
+- [Android@v5.5.0][android_sdk_v5.5.0]
+- [iOS@v5.5.1][ios_sdk_v5.5.1]
+
+---
+
 ### Version 5.4.0 (7th November 2025)
 #### Added
 - Added `JsonResponse` field (`FString`) to `FAdjustAttribution` where every key-value pair sent by the backend as part of the attribution response can be found.
@@ -117,6 +141,7 @@ If you are a current Adjust client and have questions about SDK v5, please email
 [android_sdk_v4.26.2]: https://github.com/adjust/android_sdk/tree/v4.26.2
 [android_sdk_v5.1.0]: https://github.com/adjust/android_sdk/tree/v5.1.0
 [android_sdk_v5.4.5]: https://github.com/adjust/android_sdk/tree/v5.4.5
+[android_sdk_v5.5.0]: https://github.com/adjust/android_sdk/tree/v5.5.0
 
 [ios_sdk_v4.17.1]: https://github.com/adjust/ios_sdk/tree/v4.17.1
 [ios_sdk_v4.18.3]: https://github.com/adjust/ios_sdk/tree/v4.18.3
@@ -125,3 +150,4 @@ If you are a current Adjust client and have questions about SDK v5, please email
 [ios_sdk_v5.0.1]: https://github.com/adjust/ios_sdk/tree/v5.0.1
 [ios_sdk_v5.1.0]: https://github.com/adjust/ios_sdk/tree/v5.1.0
 [ios_sdk_v5.4.6]: https://github.com/adjust/ios_sdk/tree/v5.4.6
+[ios_sdk_v5.5.1]: https://github.com/adjust/ios_sdk/tree/v5.5.1
