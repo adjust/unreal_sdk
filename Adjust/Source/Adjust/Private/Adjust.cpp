@@ -56,6 +56,9 @@ static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> LastDeeplinkCal
 static FCriticalSection DeeplinkResolutionCallbackQueueMutex;
 static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> DeeplinkResolutionCallbackQueue;
 
+static FCriticalSection LinkResolutionCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> LinkResolutionCallbackQueue;
+
 static FCriticalSection SdkVersionCallbackQueueMutex;
 static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> SdkVersionCallbackQueue;
 
@@ -136,6 +139,18 @@ static void InvokeDeeplinkResolutionLambdaCallback(FString ResolvedLink)
     {
         FScopeLock Lock(&DeeplinkResolutionCallbackQueueMutex);
         if (DeeplinkResolutionCallbackQueue.Dequeue(Callback))
+        {
+            Callback(ResolvedLink);
+        }
+    }
+}
+
+static void InvokeLinkResolutionLambdaCallback(FString ResolvedLink)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&LinkResolutionCallbackQueueMutex);
+        if (LinkResolutionCallbackQueue.Dequeue(Callback))
         {
             Callback(ResolvedLink);
         }
@@ -396,6 +411,10 @@ static void adjustDeeplinkResolutionCallback(FString ResolvedLink)
 
 static void adjustLinkResolutionCallback(FString ResolvedLink)
 {
+    // invoke lambda callback if available (C++ API)
+    InvokeLinkResolutionLambdaCallback(ResolvedLink);
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnLinkResolutionDelegate.Broadcast(ResolvedLink);
@@ -1391,6 +1410,15 @@ void UAdjust::ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlS
     }
     Env->DeleteLocalRef(joLinkResolutionCallbackProxy);
 #endif
+}
+
+void UAdjust::ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray, TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&LinkResolutionCallbackQueueMutex);
+        LinkResolutionCallbackQueue.Enqueue(Callback);
+    }
+    ResolveLink(Url, ResolveUrlSuffixArray); // call existing delegate-based method
 }
 
 void UAdjust::SetPushToken(const FString& PushToken)
@@ -3135,6 +3163,12 @@ void UAdjust::ClearAllCallbackQueues()
         FScopeLock Lock(&DeeplinkResolutionCallbackQueueMutex);
         TFunction<void(const FString&)> Dummy;
         while (DeeplinkResolutionCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&LinkResolutionCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (LinkResolutionCallbackQueue.Dequeue(Dummy)) {}
     }
     
     {

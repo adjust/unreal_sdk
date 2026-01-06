@@ -823,22 +823,11 @@ A user, who has your app installed, clicks on the short URL in the SMS message. 
 
 #### Setup
 
-To resolve a link, call the `ResolveLink` method of the `UAdjust` class with the URL you want to resolve and an array of URL suffixes to match against.
+To resolve a link, call the `ResolveLink` method of the `UAdjust` class with the URL you want to resolve, an array of URL suffixes to match against, and a lambda callback that will be invoked with the resolved link.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray);
-```
-
-Before making this call, you need to assign a callback method to the instance of `UAdjustDelegates` class:
-
-```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLinkResolutionDelegate, const FString&, ResolvedLink);
-
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnLinkResolutionDelegate OnLinkResolutionDelegate;
+// C++-only method with lambda callback
+static void ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray, TFunction<void(const FString&)> Callback);
 ```
 
 **Example: Email marketing**
@@ -846,7 +835,16 @@ FOnLinkResolutionDelegate OnLinkResolutionDelegate;
 ```cpp
 TArray<FString> ResolveUrlSuffixArray;
 ResolveUrlSuffixArray.Add(TEXT("email.example.com"));
-UAdjust::ResolveLink(TEXT("https://email.example.com/2wuTnQvU"), ResolveUrlSuffixArray);
+
+UAdjust::ResolveLink(TEXT("https://email.example.com/2wuTnQvU"), ResolveUrlSuffixArray, [](const FString& ResolvedLink) {
+    if (!ResolvedLink.IsEmpty()) {
+        UE_LOG(LogTemp, Log, TEXT("Resolved link: %s"), *ResolvedLink);
+        // Process the resolved link
+        FAdjustDeeplink adjustDeeplink;
+        adjustDeeplink.Deeplink = ResolvedLink;
+        UAdjust::ProcessDeeplink(adjustDeeplink);
+    }
+});
 ```
 
 **Example: URL shorteners**
@@ -854,21 +852,16 @@ UAdjust::ResolveLink(TEXT("https://email.example.com/2wuTnQvU"), ResolveUrlSuffi
 ```cpp
 TArray<FString> ResolveUrlSuffixArray;
 ResolveUrlSuffixArray.Add(TEXT("short.example.com"));
-UAdjust::ResolveLink(TEXT("https://short.example.com/2wuTnQvU"), ResolveUrlSuffixArray);
-```
 
-After receiving the resolved link in the callback, your app should call `ProcessDeeplink` with the resolved URL:
-
-```cpp
-void AYourGameMode::OnLinkResolved(const FString& ResolvedLink)
-{
-    if (!ResolvedLink.IsEmpty())
-    {
+UAdjust::ResolveLink(TEXT("https://short.example.com/2wuTnQvU"), ResolveUrlSuffixArray, [](const FString& ResolvedLink) {
+    if (!ResolvedLink.IsEmpty()) {
+        UE_LOG(LogTemp, Log, TEXT("Resolved link: %s"), *ResolvedLink);
+        // Process the resolved link
         FAdjustDeeplink adjustDeeplink;
         adjustDeeplink.Deeplink = ResolvedLink;
         UAdjust::ProcessDeeplink(adjustDeeplink);
     }
-}
+});
 ```
 
 > Note: For more detailed information on this topic in iOS and Android, check native guides: [iOS](https://dev.adjust.com/en/sdk/ios/features/deep-links/resolution) and [Android](https://dev.adjust.com/en/sdk/android/features/deep-links#link-resolution).

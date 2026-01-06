@@ -10,6 +10,7 @@
   - `GetSdkVersion` - retrieve SDK version
   - `IsEnabled` - check if SDK is enabled
   - `ProcessAndResolveDeeplink` - process and resolve deeplinks
+  - `ResolveLink` - resolve adjust links behind other links
   - iOS-specific: `GetIdfa`, `GetIdfv`, `GetAppTrackingAuthorizationStatus`, `RequestAppTrackingAuthorization`, `UpdateSkanConversionValue`, `VerifyAppStorePurchase`, `VerifyAndTrackAppStorePurchase`
   - Android-specific: `GetGoogleAdId`, `GetAmazonAdId`, `VerifyPlayStorePurchase`, `VerifyAndTrackPlayStorePurchase`
 

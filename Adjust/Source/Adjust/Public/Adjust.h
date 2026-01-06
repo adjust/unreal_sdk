@@ -43,12 +43,6 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     static void SwitchBackToOnlineMode();
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
-    static void OnResume();
-
-    UFUNCTION(BlueprintCallable, Category = "Adjust")
-    static void OnPause();
-
-    UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void TrackEvent(const FAdjustEvent& Event);
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
@@ -175,12 +169,7 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void TrackPlayStoreSubscription(const FAdjustPlayStoreSubscription& Subscription);
 
-    // Test methods (for internal testing only)
-    UFUNCTION(BlueprintCallable, Category = "Adjust")
-    static void SetTestOptions(const TMap<FString, FString>& StringTestOptions, const TMap<FString, int32>& IntTestOptions);
-
     // C++-only methods with lambda callbacks (not exposed to Blueprint)
-    // these provide a cleaner C++ API
     static void GetAdid(TFunction<void(const FString&)> Callback);
     static void GetAdidWithTimeout(int32 TimeoutInMilliseconds, TFunction<void(const FString&)> Callback);
     static void GetAttribution(TFunction<void(const FAdjustAttribution&)> Callback);
@@ -189,6 +178,7 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     static void GetSdkVersion(TFunction<void(const FString&)> Callback);
     static void IsEnabled(TFunction<void(bool)> Callback);
     static void ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink, TFunction<void(const FString&)> Callback);
+    static void ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray, TFunction<void(const FString&)> Callback);
 #if PLATFORM_IOS
     static void GetIdfa(TFunction<void(const FString&)> Callback);
     static void GetIdfv(TFunction<void(const FString&)> Callback);
@@ -204,7 +194,17 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     static void VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback);
     static void VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback);
 #endif
-    
-    // internal: clear all callback queues (used by test library for cleanup between tests)
+
+    // test methods (for internal testing only)
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void OnResume();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void OnPause();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void SetTestOptions(const TMap<FString, FString>& StringTestOptions, const TMap<FString, int32>& IntTestOptions);
+
     static void ClearAllCallbackQueues();
 };
