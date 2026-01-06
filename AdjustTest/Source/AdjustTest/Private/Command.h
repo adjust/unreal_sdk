@@ -12,18 +12,19 @@
 #include <string>
 #include <vector>
 #include "json/json.hpp"
+#include "TestLib.h"
 
 class Command {
 private:
-	void replace(std::string &s, const std::string &search, const std::string &replace);
+	void replace(SafeString &s, const SafeString &search, const SafeString &replace);
 public:
-	std::string className;
-	std::string methodName;
-	std::map<std::string, std::vector<std::string>> parameters;
+	SafeString className;
+	SafeString methodName;
+	std::map<SafeString, std::vector<SafeString>> parameters;
 
-	Command(std::string className, std::string methodName, std::string parametersJson);
+	Command(SafeString className, SafeString methodName, SafeString parametersJson);
 
-	std::vector<std::string> getParameters(std::string parameterKey);
-	std::string getFirstParameterValue(std::string parameterKey);
-	bool containsParameter(std::string parameterKey);
+	std::vector<SafeString> getParameters(SafeString parameterKey);
+	SafeString getFirstParameterValue(SafeString parameterKey);
+	bool containsParameter(SafeString parameterKey);
 };

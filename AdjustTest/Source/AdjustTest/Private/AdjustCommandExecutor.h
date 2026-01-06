@@ -83,6 +83,6 @@ private:
     void externalDeviceIdInDelay();
 public:
     static const std::string TAG;
-    AdjustCommandExecutor(std::string urlOverwrite);
+    AdjustCommandExecutor(const std::string& urlOverwrite);
     void executeCommand(Command *command);
 };

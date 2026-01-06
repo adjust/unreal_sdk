@@ -1760,14 +1760,26 @@ void UAdjust::GetSdkVersion()
     }];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    if (Env == nullptr) {
+        return;
+    }
     setSdkVersionGetterCallbackMethod(adjustSdkVersionGetterCallback);
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    if (jcslAdjust == nullptr) {
+        return;
+    }
     jmethodID jmidAdjustGetSdkVersionId = Env->GetStaticMethodID(jcslAdjust, "getSdkVersion", "(Lcom/adjust/sdk/OnSdkVersionReadListener;)V");
     jclass jcslUeSdkVersionGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeSdkVersionGetterCallback");
+    if (jcslUeSdkVersionGetterCallback == nullptr) {
+        return;
+    }
     jmethodID jmidUeSdkVersionGetterCallbackInit = Env->GetMethodID(jcslUeSdkVersionGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;Ljava/lang/String;)V");
-    // TODO: parametrize SDK prefix instead of hardcoding
     jstring jSdkPrefix = Env->NewStringUTF("unreal5.5.0");
     jobject joSdkVersionGetterCallbackProxy = Env->NewObject(jcslUeSdkVersionGetterCallback, jmidUeSdkVersionGetterCallbackInit, FJavaWrapper::GameActivityThis, jSdkPrefix);
+    if (joSdkVersionGetterCallbackProxy == nullptr) {
+        Env->DeleteLocalRef(jSdkPrefix);
+        return;
+    }
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetSdkVersionId, joSdkVersionGetterCallbackProxy);
     Env->DeleteLocalRef(joSdkVersionGetterCallbackProxy);
     Env->DeleteLocalRef(jSdkPrefix);
@@ -2609,13 +2621,6 @@ void UAdjust::TrackPlayStoreSubscription(const FAdjustPlayStoreSubscription& Sub
 void UAdjust::SetTestOptions(const TMap<FString, FString>& StringTestOptions, const TMap<FString, int32>& IntTestOptions)
 {
 #if PLATFORM_IOS
-    // use NSLog for immediate output (won't be buffered)
-    NSLog(@"[Adjust] ========== SetTestOptions START ==========");
-    NSLog(@"[Adjust] SetTestOptions called with %d string options, %d int options", 
-          StringTestOptions.Num(), IntTestOptions.Num());
-    UE_LOG(LogTemp, Warning, TEXT("[Adjust] SetTestOptions called with %d string options, %d int options"), 
-           StringTestOptions.Num(), IntTestOptions.Num());
-    
     NSMutableDictionary* testOptions = [[NSMutableDictionary alloc] init];
     
     // add string options
@@ -2632,11 +2637,7 @@ void UAdjust::SetTestOptions(const TMap<FString, FString>& StringTestOptions, co
         const char* keyUtf8 = KeyUtf8.Get();
         const char* valueUtf8 = ValueUtf8.Get();
         
-        NSLog(@"[Adjust] Processing string option: key='%s' value='%s'", TCHAR_TO_UTF8(*Pair.Key), TCHAR_TO_UTF8(*Pair.Value));
-        UE_LOG(LogTemp, Warning, TEXT("[Adjust] Processing string option: key='%s' value='%s'"), *Pair.Key, *Pair.Value);
-        
         if (keyUtf8 == nullptr || valueUtf8 == nullptr) {
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] ERROR: Null UTF-8 conversion for key='%s' value='%s'"), *Pair.Key, *Pair.Value);
             continue;
         }
         
@@ -2644,8 +2645,6 @@ void UAdjust::SetTestOptions(const TMap<FString, FString>& StringTestOptions, co
         size_t keyLen = strlen(keyUtf8);
         size_t valueLen = strlen(valueUtf8);
         if (keyLen == 0 || valueLen == 0) {
-            NSLog(@"[Adjust] ERROR: Empty UTF-8 string: keyLen=%zu valueLen=%zu", keyLen, valueLen);
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] ERROR: Empty UTF-8 string: keyLen=%zu valueLen=%zu"), keyLen, valueLen);
             continue;
         }
         
@@ -2662,44 +2661,16 @@ void UAdjust::SetTestOptions(const TMap<FString, FString>& StringTestOptions, co
             value = [[NSString alloc] initWithCString:valueUtf8 encoding:NSUTF8StringEncoding];
         }
         
-        if (key == nil) {
-            FString KeyUtf8Str = FString(UTF8_TO_TCHAR(keyUtf8));
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] ERROR: Failed to create NSString from key: '%s' (UTF-8: %s)"), *Pair.Key, *KeyUtf8Str);
-            continue;
-        }
-        
-        if (value == nil) {
-            FString ValueUtf8Str = FString(UTF8_TO_TCHAR(valueUtf8));
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] ERROR: Failed to create NSString from value: '%s' (UTF-8: %s)"), *Pair.Value, *ValueUtf8Str);
-            continue;
-        }
-        
-        // use %hs for narrow strings (UTF8String returns const char*)
-        const char* keyCStr = [key UTF8String];
-        const char* valueCStr = [value UTF8String];
-        UE_LOG(LogTemp, Warning, TEXT("[Adjust] Adding to dictionary: %hs = %hs"), 
-               keyCStr ? keyCStr : "nil", 
-               valueCStr ? valueCStr : "nil");
-        
-        // final safety check before adding to dictionary
         if (key == nil || value == nil) {
-            NSLog(@"[Adjust] FATAL: key or value is nil after all attempts! key=%p value=%p", key, value);
-            NSLog(@"[Adjust] FATAL: keyUtf8='%s' valueUtf8='%s'", keyUtf8 ? keyUtf8 : "NULL", valueUtf8 ? valueUtf8 : "NULL");
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] FATAL: key or value is nil after all checks! key=%p value=%p"), key, value);
-            // skip this entry - don't add nil to dictionary
             continue;
         }
         
         // additional validation: ensure NSStrings are not empty
         if ([key length] == 0 || [value length] == 0) {
-            NSLog(@"[Adjust] WARNING: Empty NSString - key length=%lu value length=%lu", (unsigned long)[key length], (unsigned long)[value length]);
-            UE_LOG(LogTemp, Warning, TEXT("[Adjust] WARNING: Empty NSString - skipping"));
             continue;
         }
         
-        NSLog(@"[Adjust] Adding to dictionary: %@ = %@", key, value);
         [testOptions setObject:value forKey:key];
-        UE_LOG(LogTemp, Warning, TEXT("[Adjust] Successfully added to dictionary"));
     }
     
     // add int options
@@ -2707,7 +2678,6 @@ void UAdjust::SetTestOptions(const TMap<FString, FString>& StringTestOptions, co
     {
         // skip if key is empty
         if (Pair.Key.IsEmpty()) {
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] ERROR: Skipping empty key for int option with value=%d"), Pair.Value);
             continue;
         }
         
@@ -2715,20 +2685,13 @@ void UAdjust::SetTestOptions(const TMap<FString, FString>& StringTestOptions, co
         FTCHARToUTF8 KeyUtf8(*Pair.Key);
         const char* keyUtf8 = KeyUtf8.Get();
         
-        NSLog(@"[Adjust] Processing int option: key='%s' value=%d", TCHAR_TO_UTF8(*Pair.Key), Pair.Value);
-        UE_LOG(LogTemp, Warning, TEXT("[Adjust] Processing int option: key='%s' value=%d"), *Pair.Key, Pair.Value);
-        
         if (keyUtf8 == nullptr) {
-            NSLog(@"[Adjust] ERROR: Null UTF-8 conversion for key");
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] ERROR: Null UTF-8 conversion for key: '%s'"), *Pair.Key);
             continue;
         }
         
         // Check UTF-8 string length
         size_t keyLen = strlen(keyUtf8);
         if (keyLen == 0) {
-            NSLog(@"[Adjust] ERROR: Empty UTF-8 string for key");
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] ERROR: Empty UTF-8 string for key"));
             continue;
         }
         
@@ -2740,94 +2703,225 @@ void UAdjust::SetTestOptions(const TMap<FString, FString>& StringTestOptions, co
         }
         
         if (key == nil) {
-            NSLog(@"[Adjust] ERROR: Failed to create NSString from key after fallback");
-            FString KeyUtf8Str = FString(UTF8_TO_TCHAR(keyUtf8));
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] ERROR: Failed to create NSString from key: '%s' (UTF-8: %s)"), *Pair.Key, *KeyUtf8Str);
             continue;
         }
         
         NSNumber* value = [NSNumber numberWithInt:Pair.Value];
         
         if (value == nil) {
-            NSLog(@"[Adjust] ERROR: Failed to create NSNumber from int: %d", Pair.Value);
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] ERROR: Failed to create NSNumber from int: %d"), Pair.Value);
-            continue;
-        }
-        
-        // final safety check before adding to dictionary
-        if (key == nil) {
-            NSLog(@"[Adjust] FATAL: key is nil for int option! value=%d", Pair.Value);
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] FATAL: key is nil after all checks! value=%d"), Pair.Value);
-            continue;
-        }
-        
-        if (value == nil) {
-            NSLog(@"[Adjust] FATAL: NSNumber is nil! This should never happen for int=%d", Pair.Value);
-            UE_LOG(LogTemp, Error, TEXT("[Adjust] FATAL: NSNumber is nil! This should never happen for int=%d"), Pair.Value);
             continue;
         }
         
         // additional validation: ensure NSString key is not empty
         if ([key length] == 0) {
-            NSLog(@"[Adjust] WARNING: Empty NSString key for int option");
-            UE_LOG(LogTemp, Warning, TEXT("[Adjust] WARNING: Empty NSString key - skipping"));
             continue;
         }
         
-        NSLog(@"[Adjust] Adding int to dictionary: %@ = %@", key, value);
         [testOptions setObject:value forKey:key];
-        UE_LOG(LogTemp, Warning, TEXT("[Adjust] Successfully added int to dictionary"));
     }
-    
-    NSLog(@"[Adjust] Final dictionary has %lu entries", (unsigned long)[testOptions count]);
-    UE_LOG(LogTemp, Warning, TEXT("[Adjust] Final dictionary has %lu entries"), (unsigned long)[testOptions count]);
     
     // final check - ensure dictionary is valid before passing to native SDK
     if (testOptions == nil) {
-        NSLog(@"[Adjust] FATAL: testOptions dictionary is nil!");
-        UE_LOG(LogTemp, Error, TEXT("[Adjust] FATAL: testOptions dictionary is nil!"));
         return;
     }
     
-    NSLog(@"[Adjust] Calling [Adjust setTestOptions:] with %lu entries", (unsigned long)[testOptions count]);
-    UE_LOG(LogTemp, Warning, TEXT("[Adjust] Calling [Adjust setTestOptions:] with %lu entries"), (unsigned long)[testOptions count]);
-    
     [Adjust setTestOptions:testOptions];
-    NSLog(@"[Adjust] [Adjust setTestOptions:] completed");
-    UE_LOG(LogTemp, Warning, TEXT("[Adjust] [Adjust setTestOptions:] completed"));
 #elif PLATFORM_ANDROID
     JNIEnv* Env = FAndroidApplication::GetJavaEnv();
-    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
-    jmethodID jmidSetTestOptions = Env->GetStaticMethodID(jcslAdjust, "setTestOptions", "(Ljava/util/Map;)V");
-    
-    // Create HashMap for test options
-    jclass jcslHashMap = FAndroidApplication::FindJavaClass("java/util/HashMap");
-    jmethodID jmidHashMapInit = Env->GetMethodID(jcslHashMap, "<init>", "()V");
-    jobject joTestOptions = Env->NewObject(jcslHashMap, jmidHashMapInit);
-    jmethodID jmidHashMapPut = Env->GetMethodID(jcslHashMap, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-    
-    // add string options
-    for (const TPair<FString, FString>& Pair : StringTestOptions)
-    {
-        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*Pair.Key));
-        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*Pair.Value));
-        Env->CallObjectMethod(joTestOptions, jmidHashMapPut, jKey, jValue);
-        Env->DeleteLocalRef(jKey);
-        Env->DeleteLocalRef(jValue);
+    if (Env == nullptr) {
+        return;
     }
     
-    // add int options (convert to String for Android)
-    for (const TPair<FString, int32>& Pair : IntTestOptions)
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    if (jcslAdjust == nullptr) {
+        return;
+    }
+    
+    jclass jcslAdjustTestOptions = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustTestOptions");
+    if (jcslAdjustTestOptions == nullptr) {
+        Env->DeleteLocalRef(jcslAdjust);
+        return;
+    }
+    
+    jmethodID jmidAdjustTestOptionsInit = Env->GetMethodID(jcslAdjustTestOptions, "<init>", "()V");
+    if (jmidAdjustTestOptionsInit == nullptr) {
+        Env->DeleteLocalRef(jcslAdjustTestOptions);
+        Env->DeleteLocalRef(jcslAdjust);
+        return;
+    }
+    
+    jobject joTestOptions = Env->NewObject(jcslAdjustTestOptions, jmidAdjustTestOptionsInit);
+    if (joTestOptions == nullptr) {
+        Env->DeleteLocalRef(jcslAdjustTestOptions);
+        Env->DeleteLocalRef(jcslAdjust);
+        return;
+    }
+    
+    // Set fields on AdjustTestOptions object following Cocos2d-x pattern
+    // Get field IDs for common types
+    jclass jcslBoolean = Env->FindClass("java/lang/Boolean");
+    jmethodID jmidBooleanInit = Env->GetMethodID(jcslBoolean, "<init>", "(Z)V");
+    jclass jcslLong = Env->FindClass("java/lang/Long");
+    jmethodID jmidLongInit = Env->GetMethodID(jcslLong, "<init>", "(J)V");
+    
+    // Set baseUrl, gdprUrl, subscriptionUrl, purchaseVerificationUrl from testUrlOverwrite
+    const FString* testUrlOverwrite = StringTestOptions.Find(TEXT("testUrlOverwrite"));
+    if (testUrlOverwrite != nullptr && !testUrlOverwrite->IsEmpty())
     {
-        jstring jKey = Env->NewStringUTF(TCHAR_TO_UTF8(*Pair.Key));
-        jstring jValue = Env->NewStringUTF(TCHAR_TO_UTF8(*FString::Printf(TEXT("%d"), Pair.Value)));
-        Env->CallObjectMethod(joTestOptions, jmidHashMapPut, jKey, jValue);
-        Env->DeleteLocalRef(jKey);
-        Env->DeleteLocalRef(jValue);
+        jstring jTestUrlOverwrite = Env->NewStringUTF(TCHAR_TO_UTF8(**testUrlOverwrite));
+        
+        jfieldID jfidBaseUrl = Env->GetFieldID(jcslAdjustTestOptions, "baseUrl", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidBaseUrl, jTestUrlOverwrite);
+        
+        jfieldID jfidGdprUrl = Env->GetFieldID(jcslAdjustTestOptions, "gdprUrl", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidGdprUrl, jTestUrlOverwrite);
+        
+        jfieldID jfidSubscriptionUrl = Env->GetFieldID(jcslAdjustTestOptions, "subscriptionUrl", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidSubscriptionUrl, jTestUrlOverwrite);
+        
+        jfieldID jfidPurchaseVerificationUrl = Env->GetFieldID(jcslAdjustTestOptions, "purchaseVerificationUrl", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidPurchaseVerificationUrl, jTestUrlOverwrite);
+        
+        Env->DeleteLocalRef(jTestUrlOverwrite);
+    }
+    
+    // Set basePath, gdprPath, subscriptionPath, purchaseVerificationPath from extraPath
+    const FString* extraPath = StringTestOptions.Find(TEXT("extraPath"));
+    if (extraPath != nullptr && !extraPath->IsEmpty())
+    {
+        jstring jExtraPath = Env->NewStringUTF(TCHAR_TO_UTF8(**extraPath));
+        
+        jfieldID jfidBasePath = Env->GetFieldID(jcslAdjustTestOptions, "basePath", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidBasePath, jExtraPath);
+        
+        jfieldID jfidGdprPath = Env->GetFieldID(jcslAdjustTestOptions, "gdprPath", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidGdprPath, jExtraPath);
+        
+        jfieldID jfidSubscriptionPath = Env->GetFieldID(jcslAdjustTestOptions, "subscriptionPath", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidSubscriptionPath, jExtraPath);
+        
+        jfieldID jfidPurchaseVerificationPath = Env->GetFieldID(jcslAdjustTestOptions, "purchaseVerificationPath", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidPurchaseVerificationPath, jExtraPath);
+        
+        Env->DeleteLocalRef(jExtraPath);
+    }
+    
+    // Set context field if setContext is set
+    const int32* setContextValue = IntTestOptions.Find(TEXT("setContext"));
+    if (setContextValue != nullptr && *setContextValue != 0)
+    {
+        jfieldID jfidContext = Env->GetFieldID(jcslAdjustTestOptions, "context", "Landroid/content/Context;");
+        Env->SetObjectField(joTestOptions, jfidContext, FJavaWrapper::GameActivityThis);
+    }
+    
+    // Set Long fields (timer intervals)
+    const int32* timerInterval = IntTestOptions.Find(TEXT("timerIntervalInMilliseconds"));
+    if (timerInterval != nullptr)
+    {
+        jobject jTimerIntervalObj = Env->NewObject(jcslLong, jmidLongInit, (jlong)(*timerInterval));
+        jfieldID jfidTimerInterval = Env->GetFieldID(jcslAdjustTestOptions, "timerIntervalInMilliseconds", "Ljava/lang/Long;");
+        Env->SetObjectField(joTestOptions, jfidTimerInterval, jTimerIntervalObj);
+        Env->DeleteLocalRef(jTimerIntervalObj);
+    }
+    
+    const int32* timerStart = IntTestOptions.Find(TEXT("timerStartInMilliseconds"));
+    if (timerStart != nullptr)
+    {
+        jobject jTimerStartObj = Env->NewObject(jcslLong, jmidLongInit, (jlong)(*timerStart));
+        jfieldID jfidTimerStart = Env->GetFieldID(jcslAdjustTestOptions, "timerStartInMilliseconds", "Ljava/lang/Long;");
+        Env->SetObjectField(joTestOptions, jfidTimerStart, jTimerStartObj);
+        Env->DeleteLocalRef(jTimerStartObj);
+    }
+    
+    const int32* sessionInterval = IntTestOptions.Find(TEXT("sessionIntervalInMilliseconds"));
+    if (sessionInterval != nullptr)
+    {
+        jobject jSessionIntervalObj = Env->NewObject(jcslLong, jmidLongInit, (jlong)(*sessionInterval));
+        jfieldID jfidSessionInterval = Env->GetFieldID(jcslAdjustTestOptions, "sessionIntervalInMilliseconds", "Ljava/lang/Long;");
+        Env->SetObjectField(joTestOptions, jfidSessionInterval, jSessionIntervalObj);
+        Env->DeleteLocalRef(jSessionIntervalObj);
+    }
+    
+    const int32* subsessionInterval = IntTestOptions.Find(TEXT("subsessionIntervalInMilliseconds"));
+    if (subsessionInterval != nullptr)
+    {
+        jobject jSubsessionIntervalObj = Env->NewObject(jcslLong, jmidLongInit, (jlong)(*subsessionInterval));
+        jfieldID jfidSubsessionInterval = Env->GetFieldID(jcslAdjustTestOptions, "subsessionIntervalInMilliseconds", "Ljava/lang/Long;");
+        Env->SetObjectField(joTestOptions, jfidSubsessionInterval, jSubsessionIntervalObj);
+        Env->DeleteLocalRef(jSubsessionIntervalObj);
+    }
+    
+    // Set Boolean fields
+    const int32* teardown = IntTestOptions.Find(TEXT("teardown"));
+    if (teardown != nullptr)
+    {
+        jboolean jTeardown = (*teardown == 1) ? JNI_TRUE : JNI_FALSE;
+        jobject jTeardownObj = Env->NewObject(jcslBoolean, jmidBooleanInit, jTeardown);
+        jfieldID jfidTeardown = Env->GetFieldID(jcslAdjustTestOptions, "teardown", "Ljava/lang/Boolean;");
+        Env->SetObjectField(joTestOptions, jfidTeardown, jTeardownObj);
+        Env->DeleteLocalRef(jTeardownObj);
+    }
+    
+    const int32* tryInstallReferrer = IntTestOptions.Find(TEXT("tryInstallReferrer"));
+    if (tryInstallReferrer != nullptr)
+    {
+        jboolean jTryInstallReferrer = (*tryInstallReferrer == 1) ? JNI_TRUE : JNI_FALSE;
+        jobject jTryInstallReferrerObj = Env->NewObject(jcslBoolean, jmidBooleanInit, jTryInstallReferrer);
+        jfieldID jfidTryInstallReferrer = Env->GetFieldID(jcslAdjustTestOptions, "tryInstallReferrer", "Ljava/lang/Boolean;");
+        Env->SetObjectField(joTestOptions, jfidTryInstallReferrer, jTryInstallReferrerObj);
+        Env->DeleteLocalRef(jTryInstallReferrerObj);
+    }
+    
+    const int32* noBackoffWait = IntTestOptions.Find(TEXT("noBackoffWait"));
+    if (noBackoffWait != nullptr)
+    {
+        jboolean jNoBackoffWait = (*noBackoffWait == 1) ? JNI_TRUE : JNI_FALSE;
+        jobject jNoBackoffWaitObj = Env->NewObject(jcslBoolean, jmidBooleanInit, jNoBackoffWait);
+        jfieldID jfidNoBackoffWait = Env->GetFieldID(jcslAdjustTestOptions, "noBackoffWait", "Ljava/lang/Boolean;");
+        Env->SetObjectField(joTestOptions, jfidNoBackoffWait, jNoBackoffWaitObj);
+        Env->DeleteLocalRef(jNoBackoffWaitObj);
+    }
+    
+    const int32* doNotIgnoreSystemLifecycleBootstrap = IntTestOptions.Find(TEXT("doNotIgnoreSystemLifecycleBootstrap"));
+    if (doNotIgnoreSystemLifecycleBootstrap != nullptr && *doNotIgnoreSystemLifecycleBootstrap == 1)
+    {
+        // doNotIgnoreSystemLifecycleBootstrap = true means ignoreSystemLifecycleBootstrap = false
+        jboolean jIgnoreSystemLifecycleBootstrap = JNI_FALSE;
+        jobject jIgnoreSystemLifecycleBootstrapObj = Env->NewObject(jcslBoolean, jmidBooleanInit, jIgnoreSystemLifecycleBootstrap);
+        jfieldID jfidIgnoreSystemLifecycleBootstrap = Env->GetFieldID(jcslAdjustTestOptions, "ignoreSystemLifecycleBootstrap", "Ljava/lang/Boolean;");
+        Env->SetObjectField(joTestOptions, jfidIgnoreSystemLifecycleBootstrap, jIgnoreSystemLifecycleBootstrapObj);
+        Env->DeleteLocalRef(jIgnoreSystemLifecycleBootstrapObj);
+    }
+    
+    Env->DeleteLocalRef(jcslBoolean);
+    Env->DeleteLocalRef(jcslLong);
+    
+    // Call setTestOptions with AdjustTestOptions object
+    jmethodID jmidSetTestOptions = Env->GetStaticMethodID(jcslAdjust, "setTestOptions", "(Lcom/adjust/sdk/AdjustTestOptions;)V");
+    
+    // Check for exceptions and method existence
+    jthrowable exception = Env->ExceptionOccurred();
+    if (exception || jmidSetTestOptions == nullptr) {
+        if (exception) {
+            Env->ExceptionClear();
+        }
+        Env->DeleteLocalRef(joTestOptions);
+        Env->DeleteLocalRef(jcslAdjustTestOptions);
+        Env->DeleteLocalRef(jcslAdjust);
+        return;
     }
     
     Env->CallStaticVoidMethod(jcslAdjust, jmidSetTestOptions, joTestOptions);
+    
+    // Check for exceptions after calling setTestOptions
+    exception = Env->ExceptionOccurred();
+    if (exception) {
+        Env->ExceptionClear();
+    }
+    
     Env->DeleteLocalRef(joTestOptions);
+    Env->DeleteLocalRef(jcslAdjustTestOptions);
+    Env->DeleteLocalRef(jcslAdjust);
 #endif
 }
 

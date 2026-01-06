@@ -41,16 +41,11 @@ ATLTestLibraryWrapper::~ATLTestLibraryWrapper() {
 }
 
 void ATLTestLibraryWrapper::addTest(std::string testName) {
-	NSLog(@"[ATLTestLibraryWrapper]: addTest called - testName: %s, testLibrary: %p", testName.c_str(), testLibrary);
 	ATLTestLibraryWrapperObjC *testLibWrapper = (__bridge ATLTestLibraryWrapperObjC *)testLibrary;
 	if (testLibWrapper != nil && testLibWrapper.testLibrary != nil) {
-		NSLog(@"[ATLTestLibraryWrapper]: Calling [testLibrary addTest:] with: %s", testName.c_str());
 		[testLibWrapper.testLibrary addTest:[NSString stringWithUTF8String:testName.c_str()]];
-		NSLog(@"[ATLTestLibraryWrapper]: [testLibrary addTest:] completed");
 	} else {
-		NSLog(@"[ATLTestLibraryWrapper]: ERROR - testLibWrapper or testLibrary is nil! testLibWrapper: %p", testLibWrapper);
 		if (testLibWrapper != nil) {
-			NSLog(@"[ATLTestLibraryWrapper]: testLibWrapper.testLibrary: %p", testLibWrapper.testLibrary);
 		}
 	}
 }
@@ -67,35 +62,25 @@ void ATLTestLibraryWrapper::startTestSession(std::string clientSdk) {
 }
 
 void ATLTestLibraryWrapper::addInfoToSend(std::string key, std::string value) {
-	NSLog(@"[ATLTestLibraryWrapper]: addInfoToSend called - Key: %s, Value: %s, testLibrary: %p", 
           key.c_str(), value.c_str(), testLibrary);
 	ATLTestLibraryWrapperObjC *testLibWrapper = (__bridge ATLTestLibraryWrapperObjC *)testLibrary;
 	if (testLibWrapper != nil && testLibWrapper.testLibrary != nil) {
 		NSString *keyString = [NSString stringWithUTF8String:key.c_str()];
 		NSString *valueString = [NSString stringWithUTF8String:value.c_str()];
-		NSLog(@"[ATLTestLibraryWrapper]: Calling [testLibrary addInfoToSend:value:] with Key: %@, Value: %@", keyString, valueString);
 		[testLibWrapper.testLibrary addInfoToSend:keyString value:valueString];
-		NSLog(@"[ATLTestLibraryWrapper]: [testLibrary addInfoToSend:value:] completed");
 	} else {
-		NSLog(@"[ATLTestLibraryWrapper]: ERROR - addInfoToSend failed! testLibWrapper: %p", testLibWrapper);
 		if (testLibWrapper != nil) {
-			NSLog(@"[ATLTestLibraryWrapper]: testLibWrapper.testLibrary: %p", testLibWrapper.testLibrary);
 		}
 	}
 }
 
 void ATLTestLibraryWrapper::sendInfoToServer(std::string basePath) {
-	NSLog(@"[ATLTestLibraryWrapper]: sendInfoToServer called - basePath: %s, testLibrary: %p", basePath.c_str(), testLibrary);
 	ATLTestLibraryWrapperObjC *testLibWrapper = (__bridge ATLTestLibraryWrapperObjC *)testLibrary;
 	if (testLibWrapper != nil && testLibWrapper.testLibrary != nil) {
 		NSString *basePathString = [NSString stringWithUTF8String:basePath.c_str()];
-		NSLog(@"[ATLTestLibraryWrapper]: Calling [testLibrary sendInfoToServer:] with basePath: %@", basePathString);
 		[testLibWrapper.testLibrary sendInfoToServer:basePathString];
-		NSLog(@"[ATLTestLibraryWrapper]: [testLibrary sendInfoToServer:] completed");
 	} else {
-		NSLog(@"[ATLTestLibraryWrapper]: ERROR - sendInfoToServer failed! testLibWrapper: %p", testLibWrapper);
 		if (testLibWrapper != nil) {
-			NSLog(@"[ATLTestLibraryWrapper]: testLibWrapper.testLibrary: %p", testLibWrapper.testLibrary);
 		}
 	}
 }

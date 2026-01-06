@@ -34,6 +34,26 @@ public class AdjustTest : ModuleRules
         {
             string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
             AdditionalPropertiesForReceipt.Add("AndroidPlugin", System.IO.Path.Combine(PluginPath, "AdjustTest_UPL_Android.xml"));
+            
+            // add JAR files to AndroidJavaLibs so they get copied to the build
+            string LibsPath = Path.Combine(ModuleDirectory, "Private", "libs");
+            string[] JarFiles = {
+                "adjust-test-options.jar",
+                "adjust-test-library.jar",
+                "gson-2.8.6.jar",
+                "Java-WebSocket-1.4.0.jar",
+                "slf4j-api-1.7.30.jar",
+                "slf4j-simple-1.7.30.jar"
+            };
+            foreach (string JarFile in JarFiles)
+            {
+                string JarPath = Path.Combine(LibsPath, JarFile);
+                if (File.Exists(JarPath))
+                {
+                    AdditionalPropertiesForReceipt.Add("AndroidJavaLibs", JarPath);
+                }
+            }
+            
             PublicIncludePathModuleNames.Add("Launch");
         }
     }
