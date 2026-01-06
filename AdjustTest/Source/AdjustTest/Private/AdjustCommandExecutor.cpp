@@ -824,9 +824,8 @@ void AdjustCommandExecutor::trackSubscription() {
     std::string purchaseTime = this->command->getFirstParameterValue(std::string("transactionDate"));
 
     FAdjustPlayStoreSubscription subscription;
-    // convert price to micros (multiply by 1,000,000)
-    double priceDouble = std::stod(price);
-    subscription.Price = (int64)(priceDouble * 1000000);
+    // price should be passed as-is (Android SDK expects the value directly, not multiplied)
+    subscription.Price = std::stoll(price);
     subscription.Currency = FString(UTF8_TO_TCHAR(currency.c_str()));
     subscription.Sku = FString(UTF8_TO_TCHAR(sku.c_str()));
     subscription.OrderId = FString(UTF8_TO_TCHAR(orderId.c_str()));
@@ -1425,9 +1424,13 @@ void AdjustCommandExecutor::amazonAdIdGetter() {
 
     // use lambda-based C++ API for proper burst/concurrent callback support
     UAdjust::GetAmazonAdId([testCallbackId, localExtraPath](const FString& AmazonAdId) {
-        FTCHARToUTF8 amazonAdIdUTF8(*AmazonAdId);
-        std::string amazonAdId(amazonAdIdUTF8.Get(), amazonAdIdUTF8.Length());
-        TestLib::addInfoToSend(std::string("fire_adid"), amazonAdId);
+        if (AmazonAdId.IsEmpty()) {
+            TestLib::addInfoToSend(std::string("fire_adid"), std::string("null"));
+        } else {
+            FTCHARToUTF8 amazonAdIdUTF8(*AmazonAdId);
+            std::string amazonAdId(amazonAdIdUTF8.Get(), amazonAdIdUTF8.Length());
+            TestLib::addInfoToSend(std::string("fire_adid"), amazonAdId);
+        }
         if (!testCallbackId.empty()) {
             TestLib::addInfoToSend(std::string("test_callback_id"), testCallbackId);
         }
