@@ -1,19 +1,25 @@
 {
     "FileVersion": 3,
     "Version": 2,
-    "VersionName": "5.5.0",
-    "FriendlyName": "Adjust",
-    "Description": "Adjust SDK plugin for Unreal Engine 5",
-    "Category": "Mobile Analytics",
+    "VersionName": "1.0.0",
+    "FriendlyName": "AdjustTest",
+    "Description": "Adjust Test Library plugin for Unreal Engine 5 - Internal testing only",
+    "Category": "Testing",
     "CreatedBy": "Adjust",
     "CreatedByURL": "https://adjust.com",
     "CanContainContent": false,
     "IsBetaVersion": false,
     "Installed": true,
     "RequiresBuildPlatform": true,
-    "Modules": [
+    "Plugins": [
         {
             "Name": "Adjust",
+            "Enabled": true
+        }
+    ],
+    "Modules": [
+        {
+            "Name": "AdjustTest",
             "Type": "Runtime",
             "LoadingPhase": "Default"
         }

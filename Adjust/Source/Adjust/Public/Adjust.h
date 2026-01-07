@@ -19,6 +19,7 @@
 #include "AdjustPlayStorePurchase.h"
 #include "AdjustAppStoreSubscription.h"
 #include "AdjustPlayStoreSubscription.h"
+#include "AdjustPurchaseVerificationResult.h"
 #include "Adjust.generated.h"
 
 UCLASS()
@@ -93,7 +94,13 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
     static void GetAdid();
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void GetAdidWithTimeout(int32 TimeoutInMilliseconds);
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void GetAttribution();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void GetAttributionWithTimeout(int32 TimeoutInMilliseconds);
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void GetLastDeeplink();
@@ -161,4 +168,43 @@ class ADJUST_API UAdjust : public UBlueprintFunctionLibrary
 
     UFUNCTION(BlueprintCallable, Category = "Adjust")
     static void TrackPlayStoreSubscription(const FAdjustPlayStoreSubscription& Subscription);
+
+    // C++-only methods with lambda callbacks (not exposed to Blueprint)
+    static void GetAdid(TFunction<void(const FString&)> Callback);
+    static void GetAdidWithTimeout(int32 TimeoutInMilliseconds, TFunction<void(const FString&)> Callback);
+    static void GetAttribution(TFunction<void(const FAdjustAttribution&)> Callback);
+    static void GetAttributionWithTimeout(int32 TimeoutInMilliseconds, TFunction<void(const FAdjustAttribution&)> Callback);
+    static void GetLastDeeplink(TFunction<void(const FString&)> Callback);
+    static void GetSdkVersion(TFunction<void(const FString&)> Callback);
+    static void IsEnabled(TFunction<void(bool)> Callback);
+    static void ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink, TFunction<void(const FString&)> Callback);
+    static void ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray, TFunction<void(const FString&)> Callback);
+#if PLATFORM_IOS
+    static void GetIdfa(TFunction<void(const FString&)> Callback);
+    static void GetIdfv(TFunction<void(const FString&)> Callback);
+    static void GetAppTrackingAuthorizationStatus(TFunction<void(int)> Callback);
+    static void RequestAppTrackingAuthorization(TFunction<void(int)> Callback);
+    static void UpdateSkanConversionValue(int ConversionValue, const FString& CoarseValue, bool LockWindow, TFunction<void(const FString&)> Callback);
+    static void VerifyAppStorePurchase(const FAdjustAppStorePurchase& Purchase, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback);
+    static void VerifyAndTrackAppStorePurchase(const FAdjustEvent& Event, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback);
+#endif
+#if PLATFORM_ANDROID
+    static void GetGoogleAdId(TFunction<void(const FString&)> Callback);
+    static void GetAmazonAdId(TFunction<void(const FString&)> Callback);
+    static void VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback);
+    static void VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback);
+#endif
+
+    // test methods (for internal testing only)
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void OnResume();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void OnPause();
+
+    UFUNCTION(BlueprintCallable, Category = "Adjust")
+    static void SetTestOptions(const TMap<FString, FString>& StringTestOptions, const TMap<FString, int32>& IntTestOptions);
+
+    static void ClearAllCallbackQueues();
 };

@@ -294,17 +294,41 @@ FString JsonResponse;
 
 ### <a id="attribution-getter"></a>Get user attribution
 
-If you want to access information about a user's current attribution whenever you need it, you can make a call to the `GetAttribution` method of the `UAdjust` class.
-
-Before making this call, you need to assign a callback method to the isntance of `UAdjustDelegates` class:
+If you want to access information about a user's current attribution whenever you need it, you can make a call to the `GetAttribution` method of the `UAdjust` class. This method accepts a lambda callback that will be invoked with the attribution information.
 
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributionGetterDelegate, const FAdjustAttribution&, Attribution);
+// C++-only method with lambda callback
+static void GetAttribution(TFunction<void(const FAdjustAttribution&)> Callback);
+```
 
-// ...
+**Example usage:**
 
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnAttributionGetterDelegate OnAttributionGetterDelegate;
+```cpp
+UAdjust::GetAttribution([](const FAdjustAttribution& Attribution) {
+    if (!Attribution.TrackerToken.IsEmpty()) {
+        UE_LOG(LogTemp, Log, TEXT("Tracker token: %s"), *Attribution.TrackerToken);
+    }
+});
+```
+
+You can also use the timeout version to retrieve attribution with a specified timeout:
+
+```cpp
+// C++-only method with timeout and lambda callback
+static void GetAttributionWithTimeout(int32 TimeoutInMilliseconds, TFunction<void(const FAdjustAttribution&)> Callback);
+```
+
+**Example usage with timeout:**
+
+```cpp
+UAdjust::GetAttributionWithTimeout(5000, [](const FAdjustAttribution& Attribution) {
+    // attribution will be empty if timeout occurred
+    if (Attribution.TrackerToken.IsEmpty() && Attribution.TrackerName.IsEmpty()) {
+        UE_LOG(LogTemp, Warning, TEXT("Attribution retrieval timed out"));
+    } else {
+        UE_LOG(LogTemp, Log, TEXT("Tracker token: %s"), *Attribution.TrackerToken);
+    }
+});
 ```
 
 **Note**: Information about current attribution is available after app installation has been recorded by the Adjust backend and the attribution callback has been initially triggered. From that moment on, the Adjust SDK has information about a user's attribution and you can access it with this method. So, **it is not possible** to access a user's attribution value before the SDK has been initialised and an attribution callback has been triggered.
@@ -715,20 +739,22 @@ UAdjust::ProcessDeeplink(adjustDeeplink);
 
 ### <a id="short-links-resolution"></a>Resolve Adjust short links
 
-To resolve an Adjust shortened deep link, instantiate an `FAdjustDeeplink` structure with your shortened deep link and pass it to the `ProcessAndResolveDeeplink` method of the `UAdjust` class. In addition to this, you need to declare a callback method on the `UAdjustDelegates` object that will get triggered once the link gets resolved.
+To resolve an Adjust shortened deep link, instantiate an `FAdjustDeeplink` structure with your shortened deep link and pass it to the `ProcessAndResolveDeeplink` method of the `UAdjust` class. This method accepts a lambda callback that will be invoked with the resolved link.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink);
+// C++-only method with lambda callback
+static void ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink, TFunction<void(const FString&)> Callback);
 ```
 
+**Example usage:**
+
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeeplinkResolutionDelegate, const FString&, ResolvedLink);
+FAdjustDeeplink adjustDeeplink;
+adjustDeeplink.Deeplink = TEXT("https://short.example.com/abcd1234");
 
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnDeeplinkResolutionDelegate OnDeeplinkResolutionDelegate;
+UAdjust::ProcessAndResolveDeeplink(adjustDeeplink, [](const FString& ResolvedLink) {
+   UE_LOG(LogTemp, Log, TEXT("Resolved deeplink: %s"), *ResolvedLink);
+});
 ```
 
 > Note: If the link passed to the `ProcessAndResolveDeeplink` method was shortened, the callback function receives the extended original link. Otherwise, the callback function receives the link you passed.
@@ -797,22 +823,11 @@ A user, who has your app installed, clicks on the short URL in the SMS message. 
 
 #### Setup
 
-To resolve a link, call the `ResolveLink` method of the `UAdjust` class with the URL you want to resolve and an array of URL suffixes to match against.
+To resolve a link, call the `ResolveLink` method of the `UAdjust` class with the URL you want to resolve, an array of URL suffixes to match against, and a lambda callback that will be invoked with the resolved link.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray);
-```
-
-Before making this call, you need to assign a callback method to the instance of `UAdjustDelegates` class:
-
-```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLinkResolutionDelegate, const FString&, ResolvedLink);
-
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnLinkResolutionDelegate OnLinkResolutionDelegate;
+// C++-only method with lambda callback
+static void ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray, TFunction<void(const FString&)> Callback);
 ```
 
 **Example: Email marketing**
@@ -820,7 +835,16 @@ FOnLinkResolutionDelegate OnLinkResolutionDelegate;
 ```cpp
 TArray<FString> ResolveUrlSuffixArray;
 ResolveUrlSuffixArray.Add(TEXT("email.example.com"));
-UAdjust::ResolveLink(TEXT("https://email.example.com/2wuTnQvU"), ResolveUrlSuffixArray);
+
+UAdjust::ResolveLink(TEXT("https://email.example.com/2wuTnQvU"), ResolveUrlSuffixArray, [](const FString& ResolvedLink) {
+    if (!ResolvedLink.IsEmpty()) {
+        UE_LOG(LogTemp, Log, TEXT("Resolved link: %s"), *ResolvedLink);
+        // Process the resolved link
+        FAdjustDeeplink adjustDeeplink;
+        adjustDeeplink.Deeplink = ResolvedLink;
+        UAdjust::ProcessDeeplink(adjustDeeplink);
+    }
+});
 ```
 
 **Example: URL shorteners**
@@ -828,43 +852,39 @@ UAdjust::ResolveLink(TEXT("https://email.example.com/2wuTnQvU"), ResolveUrlSuffi
 ```cpp
 TArray<FString> ResolveUrlSuffixArray;
 ResolveUrlSuffixArray.Add(TEXT("short.example.com"));
-UAdjust::ResolveLink(TEXT("https://short.example.com/2wuTnQvU"), ResolveUrlSuffixArray);
-```
 
-After receiving the resolved link in the callback, your app should call `ProcessDeeplink` with the resolved URL:
-
-```cpp
-void AYourGameMode::OnLinkResolved(const FString& ResolvedLink)
-{
-    if (!ResolvedLink.IsEmpty())
-    {
+UAdjust::ResolveLink(TEXT("https://short.example.com/2wuTnQvU"), ResolveUrlSuffixArray, [](const FString& ResolvedLink) {
+    if (!ResolvedLink.IsEmpty()) {
+        UE_LOG(LogTemp, Log, TEXT("Resolved link: %s"), *ResolvedLink);
+        // Process the resolved link
         FAdjustDeeplink adjustDeeplink;
         adjustDeeplink.Deeplink = ResolvedLink;
         UAdjust::ProcessDeeplink(adjustDeeplink);
     }
-}
+});
 ```
 
 > Note: For more detailed information on this topic in iOS and Android, check native guides: [iOS](https://dev.adjust.com/en/sdk/ios/features/deep-links/resolution) and [Android](https://dev.adjust.com/en/sdk/android/features/deep-links#link-resolution).
 
 ### <a id="get-last-deeplink"></a>Get last deeplink
 
-You can retrieve the last processed deeplink at any time. Call the `GetLastDeeplink` method of the `UAdjust` class to return the last deeplink as a string.
-
-Before making this call, you need to assign a callback method to the instance of `UAdjustDelegates` class:
+You can retrieve the last processed deeplink at any time. Call the `GetLastDeeplink` method of the `UAdjust` class. This method accepts a lambda callback that will be invoked with the last deeplink as a string.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void GetLastDeeplink();
+// C++-only method with lambda callback
+static void GetLastDeeplink(TFunction<void(const FString&)> Callback);
 ```
 
+**Example usage:**
+
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLastDeeplinkGetterDelegate, const FString&, LastDeeplink);
-
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnLastDeeplinkGetterDelegate OnLastDeeplinkGetterDelegate;
+UAdjust::GetLastDeeplink([](const FString& LastDeeplink) {
+    if (!LastDeeplink.IsEmpty()) {
+        UE_LOG(LogTemp, Log, TEXT("Last deeplink: %s"), *LastDeeplink);
+    } else {
+        UE_LOG(LogTemp, Warning, TEXT("No deeplink has been processed yet"));
+    }
+});
 ```
 
 ### <a id="deeplink-referrer"></a>Handling deeplinks with referrer
@@ -917,44 +937,68 @@ You must specify text content for the ATT. To do this, add your text to the `NSU
  <string>Your custom message explaining why is access to IDFA necessary.</string>
 ```
 
-You can trigger ATT prompt via Adjust SDK wrapper method like described below.
+You can trigger ATT prompt via Adjust SDK wrapper method. This method accepts a lambda callback that will be invoked with the authorization status.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void RequestAppTrackingAuthorization();
+// C++-only method with lambda callback
+static void RequestAppTrackingAuthorization(TFunction<void(int)> Callback);
 ```
 
-```cpp
-UAdjust::RequestAppTrackingAuthorization();
-```
-
-In order to obtain the ATT prompt response, you need to define a callback method and set it on `UAdjustDelegates` object before invoking the `RequestAppTrackingAuthorization` method.
+**Example usage:**
 
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRequestTrackingAuthorizationDelegate, const int, AuthorizationStatus);
-
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnRequestTrackingAuthorizationDelegate OnRequestTrackingAuthorizationDelegate;
+UAdjust::RequestAppTrackingAuthorization([](int AuthorizationStatus) {
+    switch (AuthorizationStatus) {
+        case 0: // ATTrackingManagerAuthorizationStatusNotDetermined
+            UE_LOG(LogTemp, Log, TEXT("ATT status: Not Determined"));
+            break;
+        case 1: // ATTrackingManagerAuthorizationStatusRestricted
+            UE_LOG(LogTemp, Log, TEXT("ATT status: Restricted"));
+            break;
+        case 2: // ATTrackingManagerAuthorizationStatusDenied
+            UE_LOG(LogTemp, Log, TEXT("ATT status: Denied"));
+            break;
+        case 3: // ATTrackingManagerAuthorizationStatusAuthorized
+            UE_LOG(LogTemp, Log, TEXT("ATT status: Authorized"));
+            break;
+        default:
+            UE_LOG(LogTemp, Warning, TEXT("ATT status: Unknown (%d)"), AuthorizationStatus);
+            break;
+    }
+});
 ```
 
 ### <a id="att-status-getter"></a>Get current authorization status
 
-You can retrieve a user’s current authorization status at any time. Call the `GetAppTrackingAuthorizationStatus` method to return the authorization status and make sure to set the callback method on `UAdjustDelegates` object before you make this call.
+You can retrieve a user's current authorization status at any time. Call the `GetAppTrackingAuthorizationStatus` method. This method accepts a lambda callback that will be invoked with the authorization status.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void GetAppTrackingAuthorizationStatus();
+// C++-only method with lambda callback
+static void GetAppTrackingAuthorizationStatus(TFunction<void(int)> Callback);
 ```
 
+**Example usage:**
+
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAuthorizationStatusGetterDelegate, const int, AuthorizationStatus);
-
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnAuthorizationStatusGetterDelegate OnAuthorizationStatusGetterDelegate;
+UAdjust::GetAppTrackingAuthorizationStatus([](int AuthorizationStatus) {
+    switch (AuthorizationStatus) {
+        case 0: // ATTrackingManagerAuthorizationStatusNotDetermined
+            UE_LOG(LogTemp, Log, TEXT("Current ATT status: Not Determined"));
+            break;
+        case 1: // ATTrackingManagerAuthorizationStatusRestricted
+            UE_LOG(LogTemp, Log, TEXT("Current ATT status: Restricted"));
+            break;
+        case 2: // ATTrackingManagerAuthorizationStatusDenied
+            UE_LOG(LogTemp, Log, TEXT("Current ATT status: Denied"));
+            break;
+        case 3: // ATTrackingManagerAuthorizationStatusAuthorized
+            UE_LOG(LogTemp, Log, TEXT("Current ATT status: Authorized"));
+            break;
+        default:
+            UE_LOG(LogTemp, Warning, TEXT("Current ATT status: Unknown (%d)"), AuthorizationStatus);
+            break;
+    }
+});
 ```
 
 ### <a id="att-waiting-interval"></a>ATT prompt waiting interval
@@ -1164,92 +1208,129 @@ The Adjust SDK contains helper methods that return device information. Use these
 
 ### <a id="idfa"></a>IDFA
 
-To obtain the IDFA, call the function `GetIdfa` of the `UAdjust` class. You need to set callback method on the `UAdjustDelegates` object where the IDFA value will be delivered to.
+> Note: This feature is iOS only.
+
+To obtain the IDFA, call the `GetIdfa` method of the `UAdjust` class. This method accepts a lambda callback that will be invoked with the IDFA value.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void GetIdfa();
+// C++-only method with lambda callback
+static void GetIdfa(TFunction<void(const FString&)> Callback);
 ```
 
+**Example usage:**
+
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIdfaGetterDelegate, const FString&, Idfa);
-
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnIdfaGetterDelegate OnIdfaGetterDelegate;
+UAdjust::GetIdfa([](const FString& Idfa) {
+    if (!Idfa.IsEmpty()) {
+        UE_LOG(LogTemp, Log, TEXT("IDFA: %s"), *Idfa);
+    } else {
+        UE_LOG(LogTemp, Warning, TEXT("IDFA is not available"));
+    }
+});
 ```
 
 ### <a id="idfv"></a>IDFV
 
-To obtain the IDFV, call the function `GetIdfv` of the `UAdjust` class. You need to set callback method on the `UAdjustDelegates` object where the IDFV value will be delivered to.
+> Note: This feature is iOS only.
+
+To obtain the IDFV, call the `GetIdfv` method of the `UAdjust` class. This method accepts a lambda callback that will be invoked with the IDFV value.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void GetIdfv();
+// C++-only method with lambda callback
+static void GetIdfv(TFunction<void(const FString&)> Callback);
 ```
 
+**Example usage:**
+
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIdfvGetterDelegate, const FString&, Idfv);
-
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnIdfvGetterDelegate OnIdfvGetterDelegate;
+UAdjust::GetIdfv([](const FString& Idfv) {
+    if (!Idfv.IsEmpty()) {
+        UE_LOG(LogTemp, Log, TEXT("IDFV: %s"), *Idfv);
+    }
+});
 ```
 
 ### <a id="gps-adid"></a>Google advertising identifier
 
-To obtain Google advertising ID, call the function `GetGoogleAdId` of the `UAdjust` class. You need to set callback method on the `UAdjustDelegates` object where the Google advertising ID value will be delivered to.
+> Note: This feature is Android only.
+
+To obtain Google advertising ID, call the `GetGoogleAdId` method of the `UAdjust` class. This method accepts a lambda callback that will be invoked with the Google advertising ID value.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void GetGoogleAdId();
+// C++-only method with lambda callback
+static void GetGoogleAdId(TFunction<void(const FString&)> Callback);
 ```
 
+**Example usage:**
+
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoogleAdIdGetterDelegate, const FString&, GoogleAdId);
-
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnGoogleAdIdGetterDelegate OnGoogleAdIdGetterDelegate;
+UAdjust::GetGoogleAdId([](const FString& GoogleAdId) {
+    if (!GoogleAdId.IsEmpty()) {
+        UE_LOG(LogTemp, Log, TEXT("Google Ad ID: %s"), *GoogleAdId);
+    } else {
+        UE_LOG(LogTemp, Warning, TEXT("Google Ad ID is not available"));
+    }
+});
 ```
 
 ### <a id="fire-adid"></a>Amazon advertising identifier
 
-If you need to obtain the Amazon advertising ID, you can call the `GetAmazonAdId` method of the `UAdjust` class. You need to set callback method on the `UAdjustDelegates` object where the Amazon advertising ID value will be delivered to.
+> Note: This feature is Android only.
+
+If you need to obtain the Amazon advertising ID, you can call the `GetAmazonAdId` method of the `UAdjust` class. This method accepts a lambda callback that will be invoked with the Amazon advertising ID value.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void GetAmazonAdId();
+// C++-only method with lambda callback
+static void GetAmazonAdId(TFunction<void(const FString&)> Callback);
 ```
 
+**Example usage:**
+
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAmazonAdIdGetterDelegate, const FString&, AmazonAdId);
-
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnAmazonAdIdGetterDelegate OnAmazonAdIdGetterDelegate;
+UAdjust::GetAmazonAdId([](const FString& AmazonAdId) {
+    if (!AmazonAdId.IsEmpty()) {
+        UE_LOG(LogTemp, Log, TEXT("Amazon Ad ID: %s"), *AmazonAdId);
+    } else {
+        UE_LOG(LogTemp, Warning, TEXT("Amazon Ad ID is not available"));
+    }
+});
 ```
 
 ### <a id="adid"></a>Adjust device identifier
 
-For every device with your app installed on it, the Adjust backend generates a unique **Adjust device identifier** (**adid**). In order to obtain this identifier, you can make a call to `GetAdid` method of the `UAdjust` class. You need to set callback method on the `UAdjustDelegates` object where the Adjust device ID value will be delivered to.
+For every device with your app installed on it, the Adjust backend generates a unique **Adjust device identifier** (**adid**). In order to obtain this identifier, you can make a call to `GetAdid` method of the `UAdjust` class. This method accepts a lambda callback that will be invoked with the Adjust device ID value.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void GetAdid();
+// C++-only method with lambda callback
+static void GetAdid(TFunction<void(const FString&)> Callback);
 ```
 
+**Example usage:**
+
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAdidGetterDelegate, const FString&, Adid);
+UAdjust::GetAdid([](const FString& Adid) {
+   UE_LOG(LogTemp, Log, TEXT("Adjust device ID: %s"), *Adid);
+});
+```
 
-// ...
+You can also use the timeout version to retrieve ADID with a specified timeout:
 
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnAdidGetterDelegate OnAdidGetterDelegate;
+```cpp
+// C++-only method with timeout and lambda callback
+static void GetAdidWithTimeout(int32 TimeoutInMilliseconds, TFunction<void(const FString&)> Callback);
+```
+
+**Example usage with timeout:**
+
+```cpp
+UAdjust::GetAdidWithTimeout(5000, [](const FString& Adid) {
+    // adid will be empty if timeout occurred
+    if (Adid.IsEmpty()) {
+        UE_LOG(LogTemp, Warning, TEXT("ADID retrieval timed out or ADID is not available"));
+    } else {
+        UE_LOG(LogTemp, Log, TEXT("Adjust device ID: %s"), *Adid);
+    }
+});
 ```
 
 **Note**: Information about the **adid** is available after app installation has been recorded by the Adjust backend. From that moment on, the Adjust SDK has information about the device **adid** and you can access it with this method. So, **it is not possible** to access the **adid** value before the SDK has been initialised and installation of your app has been successfully recorded.
@@ -1393,20 +1474,23 @@ UFUNCTION(BlueprintCallable, Category = "Adjust")
 static void Disable();
 ```
 
-You can verify if the Adjust SDK is currently active with the method `IsEnabled` of the `UAdjust` class. To obtain this value, you need to define callback on the `UAdjustDelegates` object to obtain it.
+You can verify if the Adjust SDK is currently active with the method `IsEnabled` of the `UAdjust` class. This method accepts a lambda callback that will be invoked with the enabled status.
 
 ```cpp
-UFUNCTION(BlueprintCallable, Category = "Adjust")
-static void IsEnabled();
+// C++-only method with lambda callback
+static void IsEnabled(TFunction<void(bool)> Callback);
 ```
 
+**Example usage:**
+
 ```cpp
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIsEnabledGetterDelegate, bool, IsEnabled);
-
-// ...
-
-UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = Adjust)
-FOnIsEnabledGetterDelegate OnIsEnabledGetterDelegate;
+UAdjust::IsEnabled([](bool IsEnabled) {
+    if (IsEnabled) {
+        UE_LOG(LogTemp, Log, TEXT("Adjust SDK is enabled"));
+    } else {
+        UE_LOG(LogTemp, Log, TEXT("Adjust SDK is disabled"));
+    }
+});
 ```
 
 It is always possible to activate the Adjust SDK by invoking `Enable` method of the `UAdjust` class.

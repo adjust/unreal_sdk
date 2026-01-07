@@ -75,6 +75,15 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
     int EventDeduplicationIdsMaxSize = -1;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    TArray<FString> UrlStrategyDomains;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool ShouldUseSubdomains = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
+    bool IsDataResidency = false;
+
     // ios only
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
@@ -113,11 +122,5 @@ public:
     FString PreinstallFilePath;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    TArray<FString> UrlStrategyDomains;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool ShouldUseSubdomains = false;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Adjust")
-    bool IsDataResidency = false;
+    bool IsAppSetIdReadingEnabled = true;
 };

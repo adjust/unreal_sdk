@@ -484,14 +484,13 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeIsEna
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAdidGetterCallback_adidRead(
     JNIEnv *env, jobject obj, jstring jAdid)
 {
-    if (jAdid == nullptr)
+    FString adid;
+    if (jAdid != nullptr)
     {
-        return;
+        const char* cAdid = env->GetStringUTFChars(jAdid, nullptr);
+        adid = FString(UTF8_TO_TCHAR(cAdid));
+        env->ReleaseStringUTFChars(jAdid, cAdid);
     }
-
-    const char* cAdid = env->GetStringUTFChars(jAdid, nullptr);
-    FString adid = FString(UTF8_TO_TCHAR(cAdid));
-    env->ReleaseStringUTFChars(jAdid, cAdid);
 
     AsyncTask(ENamedThreads::GameThread, [adid]()
     {
@@ -526,9 +525,17 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeSdkVe
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttributionGetterCallback_attributionRead(
     JNIEnv* env, jobject obj, jobject attributionObject)
 {
-    // ensure the attributionObject is not null
+    // if attributionObject is null, create empty attribution and invoke callback
     if (attributionObject == nullptr)
     {
+        AsyncTask(ENamedThreads::GameThread, []()
+        {
+            if (attributionGetterCallbackMethod != nullptr)
+            {
+                FAdjustAttribution ueAttribution; // empty attribution (all fields default to empty/zero)
+                attributionGetterCallbackMethod(ueAttribution);
+            }
+        });
         return;
     }
 
@@ -536,6 +543,15 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAttri
     jclass attributionClass = env->GetObjectClass(attributionObject);
     if (attributionClass == nullptr)
     {
+        // if we can't get the class, still invoke callback with empty attribution
+        AsyncTask(ENamedThreads::GameThread, []()
+        {
+            if (attributionGetterCallbackMethod != nullptr)
+            {
+                FAdjustAttribution ueAttribution;
+                attributionGetterCallbackMethod(ueAttribution);
+            }
+        });
         return;
     }
 
@@ -695,14 +711,13 @@ JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeGoogl
 JNIEXPORT void JNICALL Java_com_epicgames_unreal_GameActivity_00024AdjustUeAmazonAdIdGetterCallback_amazonAdIdRead(
     JNIEnv *env, jobject obj, jstring jAmazonAdId)
 {
-    if (jAmazonAdId == nullptr)
+    FString amazonAdId;
+    if (jAmazonAdId != nullptr)
     {
-        return;
+        const char* cAmazonAdId = env->GetStringUTFChars(jAmazonAdId, nullptr);
+        amazonAdId = FString(UTF8_TO_TCHAR(cAmazonAdId));
+        env->ReleaseStringUTFChars(jAmazonAdId, cAmazonAdId);
     }
-
-    const char* cAmazonAdId = env->GetStringUTFChars(jAmazonAdId, nullptr);
-    FString amazonAdId = FString(UTF8_TO_TCHAR(cAmazonAdId));
-    env->ReleaseStringUTFChars(jAmazonAdId, cAmazonAdId);
 
     AsyncTask(ENamedThreads::GameThread, [amazonAdId]()
     {

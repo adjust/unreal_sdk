@@ -27,6 +27,13 @@
     FString adgroup = *FString(attribution.adgroup);
     FString creative = *FString(attribution.creative);
     FString clickLabel = *FString(attribution.clickLabel);
+    FString costType = *FString(attribution.costType);
+    FString costCurrency = *FString(attribution.costCurrency);
+    
+    double costAmount = 0.0;
+    if (attribution.costAmount != nil) {
+        costAmount = [attribution.costAmount doubleValue];
+    }
 
     FString fsJsonResponse;
     if (attribution.jsonResponse != nil) {
@@ -41,7 +48,7 @@
     }
 
     auto callback = _attributionCallback;
-    AsyncTask(ENamedThreads::GameThread, [trackerToken, trackerName, network, campaign, adgroup, creative, clickLabel, fsJsonResponse, callback]() {
+    AsyncTask(ENamedThreads::GameThread, [trackerToken, trackerName, network, campaign, adgroup, creative, clickLabel, costType, costAmount, costCurrency, fsJsonResponse, callback]() {
         FAdjustAttribution ueAttribution;
         ueAttribution.TrackerToken = trackerToken;
         ueAttribution.TrackerName = trackerName;
@@ -50,6 +57,9 @@
         ueAttribution.Adgroup = adgroup;
         ueAttribution.Creative = creative;
         ueAttribution.ClickLabel = clickLabel;
+        ueAttribution.CostType = costType;
+        ueAttribution.CostAmount = costAmount;
+        ueAttribution.CostCurrency = costCurrency;
         ueAttribution.JsonResponse = fsJsonResponse;
 
         if (callback) {

@@ -12,8 +12,12 @@
 #include "CoreMinimal.h"
 #include "EngineMinimal.h"
 #include "Modules/ModuleManager.h"
+#include "HAL/PlatformProcess.h"
+#include "Misc/ScopeLock.h"
+#include "Containers/Queue.h"
 
 #if PLATFORM_IOS
+#import <Foundation/Foundation.h>
 #import "IOS/Native/Adjust.h"
 #import "IOS/Native/ADJEvent.h"
 #import "IOS/Native/ADJThirdPartySharing.h"
@@ -37,6 +41,257 @@
 #endif
 
 UAdjust::UAdjust(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
+
+// lambda-based callback queues for C++ API (bypasses delegate broadcasting)
+// these queues ensure each callback is invoked exactly once, supporting concurrent calls
+static FCriticalSection AdidCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> AdidCallbackQueue;
+
+static FCriticalSection AttributionCallbackQueueMutex;
+static TQueue<TFunction<void(const FAdjustAttribution&)>, EQueueMode::Mpsc> AttributionCallbackQueue;
+
+static FCriticalSection LastDeeplinkCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> LastDeeplinkCallbackQueue;
+
+static FCriticalSection DeeplinkResolutionCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> DeeplinkResolutionCallbackQueue;
+
+static FCriticalSection LinkResolutionCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> LinkResolutionCallbackQueue;
+
+static FCriticalSection SdkVersionCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> SdkVersionCallbackQueue;
+
+static FCriticalSection IsEnabledCallbackQueueMutex;
+static TQueue<TFunction<void(bool)>, EQueueMode::Mpsc> IsEnabledCallbackQueue;
+
+#if PLATFORM_IOS
+static FCriticalSection IdfaCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> IdfaCallbackQueue;
+
+static FCriticalSection IdfvCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> IdfvCallbackQueue;
+
+static FCriticalSection AuthorizationStatusCallbackQueueMutex;
+static TQueue<TFunction<void(int)>, EQueueMode::Mpsc> AuthorizationStatusCallbackQueue;
+
+static FCriticalSection RequestTrackingAuthorizationCallbackQueueMutex;
+static TQueue<TFunction<void(int)>, EQueueMode::Mpsc> RequestTrackingAuthorizationCallbackQueue;
+
+static FCriticalSection UpdateSkanConversionValueCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> UpdateSkanConversionValueCallbackQueue;
+
+static FCriticalSection PurchaseVerificationCallbackQueueMutex;
+static TQueue<TFunction<void(const FAdjustPurchaseVerificationResult&)>, EQueueMode::Mpsc> PurchaseVerificationCallbackQueue;
+#endif
+
+#if PLATFORM_ANDROID
+static FCriticalSection GoogleAdIdCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> GoogleAdIdCallbackQueue;
+
+static FCriticalSection AmazonAdIdCallbackQueueMutex;
+static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> AmazonAdIdCallbackQueue;
+
+static FCriticalSection PurchaseVerificationCallbackQueueMutex;
+static TQueue<TFunction<void(const FAdjustPurchaseVerificationResult&)>, EQueueMode::Mpsc> PurchaseVerificationCallbackQueue;
+#endif
+
+// helper functions to invoke lambda callbacks from queues
+static void InvokeAdidLambdaCallback(FString Adid)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&AdidCallbackQueueMutex);
+        if (AdidCallbackQueue.Dequeue(Callback))
+        {
+            Callback(Adid);
+        }
+    }
+}
+
+static void InvokeAttributionLambdaCallback(FAdjustAttribution Attribution)
+{
+    TFunction<void(const FAdjustAttribution&)> Callback;
+    {
+        FScopeLock Lock(&AttributionCallbackQueueMutex);
+        if (AttributionCallbackQueue.Dequeue(Callback))
+        {
+            Callback(Attribution);
+        }
+    }
+}
+
+static void InvokeLastDeeplinkLambdaCallback(FString LastDeeplink)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&LastDeeplinkCallbackQueueMutex);
+        if (LastDeeplinkCallbackQueue.Dequeue(Callback))
+        {
+            Callback(LastDeeplink);
+        }
+    }
+}
+
+static void InvokeDeeplinkResolutionLambdaCallback(FString ResolvedLink)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&DeeplinkResolutionCallbackQueueMutex);
+        if (DeeplinkResolutionCallbackQueue.Dequeue(Callback))
+        {
+            Callback(ResolvedLink);
+        }
+    }
+}
+
+static void InvokeLinkResolutionLambdaCallback(FString ResolvedLink)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&LinkResolutionCallbackQueueMutex);
+        if (LinkResolutionCallbackQueue.Dequeue(Callback))
+        {
+            Callback(ResolvedLink);
+        }
+    }
+}
+
+static void InvokeSdkVersionLambdaCallback(FString SdkVersion)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&SdkVersionCallbackQueueMutex);
+        if (SdkVersionCallbackQueue.Dequeue(Callback))
+        {
+            Callback(SdkVersion);
+        }
+    }
+}
+
+static void InvokeIsEnabledLambdaCallback(bool IsEnabled)
+{
+    TFunction<void(bool)> Callback;
+    {
+        FScopeLock Lock(&IsEnabledCallbackQueueMutex);
+        if (IsEnabledCallbackQueue.Dequeue(Callback))
+        {
+            Callback(IsEnabled);
+        }
+    }
+}
+
+#if PLATFORM_IOS
+static void InvokeIdfaLambdaCallback(FString Idfa)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&IdfaCallbackQueueMutex);
+        if (IdfaCallbackQueue.Dequeue(Callback))
+        {
+            Callback(Idfa);
+        }
+    }
+}
+
+static void InvokeIdfvLambdaCallback(FString Idfv)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&IdfvCallbackQueueMutex);
+        if (IdfvCallbackQueue.Dequeue(Callback))
+        {
+            Callback(Idfv);
+        }
+    }
+}
+
+static void InvokeAuthorizationStatusLambdaCallback(int AuthorizationStatus)
+{
+    TFunction<void(int)> Callback;
+    {
+        FScopeLock Lock(&AuthorizationStatusCallbackQueueMutex);
+        if (AuthorizationStatusCallbackQueue.Dequeue(Callback))
+        {
+            Callback(AuthorizationStatus);
+        }
+    }
+}
+
+static void InvokeRequestTrackingAuthorizationLambdaCallback(int AuthorizationStatus)
+{
+    TFunction<void(int)> Callback;
+    {
+        FScopeLock Lock(&RequestTrackingAuthorizationCallbackQueueMutex);
+        if (RequestTrackingAuthorizationCallbackQueue.Dequeue(Callback))
+        {
+            Callback(AuthorizationStatus);
+        }
+    }
+}
+
+static void InvokeUpdateSkanConversionValueLambdaCallback(FString Error)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&UpdateSkanConversionValueCallbackQueueMutex);
+        if (UpdateSkanConversionValueCallbackQueue.Dequeue(Callback))
+        {
+            Callback(Error);
+        }
+    }
+}
+
+static void InvokePurchaseVerificationLambdaCallback(FAdjustPurchaseVerificationResult VerificationResult)
+{
+    TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback;
+    {
+        FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
+        if (PurchaseVerificationCallbackQueue.Dequeue(Callback))
+        {
+            Callback(VerificationResult);
+        }
+    }
+}
+#endif
+
+#if PLATFORM_ANDROID
+static void InvokeGoogleAdIdLambdaCallback(FString GoogleAdId)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&GoogleAdIdCallbackQueueMutex);
+        if (GoogleAdIdCallbackQueue.Dequeue(Callback))
+        {
+            Callback(GoogleAdId);
+        }
+    }
+}
+
+static void InvokeAmazonAdIdLambdaCallback(FString AmazonAdId)
+{
+    TFunction<void(const FString&)> Callback;
+    {
+        FScopeLock Lock(&AmazonAdIdCallbackQueueMutex);
+        if (AmazonAdIdCallbackQueue.Dequeue(Callback))
+        {
+            Callback(AmazonAdId);
+        }
+    }
+}
+
+static void InvokePurchaseVerificationLambdaCallback(FAdjustPurchaseVerificationResult VerificationResult)
+{
+    TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback;
+    {
+        FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
+        if (PurchaseVerificationCallbackQueue.Dequeue(Callback))
+        {
+            Callback(VerificationResult);
+        }
+    }
+}
+#endif
 
 static void adjustAttributionCallback(FAdjustAttribution Attribution)
 {
@@ -88,6 +343,10 @@ static void adjustDeferredDeeplinkCallback(FString Deeplink)
 
 static void adjustIsEnabledCallback(bool isEnabled)
 {
+    // invoke lambda callback if available (C++ API)
+    InvokeIsEnabledLambdaCallback(isEnabled);
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnIsEnabledDelegate.Broadcast(isEnabled);
@@ -96,6 +355,10 @@ static void adjustIsEnabledCallback(bool isEnabled)
 
 static void adjustAdidGetterCallback(FString Adid)
 {
+    // invoke lambda callback if available (C++ API)
+    InvokeAdidLambdaCallback(Adid);
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnAdidGetterDelegate.Broadcast(Adid);
@@ -104,6 +367,10 @@ static void adjustAdidGetterCallback(FString Adid)
 
 static void adjustAttributionGetterCallback(FAdjustAttribution Attribution)
 {
+    // invoke lambda callback if available (C++ API)
+    InvokeAttributionLambdaCallback(Attribution);
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnAttributionGetterDelegate.Broadcast(Attribution);
@@ -112,6 +379,10 @@ static void adjustAttributionGetterCallback(FAdjustAttribution Attribution)
 
 static void adjustLastDeeplinkGetterCallback(FString LastDeeplink)
 {
+    // invoke lambda callback if available (C++ API)
+    InvokeLastDeeplinkLambdaCallback(LastDeeplink);
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnLastDeeplinkGetterDelegate.Broadcast(LastDeeplink);
@@ -128,6 +399,10 @@ static void adjustAuthorizationStatusCallback(int AuthorizationStatus)
 
 static void adjustDeeplinkResolutionCallback(FString ResolvedLink)
 {
+    // invoke lambda callback if available (C++ API)
+    InvokeDeeplinkResolutionLambdaCallback(ResolvedLink);
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnDeeplinkResolutionDelegate.Broadcast(ResolvedLink);
@@ -136,6 +411,10 @@ static void adjustDeeplinkResolutionCallback(FString ResolvedLink)
 
 static void adjustLinkResolutionCallback(FString ResolvedLink)
 {
+    // invoke lambda callback if available (C++ API)
+    InvokeLinkResolutionLambdaCallback(ResolvedLink);
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnLinkResolutionDelegate.Broadcast(ResolvedLink);
@@ -144,6 +423,10 @@ static void adjustLinkResolutionCallback(FString ResolvedLink)
 
 static void adjustSdkVersionGetterCallback(FString SdkVersion)
 {
+    // invoke lambda callback if available (C++ API)
+    InvokeSdkVersionLambdaCallback(SdkVersion);
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnSdkVersionGetterDelegate.Broadcast(SdkVersion);
@@ -152,6 +435,12 @@ static void adjustSdkVersionGetterCallback(FString SdkVersion)
 
 static void adjustIdfaGetterCallback(FString Idfa)
 {
+    // invoke lambda callback if available (C++ API)
+#if PLATFORM_IOS
+    InvokeIdfaLambdaCallback(Idfa);
+#endif
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnIdfaGetterDelegate.Broadcast(Idfa);
@@ -160,6 +449,12 @@ static void adjustIdfaGetterCallback(FString Idfa)
 
 static void adjustIdfvGetterCallback(FString Idfv)
 {
+    // invoke lambda callback if available (C++ API)
+#if PLATFORM_IOS
+    InvokeIdfvLambdaCallback(Idfv);
+#endif
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnIdfvGetterDelegate.Broadcast(Idfv);
@@ -168,6 +463,12 @@ static void adjustIdfvGetterCallback(FString Idfv)
 
 static void adjustAuthorizationStatusGetterCallback(int AuthorizationStatus)
 {
+    // invoke lambda callback if available (C++ API)
+#if PLATFORM_IOS
+    InvokeAuthorizationStatusLambdaCallback(AuthorizationStatus);
+#endif
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnAuthorizationStatusGetterDelegate.Broadcast(AuthorizationStatus);
@@ -176,6 +477,12 @@ static void adjustAuthorizationStatusGetterCallback(int AuthorizationStatus)
 
 static void adjustRequestAppAuthorizationStatusCallback(int AuthorizationStatus)
 {
+    // invoke lambda callback if available (C++ API)
+#if PLATFORM_IOS
+    InvokeRequestTrackingAuthorizationLambdaCallback(AuthorizationStatus);
+#endif
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnRequestTrackingAuthorizationDelegate.Broadcast(AuthorizationStatus);
@@ -184,6 +491,12 @@ static void adjustRequestAppAuthorizationStatusCallback(int AuthorizationStatus)
 
 static void adjustUpdateSkanConversionValueCallback(FString Error)
 {
+    // invoke lambda callback if available (C++ API)
+#if PLATFORM_IOS
+    InvokeUpdateSkanConversionValueLambdaCallback(Error);
+#endif
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnUpdateSkanConversionValueDelegate.Broadcast(Error);
@@ -200,6 +513,12 @@ static void adjustSkanConversionValueUpdatedCallback(FAdjustSkanConversionDataMa
 
 static void adjustGoogleAdIdGetterCallback(FString GoogleAdId)
 {
+    // invoke lambda callback if available (C++ API)
+#if PLATFORM_ANDROID
+    InvokeGoogleAdIdLambdaCallback(GoogleAdId);
+#endif
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnGoogleAdIdGetterDelegate.Broadcast(GoogleAdId);
@@ -208,6 +527,12 @@ static void adjustGoogleAdIdGetterCallback(FString GoogleAdId)
 
 static void adjustAmazonAdIdGetterCallback(FString AmazonAdId)
 {
+    // invoke lambda callback if available (C++ API)
+#if PLATFORM_ANDROID
+    InvokeAmazonAdIdLambdaCallback(AmazonAdId);
+#endif
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnAmazonAdIdGetterDelegate.Broadcast(AmazonAdId);
@@ -216,6 +541,12 @@ static void adjustAmazonAdIdGetterCallback(FString AmazonAdId)
 
 static void adjustPurchaseVerificationCallback(FAdjustPurchaseVerificationResult VerificationResult)
 {
+    // invoke lambda callback if available (C++ API)
+#if PLATFORM_IOS || PLATFORM_ANDROID
+    InvokePurchaseVerificationLambdaCallback(VerificationResult);
+#endif
+    
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnPurchaseVerificationFinishedDelegate.Broadcast(VerificationResult);
@@ -231,14 +562,19 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
 
     // environment
     EAdjustEnvironment eEnvironment = Config.Environment;
-    NSString *environment;
+    NSString *environment = nil;
     switch (eEnvironment)
     {
         case EAdjustEnvironment::Sandbox:
             environment = ADJEnvironmentSandbox;
             break;
-        case (EAdjustEnvironment::Production):
+        case EAdjustEnvironment::Production:
             environment = ADJEnvironmentProduction;
+            break;
+        default:
+            // invalid/malformed environment value
+            // pass empty string to let native SDK handle it
+            environment = @"";
             break;
     }
 
@@ -280,7 +616,7 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
                                                  suppressLogLevel:allowSuppressLevel];
 
     // SDK prefix
-    [adjustConfig setSdkPrefix:@"unreal5.4.0"];
+    [adjustConfig setSdkPrefix:@"unreal5.5.0"];
 
     // log level
     [adjustConfig setLogLevel:logLevel];
@@ -354,7 +690,7 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         [adjustConfig disableSkanAttribution];
     }
 
-    // AdServices.framework handling (Apple Search Ads)
+    // AdServices framework handling (Apple Search Ads)
     if (Config.IsAdServicesEnabled == false)
     {
         [adjustConfig disableAdServices];
@@ -415,15 +751,20 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     jstring jAppToken = Env->NewStringUTF(TCHAR_TO_UTF8(*Config.AppToken));
 
     // environment
-    jstring jEnvironment;
+    jstring jEnvironment = nullptr;
     EAdjustEnvironment eEnvironment = Config.Environment;
     switch (eEnvironment)
     {
         case EAdjustEnvironment::Sandbox:
             jEnvironment = Env->NewStringUTF("sandbox");
             break;
-        case (EAdjustEnvironment::Production):
+        case EAdjustEnvironment::Production:
             jEnvironment = Env->NewStringUTF("production");
+            break;
+        default:
+            // invalid/malformed environment value
+            // pass empty string to let native SDK handle it
+            jEnvironment = Env->NewStringUTF("");
             break;
     }
 
@@ -468,7 +809,7 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
     Env->DeleteLocalRef(jEnvironment);
 
     // SDK prefix
-    const char* cstrSdkPrefix = "unreal5.4.0";
+    const char* cstrSdkPrefix = "unreal5.5.0";
     jstring jSdkPrefix = Env->NewStringUTF(cstrSdkPrefix);
     jmethodID jmidAdjustConfigSetSdkPrefix = Env->GetMethodID(jcslAdjustConfig, "setSdkPrefix", "(Ljava/lang/String;)V");
     Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetSdkPrefix, jSdkPrefix);
@@ -659,6 +1000,12 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
         jmethodID jmidAdjustConfigSetUrlStrategy = Env->GetMethodID(jcslAdjustConfig, "setUrlStrategy", "(Ljava/util/List;ZZ)V");
         Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigSetUrlStrategy, joUrlStrategyDomains, Config.ShouldUseSubdomains, Config.IsDataResidency);
         Env->DeleteLocalRef(joUrlStrategyDomains);
+    }
+
+    // disable app set ID reading
+    if (Config.IsAppSetIdReadingEnabled == false) {
+        jmethodID jmidAdjustConfigDisableAppSetIdReading = Env->GetMethodID(jcslAdjustConfig, "disableAppSetIdReading", "()V");
+        Env->CallVoidMethod(joAdjustConfig, jmidAdjustConfigDisableAppSetIdReading);
     }
 
     // start SDK
@@ -1066,6 +1413,15 @@ void UAdjust::ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlS
 #endif
 }
 
+void UAdjust::ResolveLink(const FString& Url, const TArray<FString>& ResolveUrlSuffixArray, TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&LinkResolutionCallbackQueueMutex);
+        LinkResolutionCallbackQueue.Enqueue(Callback);
+    }
+    ResolveLink(Url, ResolveUrlSuffixArray); // call existing delegate-based method
+}
+
 void UAdjust::SetPushToken(const FString& PushToken)
 {
 #if PLATFORM_IOS
@@ -1115,6 +1471,30 @@ void UAdjust::SwitchBackToOnlineMode()
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
     jmethodID jmidAdjustSwitchBackToOnlineMode = Env->GetStaticMethodID(jcslAdjust, "switchBackToOnlineMode", "()V");
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustSwitchBackToOnlineMode);
+#endif
+}
+
+void UAdjust::OnResume()
+{
+#if PLATFORM_IOS
+    [Adjust trackSubsessionStart];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustOnResume = Env->GetStaticMethodID(jcslAdjust, "onResume", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustOnResume);
+#endif
+}
+
+void UAdjust::OnPause()
+{
+#if PLATFORM_IOS
+    [Adjust trackSubsessionEnd];
+#elif PLATFORM_ANDROID
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustOnPause = Env->GetStaticMethodID(jcslAdjust, "onPause", "()V");
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustOnPause);
 #endif
 }
 
@@ -1262,6 +1642,14 @@ void UAdjust::GetAttribution()
         ueAttribution.Adgroup = *FString(attribution.adgroup);
         ueAttribution.Creative = *FString(attribution.creative);
         ueAttribution.ClickLabel = *FString(attribution.clickLabel);
+        ueAttribution.CostType = *FString(attribution.costType);
+        ueAttribution.CostCurrency = *FString(attribution.costCurrency);
+        
+        double costAmount = 0.0;
+        if (attribution.costAmount != nil) {
+            costAmount = [attribution.costAmount doubleValue];
+        }
+        ueAttribution.CostAmount = costAmount;
         
         FString fsJsonResponse;
         if (attribution.jsonResponse != nil) {
@@ -1275,6 +1663,85 @@ void UAdjust::GetAttribution()
             }
         }
         ueAttribution.JsonResponse = fsJsonResponse;
+        
+        AsyncTask(ENamedThreads::GameThread, [ueAttribution]() {
+            adjustAttributionGetterCallback(ueAttribution);
+        });
+    }];
+#endif
+}
+
+void UAdjust::GetAdidWithTimeout(int32 TimeoutInMilliseconds)
+{
+#if PLATFORM_ANDROID
+    setAdidGetterCallbackMethod(adjustAdidGetterCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustGetAdidWithTimeout = Env->GetStaticMethodID(jcslAdjust, "getAdidWithTimeout", "(Landroid/content/Context;JLcom/adjust/sdk/OnAdidReadListener;)V");
+    jclass jcslUeAdidGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeAdidGetterCallback");
+    jmethodID jmidUeAdidGetterCallbackInit = Env->GetMethodID(jcslUeAdidGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joAdidGetterCallbackProxy = Env->NewObject(jcslUeAdidGetterCallback, jmidUeAdidGetterCallbackInit, FJavaWrapper::GameActivityThis);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetAdidWithTimeout, FJavaWrapper::GameActivityThis, (jlong)TimeoutInMilliseconds, joAdidGetterCallbackProxy);
+    Env->DeleteLocalRef(joAdidGetterCallbackProxy);
+#elif PLATFORM_IOS
+    [Adjust adidWithTimeout:TimeoutInMilliseconds completionHandler:^(NSString * _Nullable adid) {
+        FString fsAdid;
+        if (adid != nil) {
+            fsAdid = FString(UTF8_TO_TCHAR([adid UTF8String]));
+        }
+        AsyncTask(ENamedThreads::GameThread, [fsAdid]() {
+            adjustAdidGetterCallback(fsAdid);
+        });
+    }];
+#endif
+}
+
+void UAdjust::GetAttributionWithTimeout(int32 TimeoutInMilliseconds)
+{
+#if PLATFORM_ANDROID
+    setAttributionGetterCallbackMethod(adjustAttributionGetterCallback);
+    JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    jmethodID jmidAdjustGetAttributionWithTimeout = Env->GetStaticMethodID(jcslAdjust, "getAttributionWithTimeout", "(Landroid/content/Context;JLcom/adjust/sdk/OnAttributionReadListener;)V");
+    jclass jcslUeAttributionGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeAttributionGetterCallback");
+    jmethodID jmidUeAttributionGetterCallbackInit = Env->GetMethodID(jcslUeAttributionGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;)V");
+    jobject joAttributionGetterCallbackProxy = Env->NewObject(jcslUeAttributionGetterCallback, jmidUeAttributionGetterCallbackInit, FJavaWrapper::GameActivityThis);
+    Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetAttributionWithTimeout, FJavaWrapper::GameActivityThis, (jlong)TimeoutInMilliseconds, joAttributionGetterCallbackProxy);
+    Env->DeleteLocalRef(joAttributionGetterCallbackProxy);
+#elif PLATFORM_IOS
+    [Adjust attributionWithTimeout:TimeoutInMilliseconds completionHandler:^(ADJAttribution * _Nullable attribution) {
+        FAdjustAttribution ueAttribution;
+        
+        if (attribution != nil) {
+            ueAttribution.TrackerToken = *FString(attribution.trackerToken);
+            ueAttribution.TrackerName = *FString(attribution.trackerName);
+            ueAttribution.Network = *FString(attribution.network);
+            ueAttribution.Campaign = *FString(attribution.campaign);
+            ueAttribution.Adgroup = *FString(attribution.adgroup);
+            ueAttribution.Creative = *FString(attribution.creative);
+            ueAttribution.ClickLabel = *FString(attribution.clickLabel);
+            ueAttribution.CostType = *FString(attribution.costType);
+            ueAttribution.CostCurrency = *FString(attribution.costCurrency);
+            
+            double costAmount = 0.0;
+            if (attribution.costAmount != nil) {
+                costAmount = [attribution.costAmount doubleValue];
+            }
+            ueAttribution.CostAmount = costAmount;
+            
+            FString fsJsonResponse;
+            if (attribution.jsonResponse != nil) {
+                NSError *error = nil;
+                NSData *dataJsonResponse = [NSJSONSerialization dataWithJSONObject:attribution.jsonResponse options:0 error:&error];
+                if (dataJsonResponse != nil && error == nil) {
+                    NSString *stringJsonResponse = [[NSString alloc] initWithData:dataJsonResponse encoding:NSUTF8StringEncoding];
+                    if (stringJsonResponse != nil) {
+                        fsJsonResponse = *FString(stringJsonResponse);
+                    }
+                }
+            }
+            ueAttribution.JsonResponse = fsJsonResponse;
+        }
         
         AsyncTask(ENamedThreads::GameThread, [ueAttribution]() {
             adjustAttributionGetterCallback(ueAttribution);
@@ -1313,7 +1780,7 @@ void UAdjust::GetSdkVersion()
 {
 #if PLATFORM_IOS
     FString Separator = FString(UTF8_TO_TCHAR("@"));
-    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal5.4.0"));
+    FString SdkPrefix = FString(UTF8_TO_TCHAR("unreal5.5.0"));
     [Adjust sdkVersionWithCompletionHandler:^(NSString * _Nullable sdkVersion) {
         FString fsSdkVersion = SdkPrefix + Separator + FString(UTF8_TO_TCHAR([sdkVersion UTF8String]));
         AsyncTask(ENamedThreads::GameThread, [fsSdkVersion]() {
@@ -1322,14 +1789,26 @@ void UAdjust::GetSdkVersion()
     }];
 #elif PLATFORM_ANDROID
     JNIEnv *Env = FAndroidApplication::GetJavaEnv();
+    if (Env == nullptr) {
+        return;
+    }
     setSdkVersionGetterCallbackMethod(adjustSdkVersionGetterCallback);
     jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    if (jcslAdjust == nullptr) {
+        return;
+    }
     jmethodID jmidAdjustGetSdkVersionId = Env->GetStaticMethodID(jcslAdjust, "getSdkVersion", "(Lcom/adjust/sdk/OnSdkVersionReadListener;)V");
     jclass jcslUeSdkVersionGetterCallback = FAndroidApplication::FindJavaClass("com/epicgames/unreal/GameActivity$AdjustUeSdkVersionGetterCallback");
+    if (jcslUeSdkVersionGetterCallback == nullptr) {
+        return;
+    }
     jmethodID jmidUeSdkVersionGetterCallbackInit = Env->GetMethodID(jcslUeSdkVersionGetterCallback, "<init>", "(Lcom/epicgames/unreal/GameActivity;Ljava/lang/String;)V");
-    // TODO: temp hack, parametrize this
-    jstring jSdkPrefix = Env->NewStringUTF("unreal5.4.0");
+    jstring jSdkPrefix = Env->NewStringUTF("unreal5.5.0");
     jobject joSdkVersionGetterCallbackProxy = Env->NewObject(jcslUeSdkVersionGetterCallback, jmidUeSdkVersionGetterCallbackInit, FJavaWrapper::GameActivityThis, jSdkPrefix);
+    if (joSdkVersionGetterCallbackProxy == nullptr) {
+        Env->DeleteLocalRef(jSdkPrefix);
+        return;
+    }
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustGetSdkVersionId, joSdkVersionGetterCallbackProxy);
     Env->DeleteLocalRef(joSdkVersionGetterCallbackProxy);
     Env->DeleteLocalRef(jSdkPrefix);
@@ -1681,7 +2160,7 @@ void UAdjust::TrackThirdPartySharing(const FAdjustThirdPartySharing& ThirdPartyS
         CFStringRef cfstrPartner = FPlatformString::TCHARToCFString(*PartnerSettingPair.Key);
         NSString *strPartner = (NSString*) cfstrPartner;
 
-        const TMap<FString, bool>& PartnerSettingMap = PartnerSettingPair.Value.PartnerSharingSetting; // Now TMap<FString, bool>
+        const TMap<FString, bool>& PartnerSettingMap = PartnerSettingPair.Value.PartnerSharingSetting; // now TMap<FString, bool>
         for (const TPair<FString, bool>& SettingPair : PartnerSettingMap)
         {
             CFStringRef cfstrKey = FPlatformString::TCHARToCFString(*SettingPair.Key);
@@ -1748,7 +2227,7 @@ void UAdjust::TrackThirdPartySharing(const FAdjustThirdPartySharing& ThirdPartyS
     for (const TPair<FString, FAdjustPartnerSharingSetting>& PartnerSettingPair : PartnerSharingSettings)
     {
         jstring jstrPartnerName = Env->NewStringUTF(TCHAR_TO_UTF8(*PartnerSettingPair.Key));
-        const TMap<FString, bool>& PartnerSettingMap = PartnerSettingPair.Value.PartnerSharingSetting; // Now TMap<FString, bool>
+        const TMap<FString, bool>& PartnerSettingMap = PartnerSettingPair.Value.PartnerSharingSetting; // now TMap<FString, bool>
         for (const TPair<FString, bool>& SettingPair : PartnerSettingMap)
         {
             jstring jstrKey = Env->NewStringUTF(TCHAR_TO_UTF8(*SettingPair.Key));
@@ -2116,7 +2595,7 @@ void UAdjust::TrackPlayStoreSubscription(const FAdjustPlayStoreSubscription& Sub
     // create subscription object
     jclass jcslAdjustPlayStoreSubscription = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustPlayStoreSubscription");
     jmethodID jmidAdjustPlayStoreSubscriptionInit = Env->GetMethodID(jcslAdjustPlayStoreSubscription, "<init>", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
-    jlong jPrice = (jlong)Subscription.Price; // Price is already in micros
+    jlong jPrice = (jlong)Subscription.Price; // price is already in micros
     jstring jCurrency = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.Currency));
     jstring jSku = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.Sku));
     jstring jOrderId = Env->NewStringUTF(TCHAR_TO_UTF8(*Subscription.OrderId));
@@ -2165,5 +2644,620 @@ void UAdjust::TrackPlayStoreSubscription(const FAdjustPlayStoreSubscription& Sub
     jmethodID jmidAdjustTrackPlayStoreSubscription = Env->GetStaticMethodID(jcslAdjust, "trackPlayStoreSubscription", "(Lcom/adjust/sdk/AdjustPlayStoreSubscription;)V");
     Env->CallStaticVoidMethod(jcslAdjust, jmidAdjustTrackPlayStoreSubscription, joSubscription);
     Env->DeleteLocalRef(joSubscription);
+#endif
+}
+
+void UAdjust::SetTestOptions(const TMap<FString, FString>& StringTestOptions, const TMap<FString, int32>& IntTestOptions)
+{
+#if PLATFORM_IOS
+    NSMutableDictionary* testOptions = [[NSMutableDictionary alloc] init];
+    
+    // add string options
+    for (const TPair<FString, FString>& Pair : StringTestOptions)
+    {
+        // skip if key or value is empty
+        if (Pair.Key.IsEmpty() || Pair.Value.IsEmpty()) {
+            continue;
+        }
+        
+        // store UTF-8 conversions in FString to avoid dangling pointers
+        FTCHARToUTF8 KeyUtf8(*Pair.Key);
+        FTCHARToUTF8 ValueUtf8(*Pair.Value);
+        const char* keyUtf8 = KeyUtf8.Get();
+        const char* valueUtf8 = ValueUtf8.Get();
+        
+        if (keyUtf8 == nullptr || valueUtf8 == nullptr) {
+            continue;
+        }
+        
+        // check UTF-8 string lengths
+        size_t keyLen = strlen(keyUtf8);
+        size_t valueLen = strlen(valueUtf8);
+        if (keyLen == 0 || valueLen == 0) {
+            continue;
+        }
+        
+        // use initWithUTF8String which is more robust, or fallback to initWithCString
+        NSString* key = [[NSString alloc] initWithUTF8String:keyUtf8];
+        if (key == nil) {
+            // fallback: try with CString encoding
+            key = [[NSString alloc] initWithCString:keyUtf8 encoding:NSUTF8StringEncoding];
+        }
+        
+        NSString* value = [[NSString alloc] initWithUTF8String:valueUtf8];
+        if (value == nil) {
+            // fallback: try with CString encoding
+            value = [[NSString alloc] initWithCString:valueUtf8 encoding:NSUTF8StringEncoding];
+        }
+        
+        if (key == nil || value == nil) {
+            continue;
+        }
+        
+        // additional validation: ensure NSStrings are not empty
+        if ([key length] == 0 || [value length] == 0) {
+            continue;
+        }
+        
+        [testOptions setObject:value forKey:key];
+    }
+    
+    // add int options
+    for (const TPair<FString, int32>& Pair : IntTestOptions)
+    {
+        // skip if key is empty
+        if (Pair.Key.IsEmpty()) {
+            continue;
+        }
+        
+        // store UTF-8 conversion in FString to avoid dangling pointer
+        FTCHARToUTF8 KeyUtf8(*Pair.Key);
+        const char* keyUtf8 = KeyUtf8.Get();
+        
+        if (keyUtf8 == nullptr) {
+            continue;
+        }
+        
+        // Check UTF-8 string length
+        size_t keyLen = strlen(keyUtf8);
+        if (keyLen == 0) {
+            continue;
+        }
+        
+        // use initWithUTF8String which is more robust, or fallback to initWithCString
+        NSString* key = [[NSString alloc] initWithUTF8String:keyUtf8];
+        if (key == nil) {
+            // fallback: try with CString encoding
+            key = [[NSString alloc] initWithCString:keyUtf8 encoding:NSUTF8StringEncoding];
+        }
+        
+        if (key == nil) {
+            continue;
+        }
+        
+        NSNumber* value = [NSNumber numberWithInt:Pair.Value];
+        
+        if (value == nil) {
+            continue;
+        }
+        
+        // additional validation: ensure NSString key is not empty
+        if ([key length] == 0) {
+            continue;
+        }
+        
+        [testOptions setObject:value forKey:key];
+    }
+    
+    // final check - ensure dictionary is valid before passing to native SDK
+    if (testOptions == nil) {
+        return;
+    }
+    
+    [Adjust setTestOptions:testOptions];
+#elif PLATFORM_ANDROID
+    JNIEnv* Env = FAndroidApplication::GetJavaEnv();
+    if (Env == nullptr) {
+        return;
+    }
+    
+    jclass jcslAdjust = FAndroidApplication::FindJavaClass("com/adjust/sdk/Adjust");
+    if (jcslAdjust == nullptr) {
+        return;
+    }
+    
+    jclass jcslAdjustTestOptions = FAndroidApplication::FindJavaClass("com/adjust/sdk/AdjustTestOptions");
+    if (jcslAdjustTestOptions == nullptr) {
+        Env->DeleteLocalRef(jcslAdjust);
+        return;
+    }
+    
+    jmethodID jmidAdjustTestOptionsInit = Env->GetMethodID(jcslAdjustTestOptions, "<init>", "()V");
+    if (jmidAdjustTestOptionsInit == nullptr) {
+        Env->DeleteLocalRef(jcslAdjustTestOptions);
+        Env->DeleteLocalRef(jcslAdjust);
+        return;
+    }
+    
+    jobject joTestOptions = Env->NewObject(jcslAdjustTestOptions, jmidAdjustTestOptionsInit);
+    if (joTestOptions == nullptr) {
+        Env->DeleteLocalRef(jcslAdjustTestOptions);
+        Env->DeleteLocalRef(jcslAdjust);
+        return;
+    }
+    
+    // set fields on AdjustTestOptions object
+    // get field IDs for common types
+    jclass jcslBoolean = Env->FindClass("java/lang/Boolean");
+    jmethodID jmidBooleanInit = Env->GetMethodID(jcslBoolean, "<init>", "(Z)V");
+    jclass jcslLong = Env->FindClass("java/lang/Long");
+    jmethodID jmidLongInit = Env->GetMethodID(jcslLong, "<init>", "(J)V");
+    
+    // Set baseUrl, gdprUrl, subscriptionUrl, purchaseVerificationUrl from testUrlOverwrite
+    const FString* testUrlOverwrite = StringTestOptions.Find(TEXT("testUrlOverwrite"));
+    if (testUrlOverwrite != nullptr && !testUrlOverwrite->IsEmpty())
+    {
+        jstring jTestUrlOverwrite = Env->NewStringUTF(TCHAR_TO_UTF8(**testUrlOverwrite));
+        
+        jfieldID jfidBaseUrl = Env->GetFieldID(jcslAdjustTestOptions, "baseUrl", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidBaseUrl, jTestUrlOverwrite);
+        
+        jfieldID jfidGdprUrl = Env->GetFieldID(jcslAdjustTestOptions, "gdprUrl", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidGdprUrl, jTestUrlOverwrite);
+        
+        jfieldID jfidSubscriptionUrl = Env->GetFieldID(jcslAdjustTestOptions, "subscriptionUrl", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidSubscriptionUrl, jTestUrlOverwrite);
+        
+        jfieldID jfidPurchaseVerificationUrl = Env->GetFieldID(jcslAdjustTestOptions, "purchaseVerificationUrl", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidPurchaseVerificationUrl, jTestUrlOverwrite);
+        
+        Env->DeleteLocalRef(jTestUrlOverwrite);
+    }
+    
+    // Set basePath, gdprPath, subscriptionPath, purchaseVerificationPath from extraPath
+    const FString* extraPath = StringTestOptions.Find(TEXT("extraPath"));
+    if (extraPath != nullptr && !extraPath->IsEmpty())
+    {
+        jstring jExtraPath = Env->NewStringUTF(TCHAR_TO_UTF8(**extraPath));
+        
+        jfieldID jfidBasePath = Env->GetFieldID(jcslAdjustTestOptions, "basePath", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidBasePath, jExtraPath);
+        
+        jfieldID jfidGdprPath = Env->GetFieldID(jcslAdjustTestOptions, "gdprPath", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidGdprPath, jExtraPath);
+        
+        jfieldID jfidSubscriptionPath = Env->GetFieldID(jcslAdjustTestOptions, "subscriptionPath", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidSubscriptionPath, jExtraPath);
+        
+        jfieldID jfidPurchaseVerificationPath = Env->GetFieldID(jcslAdjustTestOptions, "purchaseVerificationPath", "Ljava/lang/String;");
+        Env->SetObjectField(joTestOptions, jfidPurchaseVerificationPath, jExtraPath);
+        
+        Env->DeleteLocalRef(jExtraPath);
+    }
+    
+    // Set context field if setContext is set
+    const int32* setContextValue = IntTestOptions.Find(TEXT("setContext"));
+    if (setContextValue != nullptr && *setContextValue != 0)
+    {
+        jfieldID jfidContext = Env->GetFieldID(jcslAdjustTestOptions, "context", "Landroid/content/Context;");
+        Env->SetObjectField(joTestOptions, jfidContext, FJavaWrapper::GameActivityThis);
+    }
+    
+    // Set Long fields (timer intervals)
+    const int32* timerInterval = IntTestOptions.Find(TEXT("timerIntervalInMilliseconds"));
+    if (timerInterval != nullptr)
+    {
+        jobject jTimerIntervalObj = Env->NewObject(jcslLong, jmidLongInit, (jlong)(*timerInterval));
+        jfieldID jfidTimerInterval = Env->GetFieldID(jcslAdjustTestOptions, "timerIntervalInMilliseconds", "Ljava/lang/Long;");
+        Env->SetObjectField(joTestOptions, jfidTimerInterval, jTimerIntervalObj);
+        Env->DeleteLocalRef(jTimerIntervalObj);
+    }
+    
+    const int32* timerStart = IntTestOptions.Find(TEXT("timerStartInMilliseconds"));
+    if (timerStart != nullptr)
+    {
+        jobject jTimerStartObj = Env->NewObject(jcslLong, jmidLongInit, (jlong)(*timerStart));
+        jfieldID jfidTimerStart = Env->GetFieldID(jcslAdjustTestOptions, "timerStartInMilliseconds", "Ljava/lang/Long;");
+        Env->SetObjectField(joTestOptions, jfidTimerStart, jTimerStartObj);
+        Env->DeleteLocalRef(jTimerStartObj);
+    }
+    
+    const int32* sessionInterval = IntTestOptions.Find(TEXT("sessionIntervalInMilliseconds"));
+    if (sessionInterval != nullptr)
+    {
+        jobject jSessionIntervalObj = Env->NewObject(jcslLong, jmidLongInit, (jlong)(*sessionInterval));
+        jfieldID jfidSessionInterval = Env->GetFieldID(jcslAdjustTestOptions, "sessionIntervalInMilliseconds", "Ljava/lang/Long;");
+        Env->SetObjectField(joTestOptions, jfidSessionInterval, jSessionIntervalObj);
+        Env->DeleteLocalRef(jSessionIntervalObj);
+    }
+    
+    const int32* subsessionInterval = IntTestOptions.Find(TEXT("subsessionIntervalInMilliseconds"));
+    if (subsessionInterval != nullptr)
+    {
+        jobject jSubsessionIntervalObj = Env->NewObject(jcslLong, jmidLongInit, (jlong)(*subsessionInterval));
+        jfieldID jfidSubsessionInterval = Env->GetFieldID(jcslAdjustTestOptions, "subsessionIntervalInMilliseconds", "Ljava/lang/Long;");
+        Env->SetObjectField(joTestOptions, jfidSubsessionInterval, jSubsessionIntervalObj);
+        Env->DeleteLocalRef(jSubsessionIntervalObj);
+    }
+    
+    // Set Boolean fields
+    const int32* teardown = IntTestOptions.Find(TEXT("teardown"));
+    if (teardown != nullptr)
+    {
+        jboolean jTeardown = (*teardown == 1) ? JNI_TRUE : JNI_FALSE;
+        jobject jTeardownObj = Env->NewObject(jcslBoolean, jmidBooleanInit, jTeardown);
+        jfieldID jfidTeardown = Env->GetFieldID(jcslAdjustTestOptions, "teardown", "Ljava/lang/Boolean;");
+        Env->SetObjectField(joTestOptions, jfidTeardown, jTeardownObj);
+        Env->DeleteLocalRef(jTeardownObj);
+    }
+    
+    const int32* tryInstallReferrer = IntTestOptions.Find(TEXT("tryInstallReferrer"));
+    if (tryInstallReferrer != nullptr)
+    {
+        jboolean jTryInstallReferrer = (*tryInstallReferrer == 1) ? JNI_TRUE : JNI_FALSE;
+        jobject jTryInstallReferrerObj = Env->NewObject(jcslBoolean, jmidBooleanInit, jTryInstallReferrer);
+        jfieldID jfidTryInstallReferrer = Env->GetFieldID(jcslAdjustTestOptions, "tryInstallReferrer", "Ljava/lang/Boolean;");
+        Env->SetObjectField(joTestOptions, jfidTryInstallReferrer, jTryInstallReferrerObj);
+        Env->DeleteLocalRef(jTryInstallReferrerObj);
+    }
+    
+    const int32* noBackoffWait = IntTestOptions.Find(TEXT("noBackoffWait"));
+    if (noBackoffWait != nullptr)
+    {
+        jboolean jNoBackoffWait = (*noBackoffWait == 1) ? JNI_TRUE : JNI_FALSE;
+        jobject jNoBackoffWaitObj = Env->NewObject(jcslBoolean, jmidBooleanInit, jNoBackoffWait);
+        jfieldID jfidNoBackoffWait = Env->GetFieldID(jcslAdjustTestOptions, "noBackoffWait", "Ljava/lang/Boolean;");
+        Env->SetObjectField(joTestOptions, jfidNoBackoffWait, jNoBackoffWaitObj);
+        Env->DeleteLocalRef(jNoBackoffWaitObj);
+    }
+    
+    const int32* doNotIgnoreSystemLifecycleBootstrap = IntTestOptions.Find(TEXT("doNotIgnoreSystemLifecycleBootstrap"));
+    if (doNotIgnoreSystemLifecycleBootstrap != nullptr && *doNotIgnoreSystemLifecycleBootstrap == 1)
+    {
+        // doNotIgnoreSystemLifecycleBootstrap = true means ignoreSystemLifecycleBootstrap = false
+        jboolean jIgnoreSystemLifecycleBootstrap = JNI_FALSE;
+        jobject jIgnoreSystemLifecycleBootstrapObj = Env->NewObject(jcslBoolean, jmidBooleanInit, jIgnoreSystemLifecycleBootstrap);
+        jfieldID jfidIgnoreSystemLifecycleBootstrap = Env->GetFieldID(jcslAdjustTestOptions, "ignoreSystemLifecycleBootstrap", "Ljava/lang/Boolean;");
+        Env->SetObjectField(joTestOptions, jfidIgnoreSystemLifecycleBootstrap, jIgnoreSystemLifecycleBootstrapObj);
+        Env->DeleteLocalRef(jIgnoreSystemLifecycleBootstrapObj);
+    }
+    
+    Env->DeleteLocalRef(jcslBoolean);
+    Env->DeleteLocalRef(jcslLong);
+    
+    // Call setTestOptions with AdjustTestOptions object
+    jmethodID jmidSetTestOptions = Env->GetStaticMethodID(jcslAdjust, "setTestOptions", "(Lcom/adjust/sdk/AdjustTestOptions;)V");
+    
+    // Check for exceptions and method existence
+    jthrowable exception = Env->ExceptionOccurred();
+    if (exception || jmidSetTestOptions == nullptr) {
+        if (exception) {
+            Env->ExceptionClear();
+        }
+        Env->DeleteLocalRef(joTestOptions);
+        Env->DeleteLocalRef(jcslAdjustTestOptions);
+        Env->DeleteLocalRef(jcslAdjust);
+        return;
+    }
+    
+    Env->CallStaticVoidMethod(jcslAdjust, jmidSetTestOptions, joTestOptions);
+    
+    // Check for exceptions after calling setTestOptions
+    exception = Env->ExceptionOccurred();
+    if (exception) {
+        Env->ExceptionClear();
+    }
+    
+    Env->DeleteLocalRef(joTestOptions);
+    Env->DeleteLocalRef(jcslAdjustTestOptions);
+    Env->DeleteLocalRef(jcslAdjust);
+#endif
+}
+
+// lambda-based C++ API implementations (bypass delegate broadcasting)
+void UAdjust::GetAdid(TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&AdidCallbackQueueMutex);
+        AdidCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method which will trigger callback
+    GetAdid();
+}
+
+void UAdjust::GetAdidWithTimeout(int32 TimeoutInMilliseconds, TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&AdidCallbackQueueMutex);
+        AdidCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    GetAdidWithTimeout(TimeoutInMilliseconds);
+}
+
+void UAdjust::GetAttribution(TFunction<void(const FAdjustAttribution&)> Callback)
+{
+    {
+        FScopeLock Lock(&AttributionCallbackQueueMutex);
+        AttributionCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    GetAttribution();
+}
+
+void UAdjust::GetAttributionWithTimeout(int32 TimeoutInMilliseconds, TFunction<void(const FAdjustAttribution&)> Callback)
+{
+    {
+        FScopeLock Lock(&AttributionCallbackQueueMutex);
+        AttributionCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    GetAttributionWithTimeout(TimeoutInMilliseconds);
+}
+
+void UAdjust::GetLastDeeplink(TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&LastDeeplinkCallbackQueueMutex);
+        LastDeeplinkCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    GetLastDeeplink();
+}
+
+void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink, TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&DeeplinkResolutionCallbackQueueMutex);
+        // clear any existing callbacks in the queue first
+        // the native SDK only processes the LAST saved deeplink when initialized
+        // so we should only keep the last callback in the queue
+        TFunction<void(const FString&)> Dummy;
+        while (DeeplinkResolutionCallbackQueue.Dequeue(Dummy)) {}
+        // enqueue the new callback (this will be the only one in the queue)
+        DeeplinkResolutionCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    ProcessAndResolveDeeplink(Deeplink);
+}
+
+void UAdjust::GetSdkVersion(TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&SdkVersionCallbackQueueMutex);
+        SdkVersionCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    GetSdkVersion();
+}
+
+void UAdjust::IsEnabled(TFunction<void(bool)> Callback)
+{
+    {
+        FScopeLock Lock(&IsEnabledCallbackQueueMutex);
+        IsEnabledCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    IsEnabled();
+}
+
+#if PLATFORM_IOS
+void UAdjust::GetIdfa(TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&IdfaCallbackQueueMutex);
+        IdfaCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    GetIdfa();
+}
+
+void UAdjust::GetIdfv(TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&IdfvCallbackQueueMutex);
+        IdfvCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    GetIdfv();
+}
+
+void UAdjust::GetAppTrackingAuthorizationStatus(TFunction<void(int)> Callback)
+{
+    {
+        FScopeLock Lock(&AuthorizationStatusCallbackQueueMutex);
+        AuthorizationStatusCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    GetAppTrackingAuthorizationStatus();
+}
+
+void UAdjust::RequestAppTrackingAuthorization(TFunction<void(int)> Callback)
+{
+    {
+        FScopeLock Lock(&RequestTrackingAuthorizationCallbackQueueMutex);
+        RequestTrackingAuthorizationCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    RequestAppTrackingAuthorization();
+}
+
+void UAdjust::UpdateSkanConversionValue(int ConversionValue, const FString& CoarseValue, bool LockWindow, TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&UpdateSkanConversionValueCallbackQueueMutex);
+        UpdateSkanConversionValueCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    UpdateSkanConversionValue(ConversionValue, CoarseValue, LockWindow);
+}
+
+void UAdjust::VerifyAppStorePurchase(const FAdjustAppStorePurchase& Purchase, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback)
+{
+    {
+        FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
+        PurchaseVerificationCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    VerifyAppStorePurchase(Purchase);
+}
+
+void UAdjust::VerifyAndTrackAppStorePurchase(const FAdjustEvent& Event, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback)
+{
+    {
+        FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
+        PurchaseVerificationCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    VerifyAndTrackAppStorePurchase(Event);
+}
+#endif
+
+#if PLATFORM_ANDROID
+void UAdjust::GetGoogleAdId(TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&GoogleAdIdCallbackQueueMutex);
+        GoogleAdIdCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    GetGoogleAdId();
+}
+
+void UAdjust::GetAmazonAdId(TFunction<void(const FString&)> Callback)
+{
+    {
+        FScopeLock Lock(&AmazonAdIdCallbackQueueMutex);
+        AmazonAdIdCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    GetAmazonAdId();
+}
+
+void UAdjust::VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback)
+{
+    {
+        FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
+        PurchaseVerificationCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    VerifyPlayStorePurchase(Purchase);
+}
+
+void UAdjust::VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback)
+{
+    {
+        FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
+        PurchaseVerificationCallbackQueue.Enqueue(Callback);
+    }
+    // call existing delegate-based method
+    VerifyAndTrackPlayStorePurchase(Event);
+}
+#endif
+
+void UAdjust::ClearAllCallbackQueues()
+{
+    // clear all callback queues by dequeuing all items
+    // this is called during test reset to prevent stale callbacks from previous tests
+    
+    // common queues
+    {
+        FScopeLock Lock(&AdidCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (AdidCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&AttributionCallbackQueueMutex);
+        TFunction<void(const FAdjustAttribution&)> Dummy;
+        while (AttributionCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&LastDeeplinkCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (LastDeeplinkCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&DeeplinkResolutionCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (DeeplinkResolutionCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&LinkResolutionCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (LinkResolutionCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&SdkVersionCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (SdkVersionCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&IsEnabledCallbackQueueMutex);
+        TFunction<void(bool)> Dummy;
+        while (IsEnabledCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+#if PLATFORM_IOS
+    {
+        FScopeLock Lock(&IdfaCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (IdfaCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&IdfvCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (IdfvCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&AuthorizationStatusCallbackQueueMutex);
+        TFunction<void(int)> Dummy;
+        while (AuthorizationStatusCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&RequestTrackingAuthorizationCallbackQueueMutex);
+        TFunction<void(int)> Dummy;
+        while (RequestTrackingAuthorizationCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&UpdateSkanConversionValueCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (UpdateSkanConversionValueCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
+        TFunction<void(const FAdjustPurchaseVerificationResult&)> Dummy;
+        while (PurchaseVerificationCallbackQueue.Dequeue(Dummy)) {}
+    }
+#endif
+
+#if PLATFORM_ANDROID
+    {
+        FScopeLock Lock(&GoogleAdIdCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (GoogleAdIdCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&AmazonAdIdCallbackQueueMutex);
+        TFunction<void(const FString&)> Dummy;
+        while (AmazonAdIdCallbackQueue.Dequeue(Dummy)) {}
+    }
+    
+    {
+        FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
+        TFunction<void(const FAdjustPurchaseVerificationResult&)> Dummy;
+        while (PurchaseVerificationCallbackQueue.Dequeue(Dummy)) {}
+    }
 #endif
 }
