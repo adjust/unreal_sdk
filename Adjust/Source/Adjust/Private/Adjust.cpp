@@ -43,7 +43,7 @@
 UAdjust::UAdjust(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
 // lambda-based callback queues for C++ API (bypasses delegate broadcasting)
-// these queues ensure each callback is invoked exactly once, supporting burst calls
+// these queues ensure each callback is invoked exactly once, supporting concurrent calls
 static FCriticalSection AdidCallbackQueueMutex;
 static TQueue<TFunction<void(const FString&)>, EQueueMode::Mpsc> AdidCallbackQueue;
 
@@ -346,7 +346,7 @@ static void adjustIsEnabledCallback(bool isEnabled)
     // invoke lambda callback if available (C++ API)
     InvokeIsEnabledLambdaCallback(isEnabled);
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnIsEnabledDelegate.Broadcast(isEnabled);
@@ -358,7 +358,7 @@ static void adjustAdidGetterCallback(FString Adid)
     // invoke lambda callback if available (C++ API)
     InvokeAdidLambdaCallback(Adid);
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnAdidGetterDelegate.Broadcast(Adid);
@@ -370,7 +370,7 @@ static void adjustAttributionGetterCallback(FAdjustAttribution Attribution)
     // invoke lambda callback if available (C++ API)
     InvokeAttributionLambdaCallback(Attribution);
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnAttributionGetterDelegate.Broadcast(Attribution);
@@ -382,7 +382,7 @@ static void adjustLastDeeplinkGetterCallback(FString LastDeeplink)
     // invoke lambda callback if available (C++ API)
     InvokeLastDeeplinkLambdaCallback(LastDeeplink);
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnLastDeeplinkGetterDelegate.Broadcast(LastDeeplink);
@@ -426,7 +426,7 @@ static void adjustSdkVersionGetterCallback(FString SdkVersion)
     // invoke lambda callback if available (C++ API)
     InvokeSdkVersionLambdaCallback(SdkVersion);
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnSdkVersionGetterDelegate.Broadcast(SdkVersion);
@@ -440,7 +440,7 @@ static void adjustIdfaGetterCallback(FString Idfa)
     InvokeIdfaLambdaCallback(Idfa);
 #endif
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnIdfaGetterDelegate.Broadcast(Idfa);
@@ -454,7 +454,7 @@ static void adjustIdfvGetterCallback(FString Idfv)
     InvokeIdfvLambdaCallback(Idfv);
 #endif
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnIdfvGetterDelegate.Broadcast(Idfv);
@@ -468,7 +468,7 @@ static void adjustAuthorizationStatusGetterCallback(int AuthorizationStatus)
     InvokeAuthorizationStatusLambdaCallback(AuthorizationStatus);
 #endif
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnAuthorizationStatusGetterDelegate.Broadcast(AuthorizationStatus);
@@ -482,7 +482,7 @@ static void adjustRequestAppAuthorizationStatusCallback(int AuthorizationStatus)
     InvokeRequestTrackingAuthorizationLambdaCallback(AuthorizationStatus);
 #endif
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnRequestTrackingAuthorizationDelegate.Broadcast(AuthorizationStatus);
@@ -496,7 +496,7 @@ static void adjustUpdateSkanConversionValueCallback(FString Error)
     InvokeUpdateSkanConversionValueLambdaCallback(Error);
 #endif
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnUpdateSkanConversionValueDelegate.Broadcast(Error);
@@ -518,7 +518,7 @@ static void adjustGoogleAdIdGetterCallback(FString GoogleAdId)
     InvokeGoogleAdIdLambdaCallback(GoogleAdId);
 #endif
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnGoogleAdIdGetterDelegate.Broadcast(GoogleAdId);
@@ -532,7 +532,7 @@ static void adjustAmazonAdIdGetterCallback(FString AmazonAdId)
     InvokeAmazonAdIdLambdaCallback(AmazonAdId);
 #endif
     
-    // Also broadcast to delegates (Blueprint API)
+    // also broadcast to delegates (Blueprint API)
     for (TObjectIterator<UAdjustDelegates> Itr; Itr; ++Itr)
     {
         Itr->OnAmazonAdIdGetterDelegate.Broadcast(AmazonAdId);
@@ -762,7 +762,8 @@ void UAdjust::InitSdk(const FAdjustConfig& Config)
             jEnvironment = Env->NewStringUTF("production");
             break;
         default:
-            // invalid/malformed environment value - pass empty string to let native SDK handle it
+            // invalid/malformed environment value
+            // pass empty string to let native SDK handle it
             jEnvironment = Env->NewStringUTF("");
             break;
     }
@@ -2785,8 +2786,8 @@ void UAdjust::SetTestOptions(const TMap<FString, FString>& StringTestOptions, co
         return;
     }
     
-    // Set fields on AdjustTestOptions object following Cocos2d-x pattern
-    // Get field IDs for common types
+    // set fields on AdjustTestOptions object
+    // get field IDs for common types
     jclass jcslBoolean = Env->FindClass("java/lang/Boolean");
     jmethodID jmidBooleanInit = Env->GetMethodID(jcslBoolean, "<init>", "(Z)V");
     jclass jcslLong = Env->FindClass("java/lang/Long");
@@ -2960,7 +2961,8 @@ void UAdjust::GetAdid(TFunction<void(const FString&)> Callback)
         FScopeLock Lock(&AdidCallbackQueueMutex);
         AdidCallbackQueue.Enqueue(Callback);
     }
-    GetAdid(); // call existing delegate-based method which will trigger callback
+    // call existing delegate-based method which will trigger callback
+    GetAdid();
 }
 
 void UAdjust::GetAdidWithTimeout(int32 TimeoutInMilliseconds, TFunction<void(const FString&)> Callback)
@@ -2969,7 +2971,8 @@ void UAdjust::GetAdidWithTimeout(int32 TimeoutInMilliseconds, TFunction<void(con
         FScopeLock Lock(&AdidCallbackQueueMutex);
         AdidCallbackQueue.Enqueue(Callback);
     }
-    GetAdidWithTimeout(TimeoutInMilliseconds); // call existing delegate-based method
+    // call existing delegate-based method
+    GetAdidWithTimeout(TimeoutInMilliseconds);
 }
 
 void UAdjust::GetAttribution(TFunction<void(const FAdjustAttribution&)> Callback)
@@ -2978,7 +2981,8 @@ void UAdjust::GetAttribution(TFunction<void(const FAdjustAttribution&)> Callback
         FScopeLock Lock(&AttributionCallbackQueueMutex);
         AttributionCallbackQueue.Enqueue(Callback);
     }
-    GetAttribution(); // call existing delegate-based method
+    // call existing delegate-based method
+    GetAttribution();
 }
 
 void UAdjust::GetAttributionWithTimeout(int32 TimeoutInMilliseconds, TFunction<void(const FAdjustAttribution&)> Callback)
@@ -2987,7 +2991,8 @@ void UAdjust::GetAttributionWithTimeout(int32 TimeoutInMilliseconds, TFunction<v
         FScopeLock Lock(&AttributionCallbackQueueMutex);
         AttributionCallbackQueue.Enqueue(Callback);
     }
-    GetAttributionWithTimeout(TimeoutInMilliseconds); // call existing delegate-based method
+    // call existing delegate-based method
+    GetAttributionWithTimeout(TimeoutInMilliseconds);
 }
 
 void UAdjust::GetLastDeeplink(TFunction<void(const FString&)> Callback)
@@ -2996,22 +3001,18 @@ void UAdjust::GetLastDeeplink(TFunction<void(const FString&)> Callback)
         FScopeLock Lock(&LastDeeplinkCallbackQueueMutex);
         LastDeeplinkCallbackQueue.Enqueue(Callback);
     }
-    GetLastDeeplink(); // call existing delegate-based method
+    // call existing delegate-based method
+    GetLastDeeplink();
 }
 
 void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink, TFunction<void(const FString&)> Callback)
 {
     {
         FScopeLock Lock(&DeeplinkResolutionCallbackQueueMutex);
-        // clear any existing callbacks in the queue first
-        // the native SDK only processes the LAST saved deeplink when initialized
-        // so we should only keep the last callback in the queue
-        TFunction<void(const FString&)> Dummy;
-        while (DeeplinkResolutionCallbackQueue.Dequeue(Dummy)) {}
-        // enqueue the new callback (this will be the only one in the queue)
         DeeplinkResolutionCallbackQueue.Enqueue(Callback);
     }
-    ProcessAndResolveDeeplink(Deeplink); // call existing delegate-based method
+    // call existing delegate-based method
+    ProcessAndResolveDeeplink(Deeplink);
 }
 
 void UAdjust::GetSdkVersion(TFunction<void(const FString&)> Callback)
@@ -3020,7 +3021,8 @@ void UAdjust::GetSdkVersion(TFunction<void(const FString&)> Callback)
         FScopeLock Lock(&SdkVersionCallbackQueueMutex);
         SdkVersionCallbackQueue.Enqueue(Callback);
     }
-    GetSdkVersion(); // call existing delegate-based method
+    // call existing delegate-based method
+    GetSdkVersion();
 }
 
 void UAdjust::IsEnabled(TFunction<void(bool)> Callback)
@@ -3029,7 +3031,8 @@ void UAdjust::IsEnabled(TFunction<void(bool)> Callback)
         FScopeLock Lock(&IsEnabledCallbackQueueMutex);
         IsEnabledCallbackQueue.Enqueue(Callback);
     }
-    IsEnabled(); // Call existing delegate-based method
+    // call existing delegate-based method
+    IsEnabled();
 }
 
 #if PLATFORM_IOS
@@ -3039,7 +3042,8 @@ void UAdjust::GetIdfa(TFunction<void(const FString&)> Callback)
         FScopeLock Lock(&IdfaCallbackQueueMutex);
         IdfaCallbackQueue.Enqueue(Callback);
     }
-    GetIdfa(); // call existing delegate-based method
+    // call existing delegate-based method
+    GetIdfa();
 }
 
 void UAdjust::GetIdfv(TFunction<void(const FString&)> Callback)
@@ -3048,7 +3052,8 @@ void UAdjust::GetIdfv(TFunction<void(const FString&)> Callback)
         FScopeLock Lock(&IdfvCallbackQueueMutex);
         IdfvCallbackQueue.Enqueue(Callback);
     }
-    GetIdfv(); // Call existing delegate-based method
+    // call existing delegate-based method
+    GetIdfv();
 }
 
 void UAdjust::GetAppTrackingAuthorizationStatus(TFunction<void(int)> Callback)
@@ -3057,7 +3062,8 @@ void UAdjust::GetAppTrackingAuthorizationStatus(TFunction<void(int)> Callback)
         FScopeLock Lock(&AuthorizationStatusCallbackQueueMutex);
         AuthorizationStatusCallbackQueue.Enqueue(Callback);
     }
-    GetAppTrackingAuthorizationStatus(); // call existing delegate-based method
+    // call existing delegate-based method
+    GetAppTrackingAuthorizationStatus();
 }
 
 void UAdjust::RequestAppTrackingAuthorization(TFunction<void(int)> Callback)
@@ -3066,7 +3072,8 @@ void UAdjust::RequestAppTrackingAuthorization(TFunction<void(int)> Callback)
         FScopeLock Lock(&RequestTrackingAuthorizationCallbackQueueMutex);
         RequestTrackingAuthorizationCallbackQueue.Enqueue(Callback);
     }
-    RequestAppTrackingAuthorization(); // Call existing delegate-based method
+    // call existing delegate-based method
+    RequestAppTrackingAuthorization();
 }
 
 void UAdjust::UpdateSkanConversionValue(int ConversionValue, const FString& CoarseValue, bool LockWindow, TFunction<void(const FString&)> Callback)
@@ -3075,7 +3082,8 @@ void UAdjust::UpdateSkanConversionValue(int ConversionValue, const FString& Coar
         FScopeLock Lock(&UpdateSkanConversionValueCallbackQueueMutex);
         UpdateSkanConversionValueCallbackQueue.Enqueue(Callback);
     }
-    UpdateSkanConversionValue(ConversionValue, CoarseValue, LockWindow); // call existing delegate-based method
+    // call existing delegate-based method
+    UpdateSkanConversionValue(ConversionValue, CoarseValue, LockWindow);
 }
 
 void UAdjust::VerifyAppStorePurchase(const FAdjustAppStorePurchase& Purchase, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback)
@@ -3084,7 +3092,8 @@ void UAdjust::VerifyAppStorePurchase(const FAdjustAppStorePurchase& Purchase, TF
         FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
         PurchaseVerificationCallbackQueue.Enqueue(Callback);
     }
-    VerifyAppStorePurchase(Purchase); // Call existing delegate-based method
+    // call existing delegate-based method
+    VerifyAppStorePurchase(Purchase);
 }
 
 void UAdjust::VerifyAndTrackAppStorePurchase(const FAdjustEvent& Event, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback)
@@ -3093,7 +3102,8 @@ void UAdjust::VerifyAndTrackAppStorePurchase(const FAdjustEvent& Event, TFunctio
         FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
         PurchaseVerificationCallbackQueue.Enqueue(Callback);
     }
-    VerifyAndTrackAppStorePurchase(Event); // call existing delegate-based method
+    // call existing delegate-based method
+    VerifyAndTrackAppStorePurchase(Event);
 }
 #endif
 
@@ -3104,7 +3114,8 @@ void UAdjust::GetGoogleAdId(TFunction<void(const FString&)> Callback)
         FScopeLock Lock(&GoogleAdIdCallbackQueueMutex);
         GoogleAdIdCallbackQueue.Enqueue(Callback);
     }
-    GetGoogleAdId(); // call existing delegate-based method
+    // call existing delegate-based method
+    GetGoogleAdId();
 }
 
 void UAdjust::GetAmazonAdId(TFunction<void(const FString&)> Callback)
@@ -3113,7 +3124,8 @@ void UAdjust::GetAmazonAdId(TFunction<void(const FString&)> Callback)
         FScopeLock Lock(&AmazonAdIdCallbackQueueMutex);
         AmazonAdIdCallbackQueue.Enqueue(Callback);
     }
-    GetAmazonAdId(); // call existing delegate-based method
+    // call existing delegate-based method
+    GetAmazonAdId();
 }
 
 void UAdjust::VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback)
@@ -3122,7 +3134,8 @@ void UAdjust::VerifyPlayStorePurchase(const FAdjustPlayStorePurchase& Purchase, 
         FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
         PurchaseVerificationCallbackQueue.Enqueue(Callback);
     }
-    VerifyPlayStorePurchase(Purchase); // call existing delegate-based method
+    // call existing delegate-based method
+    VerifyPlayStorePurchase(Purchase);
 }
 
 void UAdjust::VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event, TFunction<void(const FAdjustPurchaseVerificationResult&)> Callback)
@@ -3131,7 +3144,8 @@ void UAdjust::VerifyAndTrackPlayStorePurchase(const FAdjustEvent& Event, TFuncti
         FScopeLock Lock(&PurchaseVerificationCallbackQueueMutex);
         PurchaseVerificationCallbackQueue.Enqueue(Callback);
     }
-    VerifyAndTrackPlayStorePurchase(Event); // call existing delegate-based method
+    // call existing delegate-based method
+    VerifyAndTrackPlayStorePurchase(Event);
 }
 #endif
 

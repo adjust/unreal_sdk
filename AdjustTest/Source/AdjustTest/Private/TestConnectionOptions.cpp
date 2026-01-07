@@ -2,8 +2,8 @@
 //  TestConnectionOptions.cpp
 //  Adjust SDK
 //
-//  Created by Uglješa Erceg (@uerceg) on 14th September 2021.
-//  Copyright © 2021-Present Adjust GmbH. All rights reserved.
+//  Created by Uglješa Erceg (@uerceg) on 18th December 2025.
+//  Copyright © 2025-Present Adjust GmbH. All rights reserved.
 //
 
 #include "TestConnectionOptions.h"
