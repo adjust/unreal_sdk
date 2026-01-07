@@ -3009,6 +3009,12 @@ void UAdjust::ProcessAndResolveDeeplink(const FAdjustDeeplink& Deeplink, TFuncti
 {
     {
         FScopeLock Lock(&DeeplinkResolutionCallbackQueueMutex);
+        // clear any existing callbacks in the queue first
+        // the native SDK only processes the LAST saved deeplink when initialized
+        // so we should only keep the last callback in the queue
+        TFunction<void(const FString&)> Dummy;
+        while (DeeplinkResolutionCallbackQueue.Dequeue(Dummy)) {}
+        // enqueue the new callback (this will be the only one in the queue)
         DeeplinkResolutionCallbackQueue.Enqueue(Callback);
     }
     // call existing delegate-based method
